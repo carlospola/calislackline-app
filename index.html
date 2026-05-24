@@ -853,9 +853,7 @@ async function submitOnboard(){
   // SOSTITUISCI CON IL TUO APPS SCRIPT URL
   const APPS_URL='https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec';
   try{
-    if(APPS_URL!=='https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec'){
-      await fetch(APPS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(dati)});
-    }
+    await fetch(APPS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(dati)});
     document.getElementById('onboardForm').style.display='none';
     document.getElementById('onboardSuccess').style.display='flex';
     DB.users.push({id:DB.users.length+1,name:dati.nome,email:dati.email,password:Math.random().toString(36).slice(2,8),role:'athlete',status:'pending',program:null,sessions:[],onboardData:dati});
