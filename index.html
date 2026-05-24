@@ -584,14 +584,17 @@ function startDemoSession() {
 // ── INIT ──────────────────────────────────────────────────
 async function init() {
   const timeout = setTimeout(() => {
-    hideLoading();
-    showScreen('loginScreen');
+    if (!currentUser) { hideLoading(); showScreen('loginScreen'); }
   }, 8000);
 
-  // Gestisce il callback OAuth dal redirect Google
+  // Gestisce il callback OAuth — il token arriva nell'hash dell'URL
   sb.auth.onAuthStateChange(async (event, session) => {
-    clearTimeout(timeout);
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+      clearTimeout(timeout);
+      // Pulisce l'URL dall'hash token
+      if (window.location.hash.includes('access_token')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       await handleSession(session);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; currentProfile = null;
@@ -600,21 +603,12 @@ async function init() {
   });
 
   try {
-    // Controlla se c'è già una sessione attiva
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
       clearTimeout(timeout);
       await handleSession(session);
-    } else {
-      // Aspetta l'evento onAuthStateChange per il redirect OAuth
-      // Se non arriva nessun evento entro 8s, mostra login
-      setTimeout(() => {
-        if (!currentUser) {
-          hideLoading();
-          showScreen('loginScreen');
-        }
-      }, 3000);
     }
+    // Se non c'è sessione, onAuthStateChange gestirà il redirect OAuth
   } catch(e) {
     clearTimeout(timeout);
     hideLoading();
