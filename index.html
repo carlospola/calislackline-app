@@ -651,7 +651,7 @@ function showScreen(id) {
 async function loginGoogle() {
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin }
+    options: { redirectTo: 'https://calislackline-app.vercel.app/api/callback' }
   });
 }
 
