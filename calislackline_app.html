@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calislackline Südtirol</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#080808;--bg2:#0d0d0d;--surface:#141414;--surface2:#1a1a1a;
+  --border:#222;--border2:#2e2e2e;--text:#e8e8e8;--text2:#aaa;--muted:#666;
+  --accent:#c8f060;--accent-dim:rgba(200,240,96,0.07);--accent-dark:#9ab840;
+  --red:#ff5f5f;--mono:'DM Mono',monospace;--display:'Syne',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden;}
+.screen{display:none;height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* LOGIN */
+#loginScreen{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,#1a2200 0%,var(--bg) 70%);}
+.login-box{width:100%;max-width:380px;padding:0 24px;display:flex;flex-direction:column;align-items:center;gap:28px;}
+.login-glyph{width:52px;height:52px;border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--accent-dim);}
+.login-name{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:.06em;text-align:center;line-height:1.3;}
+.login-tagline{font-size:9px;letter-spacing:.25em;color:var(--muted);text-transform:uppercase;text-align:center;}
+.login-form{width:100%;display:flex;flex-direction:column;gap:12px;}
+.login-field{display:flex;flex-direction:column;gap:5px;}
+.login-label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;}
+.login-input{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s;}
+.login-input:focus{border-color:#444;}
+.login-input::placeholder{color:#333;}
+.login-btn{padding:13px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:all .15s;margin-top:4px;}
+.login-btn:hover{background:var(--accent-dark);}
+.login-error{font-size:11px;color:var(--red);text-align:center;min-height:16px;}
+.login-hint{font-size:10px;color:#333;text-align:center;line-height:1.8;}
+.login-hint span{color:#555;}
+.login-register{background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px;}
+
+/* TOPBAR */
+.topbar{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg);}
+.topbar-brand{font-family:var(--display);font-size:13px;font-weight:800;letter-spacing:.06em;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-user{font-size:10px;color:var(--muted);letter-spacing:.05em;}
+.topbar-btn{font-size:10px;color:var(--muted);cursor:pointer;padding:5px 10px;border:1px solid var(--border2);border-radius:4px;background:transparent;font-family:var(--mono);transition:all .15s;}
+.topbar-btn:hover{color:var(--text);border-color:#444;}
+
+/* DASHBOARD */
+#dashScreen{overflow:hidden;}
+.dash-body{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;gap:20px;}
+.dash-body::-webkit-scrollbar{width:3px;}
+.dash-body::-webkit-scrollbar-thumb{background:var(--border2);}
+.dash-name{font-family:var(--display);font-size:20px;font-weight:800;}
+.dash-sub{font-size:11px;color:var(--muted);letter-spacing:.05em;}
+.section-label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+.program-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.program-empty{font-size:12px;color:var(--muted);text-align:center;padding:20px 0;line-height:1.8;}
+.program-name{font-family:var(--display);font-size:15px;font-weight:700;margin-bottom:6px;}
+.program-meta{font-size:11px;color:var(--text2);margin-bottom:14px;}
+.workout-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.workout-card{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px;}
+.workout-card:hover{border-color:#444;background:var(--surface);}
+.workout-card-name{font-family:var(--display);font-size:13px;font-weight:700;}
+.workout-card-badge{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--accent-dim);color:var(--accent);width:fit-content;}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+.stat-num{font-family:var(--display);font-size:22px;font-weight:800;color:var(--accent);}
+.stat-lbl{font-size:9px;color:var(--muted);letter-spacing:.1em;margin-top:3px;}
+.log-list{display:flex;flex-direction:column;gap:8px;}
+.log-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:border-color .15s;}
+.log-item:hover{border-color:#444;}
+.log-item-name{font-size:12px;font-weight:500;}
+.log-item-date{font-size:10px;color:var(--muted);}
+.log-item-right{font-size:10px;color:var(--muted);}
+
+/* SESSION */
+#sessionScreen{overflow:hidden;}
+.session-body{display:grid;grid-template-rows:1fr auto auto;flex:1;overflow:hidden;}
+.messages{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px;}
+.messages::-webkit-scrollbar{width:3px;}
+.messages::-webkit-scrollbar-thumb{background:var(--border2);}
+.msg-row{display:flex;gap:10px;animation:fadeUp .2s ease both;}
+.msg-row.user{flex-direction:row-reverse;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;flex-shrink:0;margin-top:2px;}
+.avatar.ai{background:var(--accent);color:#000;}
+.avatar.user{background:var(--surface2);color:var(--text2);}
+.bubble{max-width:calc(100% - 40px);padding:11px 14px;border-radius:10px;font-size:12.5px;line-height:1.65;}
+.msg-row.ai .bubble{background:var(--surface);border:1px solid var(--border);border-top-left-radius:3px;}
+.msg-row.user .bubble{background:var(--surface2);border:1px solid var(--border2);color:#bbb;border-top-right-radius:3px;}
+.typing-dots{display:flex;gap:5px;padding:3px 0;}
+.typing-dots span{width:5px;height:5px;background:var(--muted);border-radius:50%;animation:bounce 1.2s infinite ease-in-out;}
+.typing-dots span:nth-child(2){animation-delay:.15s;}
+.typing-dots span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-5px);opacity:1;}}
+.timer{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;}
+.timer-num{font-family:var(--display);font-size:20px;font-weight:700;color:var(--text);min-width:52px;font-variant-numeric:tabular-nums;}
+.timer-num.on{color:var(--accent);}
+.timer-lbl{flex:1;font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.tbtn{padding:5px 12px;border-radius:5px;font-family:var(--mono);font-size:10px;cursor:pointer;border:none;transition:all .15s;}
+.tbtn-go{background:var(--accent);color:#000;}
+.tbtn-go:hover{background:var(--accent-dark);}
+.tbtn-rst{background:var(--border);color:var(--text2);}
+.quick{padding:0 20px 8px;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
+.qbtn{padding:4px 11px;background:transparent;border:1px solid var(--border2);border-radius:20px;color:var(--text2);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;}
+.qbtn:hover{color:var(--text);border-color:#444;}
+.input-panel{padding:10px 20px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:9px;flex-shrink:0;}
+.input-fields{display:grid;grid-template-columns:72px 72px 1fr;gap:8px;align-items:end;}
+.field-wrap{display:flex;flex-direction:column;gap:4px;}
+.field-lbl{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#999;padding-left:2px;}
+.field-lbl .req{color:var(--accent);margin-left:1px;}
+.field-lbl .opt{color:#444;font-size:8px;margin-left:2px;}
+input[type=number],input[type=text]{background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px 11px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;width:100%;transition:border-color .15s;-moz-appearance:textfield;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type=number]:focus,input[type=text]:focus{border-color:#3a3a3a;}
+input::placeholder{color:#444;}
+.input-bottom{display:flex;gap:8px;align-items:flex-end;}
+.rpe-section{display:flex;flex-direction:column;gap:5px;flex:1;}
+.rpe-section-lbl{font-size:9px;letter-spacing:.15em;color:#999;text-transform:uppercase;}
+.rpe-btns{display:flex;gap:3px;flex-wrap:wrap;}
+.rpe-btn{padding:5px 6px;background:transparent;border:1px solid var(--border2);border-radius:5px;color:#888;font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .12s;min-width:25px;text-align:center;}
+.rpe-btn:hover{color:var(--text);border-color:#444;}
+.rpe-btn.sel{background:var(--accent);color:#000;border-color:var(--accent);}
+.send-btn{width:40px;height:40px;background:var(--accent);border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.send-btn:hover{background:var(--accent-dark);}
+.send-btn:disabled{background:var(--border);cursor:not-allowed;}
+.send-btn svg{width:14px;height:14px;}
+
+/* ADMIN */
+#adminScreen{overflow:hidden;}
+.admin-body{flex:1;overflow-y:auto;padding:20px;}
+.admin-body::-webkit-scrollbar{width:3px;}
+.admin-body::-webkit-scrollbar-thumb{background:var(--border2);}
+.admin-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);}
+.atab{padding:10px 16px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;margin-bottom:-1px;letter-spacing:.05em;}
+.atab:hover{color:var(--text);}
+.atab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.admin-section{display:none;}
+.admin-section.active{display:block;}
+.user-table{width:100%;border-collapse:collapse;}
+.user-table th{font-size:9px;letter-spacing:.15em;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);text-transform:uppercase;}
+.user-table td{padding:12px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle;}
+.user-table tr:hover td{background:var(--surface);}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;letter-spacing:.05em;}
+.badge-active{background:rgba(200,240,96,.1);color:var(--accent);}
+.badge-pending{background:rgba(255,200,60,.1);color:#ffc83c;}
+.badge-inactive{background:rgba(255,95,95,.1);color:var(--red);}
+.action-btn{padding:4px 10px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text2);transition:all .15s;margin-right:4px;}
+.action-btn:hover{color:var(--text);border-color:#444;}
+.action-btn.primary{background:var(--accent);color:#000;border-color:var(--accent);}
+.action-btn.danger{color:var(--red);border-color:rgba(255,95,95,.3);}
+.empty-table{text-align:center;padding:40px;font-size:12px;color:var(--muted);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:560px;max-height:80vh;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;}
+.modal-title{font-family:var(--display);font-size:16px;font-weight:700;}
+.modal-sub{font-size:11px;color:var(--muted);}
+.modal-field{display:flex;flex-direction:column;gap:6px;}
+.modal-label{font-size:10px;letter-spacing:.15em;color:var(--text2);text-transform:uppercase;}
+.modal-input{background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:10px 13px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;width:100%;transition:border-color .15s;}
+.modal-input:focus{border-color:#444;}
+.modal-textarea{background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:10px 13px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;width:100%;resize:vertical;min-height:160px;line-height:1.6;transition:border-color .15s;}
+.modal-textarea::placeholder{color:#333;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.modal-cancel{padding:9px 18px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;}
+.modal-save{padding:9px 18px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;}
+.modal-save:hover{background:var(--accent-dark);}
+.log-entry{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;line-height:1.7;color:var(--text2);white-space:pre-wrap;max-height:300px;overflow-y:auto;}
+
+/* ONBOARD */
+#onboardScreen{overflow-y:auto;background:radial-gradient(ellipse at 50% 0%,#1a2200 0%,var(--bg) 60%);}
+#onboardScreen::-webkit-scrollbar{width:3px;}
+#onboardScreen::-webkit-scrollbar-thumb{background:var(--border2);}
+.onboard-wrap{max-width:540px;margin:0 auto;padding:32px 24px 60px;display:flex;flex-direction:column;gap:28px;}
+.onboard-title{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:.04em;text-align:center;}
+.onboard-sub{font-size:11px;color:var(--muted);line-height:1.8;text-align:center;}
+.form-section{display:flex;flex-direction:column;gap:14px;padding-top:4px;}
+.form-section-title{font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.form-row{display:grid;gap:12px;}
+.form-row.cols-2{grid-template-columns:1fr 1fr;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-label{font-size:10px;letter-spacing:.12em;color:#999;text-transform:uppercase;}
+.form-label .req{color:var(--accent);margin-left:2px;}
+.form-input,.form-select,.form-textarea{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;color:var(--text);font-family:var(--mono);font-size:12.5px;outline:none;width:100%;transition:border-color .15s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:#444;}
+.form-input::placeholder,.form-textarea::placeholder{color:#444;}
+.form-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.form-select option{background:#1a1a1a;}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.6;}
+
+/* CHECKBOXES */
+.check-group{display:flex;flex-wrap:wrap;gap:8px;}
+.check-chip{display:inline-flex;align-items:center;gap:7px;cursor:pointer;padding:8px 13px;background:var(--surface);border:2px solid var(--border2);border-radius:8px;transition:all .15s;font-size:11px;color:#aaa;user-select:none;-webkit-user-select:none;}
+.check-chip:hover{border-color:#555;color:var(--text);}
+.check-chip input{position:absolute;opacity:0;width:0;height:0;}
+.check-chip .chip-box{width:14px;height:14px;border:1.5px solid #555;border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;color:transparent;transition:all .15s;}
+.check-chip.is-checked{border-color:var(--accent);color:var(--accent);background:rgba(200,240,96,0.08);}
+.check-chip.is-checked .chip-box{background:var(--accent);border-color:var(--accent);color:#000;}
+
+.toggle-row{display:flex;gap:8px;}
+.toggle-btn{flex:1;padding:10px;background:var(--surface);border:2px solid var(--border2);border-radius:7px;color:#888;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;text-align:center;}
+.toggle-btn.yes{border-color:var(--red);color:var(--red);background:rgba(255,95,95,0.08);}
+.toggle-btn.no{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+
+.onboard-submit{padding:14px;background:var(--accent);border:none;border-radius:9px;color:#000;font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:all .15s;width:100%;}
+.onboard-submit:hover{background:var(--accent-dark);}
+.onboard-submit:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;}
+.form-note{font-size:10px;color:var(--muted);text-align:center;line-height:1.8;}
+.onboard-success{display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:60px 24px;min-height:60vh;}
+.success-glyph{font-size:40px;color:var(--accent);}
+.success-title{font-family:var(--display);font-size:20px;font-weight:800;}
+.success-sub{font-size:12px;color:var(--muted);line-height:1.8;max-width:320px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="screen active" id="loginScreen">
+  <div class="login-box">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div class="login-glyph">◎</div>
+      <div class="login-name">CALISLACKLINE<br>SÜDTIROL</div>
+      <div class="login-tagline">AI Coaching · Personalized · Adaptive</div>
+    </div>
+    <div class="login-form">
+      <div class="login-field">
+        <div class="login-label">Email</div>
+        <input class="login-input" id="loginEmail" type="email" placeholder="la tua email">
+      </div>
+      <div class="login-field">
+        <div class="login-label">Password</div>
+        <input class="login-input" id="loginPass" type="password" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button class="login-btn" onclick="doLogin()">Accedi</button>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <button class="login-register" onclick="showScreen('onboardScreen')">Non hai un account? Richiedi il coaching →</button>
+      <div class="login-hint"><span>Demo atleta:</span> atleta@test.com / 1234<br><span>Admin:</span> calislackline@gmail.com / admin</div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="screen" id="dashScreen">
+  <div class="topbar">
+    <div class="topbar-brand">CALISLACKLINE SÜDTIROL</div>
+    <div class="topbar-right">
+      <div class="topbar-user" id="dashUserLabel"></div>
+      <button class="topbar-btn" onclick="doLogout()">Esci</button>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div><div class="dash-name" id="dashWelcome">Ciao!</div><div class="dash-sub">Pronto per allenarti oggi?</div></div>
+    <div>
+      <div class="section-label">Il tuo programma</div>
+      <div class="program-card" id="programCard">
+        <div class="program-empty" id="programEmpty">Nessun programma assegnato.<br>Il coach lo caricherà presto.</div>
+        <div id="programContent" style="display:none">
+          <div class="program-name" id="programName"></div>
+          <div class="program-meta" id="programMeta"></div>
+          <div class="workout-grid" id="workoutGrid"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Statistiche</div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num" id="statSessions">0</div><div class="stat-lbl">SESSIONI</div></div>
+        <div class="stat-card"><div class="stat-num" id="statWeek">0</div><div class="stat-lbl">QUESTA SETTIMANA</div></div>
+        <div class="stat-card"><div class="stat-num" id="statStreak">0</div><div class="stat-lbl">STREAK</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Sessioni recenti</div>
+      <div class="log-list" id="logList"><div style="font-size:12px;color:var(--muted);padding:16px 0;">Nessuna sessione ancora.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION -->
+<div class="screen" id="sessionScreen">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="topbar-btn" onclick="showDash()">← Torna</button>
+      <div style="font-family:var(--display);font-size:13px;font-weight:700;" id="sessionTitle"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:9px;color:var(--accent);letter-spacing:.15em;">
+      <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite;"></div>LIVE
+    </div>
+  </div>
+  <style>@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}</style>
+  <div class="session-body">
+    <div class="messages" id="messages"></div>
+    <div class="quick">
+      <button class="qbtn" onclick="qSend('skip')">skip</button>
+      <button class="qbtn" onclick="qSend('recap')">recap</button>
+      <button class="qbtn" onclick="qSend('fine')">termina</button>
+    </div>
+    <div class="input-panel">
+      <div class="input-fields">
+        <div class="field-wrap"><div class="field-lbl">Reps<span class="req">*</span></div><input type="number" id="inpReps" placeholder="8" min="0" max="99"></div>
+        <div class="field-wrap"><div class="field-lbl">RIR<span class="opt">opz</span></div><input type="number" id="inpRir" placeholder="2" min="0" max="10"></div>
+        <div class="field-wrap"><div class="field-lbl">Note<span class="opt">opz</span></div><input type="text" id="inpNote" placeholder="..."></div>
+      </div>
+      <div class="input-bottom">
+        <div class="rpe-section">
+          <div class="rpe-section-lbl">RPE<span style="color:#444;font-size:8px;margin-left:4px;">opz</span></div>
+          <div class="rpe-btns" id="rpeBtns">
+            <button class="rpe-btn" onclick="selRpe(this,1)">1</button><button class="rpe-btn" onclick="selRpe(this,2)">2</button>
+            <button class="rpe-btn" onclick="selRpe(this,3)">3</button><button class="rpe-btn" onclick="selRpe(this,4)">4</button>
+            <button class="rpe-btn" onclick="selRpe(this,5)">5</button><button class="rpe-btn" onclick="selRpe(this,6)">6</button>
+            <button class="rpe-btn" onclick="selRpe(this,7)">7</button><button class="rpe-btn" onclick="selRpe(this,8)">8</button>
+            <button class="rpe-btn" onclick="selRpe(this,9)">9</button><button class="rpe-btn" onclick="selRpe(this,10)">10</button>
+          </div>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="screen" id="adminScreen">
+  <div class="topbar">
+    <div class="topbar-brand">CALISLACKLINE <span style="color:var(--accent);font-size:9px;letter-spacing:.15em;margin-left:6px;">ADMIN</span></div>
+    <div class="topbar-right"><div class="topbar-user">Carlo Spolaore</div><button class="topbar-btn" onclick="doLogout()">Esci</button></div>
+  </div>
+  <div class="admin-body">
+    <div class="admin-tabs">
+      <button class="atab active" onclick="switchTab('users',this)">Atleti</button>
+      <button class="atab" onclick="switchTab('logs',this)">Sessioni</button>
+    </div>
+    <div class="admin-section active" id="tab-users">
+      <table class="user-table">
+        <thead><tr><th>Atleta</th><th>Email</th><th>Programma</th><th>Stato</th><th>Azioni</th></tr></thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+    <div class="admin-section" id="tab-logs">
+      <table class="user-table">
+        <thead><tr><th>Atleta</th><th>Workout</th><th>Data</th><th>Azioni</th></tr></thead>
+        <tbody id="logTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ONBOARD -->
+<div class="screen" id="onboardScreen">
+  <div class="onboard-wrap">
+    <button onclick="showScreen('loginScreen')" style="background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;text-align:left;padding:0;">← Torna al login</button>
+    <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="font-size:26px;">◎</div>
+      <div class="onboard-title">Inizia il tuo percorso</div>
+      <div class="onboard-sub">Compila il form — riceverai una mail di conferma<br>e verrai contattato dal coach entro 24h.</div>
+    </div>
+
+    <div id="onboardForm" style="display:flex;flex-direction:column;gap:24px;">
+
+      <!-- 01 DATI PERSONALI -->
+      <div class="form-section">
+        <div class="form-section-title">01 — Dati personali</div>
+        <div class="form-row cols-2">
+          <div class="form-group"><div class="form-label">Nome<span class="req">*</span></div><input class="form-input" id="f_nome" type="text" placeholder="Mario"></div>
+          <div class="form-group"><div class="form-label">Cognome<span class="req">*</span></div><input class="form-input" id="f_cognome" type="text" placeholder="Rossi"></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><div class="form-label">Email<span class="req">*</span></div><input class="form-input" id="f_email" type="email" placeholder="mario@email.com"></div>
+          <div class="form-group"><div class="form-label">Telefono</div><input class="form-input" id="f_telefono" type="tel" placeholder="+39 333 000 0000"></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><div class="form-label">Età<span class="req">*</span></div><input class="form-input" id="f_eta" type="number" placeholder="25" min="14" max="80"></div>
+          <div class="form-group"><div class="form-label">Sesso</div>
+            <select class="form-select" id="f_sesso"><option value="">—</option><option>Maschile</option><option>Femminile</option><option>Altro</option></select>
+          </div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><div class="form-label">Peso (kg)</div><input class="form-input" id="f_peso" type="number" placeholder="75"></div>
+          <div class="form-group"><div class="form-label">Altezza (cm)</div><input class="form-input" id="f_altezza" type="number" placeholder="178"></div>
+        </div>
+      </div>
+
+      <!-- 02 ALLENAMENTO -->
+      <div class="form-section">
+        <div class="form-section-title">02 — Allenamento attuale</div>
+        <div class="form-group"><div class="form-label">Livello<span class="req">*</span></div>
+          <select class="form-select" id="f_livello">
+            <option value="">Seleziona</option>
+            <option>Principiante — meno di 6 mesi</option>
+            <option>Intermedio — 6 mesi / 2 anni</option>
+            <option>Avanzato — più di 2 anni</option>
+          </select>
+        </div>
+        <div class="form-group"><div class="form-label">Frequenza attuale<span class="req">*</span></div>
+          <select class="form-select" id="f_frequenza">
+            <option value="">—</option>
+            <option>1-2 volte a settimana</option>
+            <option>3-4 volte a settimana</option>
+            <option>5+ volte a settimana</option>
+            <option>Non mi alleno regolarmente</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Discipline praticate</div>
+          <div class="check-group" id="checkDiscipline">
+            <label class="check-chip"><input type="checkbox" value="Calisthenics"><span class="chip-box"></span>Calisthenics</label>
+            <label class="check-chip"><input type="checkbox" value="Anelli"><span class="chip-box"></span>Anelli</label>
+            <label class="check-chip"><input type="checkbox" value="BJJ"><span class="chip-box"></span>BJJ</label>
+            <label class="check-chip"><input type="checkbox" value="Running"><span class="chip-box"></span>Running</label>
+            <label class="check-chip"><input type="checkbox" value="Trail Running"><span class="chip-box"></span>Trail Running</label>
+            <label class="check-chip"><input type="checkbox" value="Ciclismo / MTB"><span class="chip-box"></span>Ciclismo / MTB</label>
+            <label class="check-chip"><input type="checkbox" value="Arrampicata"><span class="chip-box"></span>Arrampicata</label>
+            <label class="check-chip"><input type="checkbox" value="Sci / Snowboard"><span class="chip-box"></span>Sci / Snowboard</label>
+            <label class="check-chip"><input type="checkbox" value="Slackline"><span class="chip-box"></span>Slackline</label>
+            <label class="check-chip"><input type="checkbox" value="Mobility / Yoga"><span class="chip-box"></span>Mobility / Yoga</label>
+            <label class="check-chip"><input type="checkbox" value="Nuoto"><span class="chip-box"></span>Nuoto</label>
+            <label class="check-chip"><input type="checkbox" value="Sport di squadra"><span class="chip-box"></span>Sport di squadra</label>
+            <label class="check-chip" id="altroDiscChip"><input type="checkbox" value="Altro"><span class="chip-box"></span>Altro</label>
+          </div>
+          <div id="altroDiscWrap" style="display:none;margin-top:8px;">
+            <input class="form-input" id="f_altro_disc" type="text" placeholder="Specifica il tuo sport...">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Skill attuali</div>
+          <div class="check-group" id="checkSkill">
+            <label class="check-chip"><input type="checkbox" value="Flessioni"><span class="chip-box"></span>Flessioni</label>
+            <label class="check-chip"><input type="checkbox" value="Trazioni"><span class="chip-box"></span>Trazioni</label>
+            <label class="check-chip"><input type="checkbox" value="Dip"><span class="chip-box"></span>Dip</label>
+            <label class="check-chip"><input type="checkbox" value="Muscle up"><span class="chip-box"></span>Muscle up</label>
+            <label class="check-chip"><input type="checkbox" value="L-sit"><span class="chip-box"></span>L-sit</label>
+            <label class="check-chip"><input type="checkbox" value="Handstand"><span class="chip-box"></span>Handstand</label>
+            <label class="check-chip"><input type="checkbox" value="Front lever"><span class="chip-box"></span>Front lever</label>
+            <label class="check-chip"><input type="checkbox" value="Back lever"><span class="chip-box"></span>Back lever</label>
+            <label class="check-chip"><input type="checkbox" value="Planche"><span class="chip-box"></span>Planche</label>
+            <label class="check-chip"><input type="checkbox" value="Human flag"><span class="chip-box"></span>Human flag</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 OBIETTIVI -->
+      <div class="form-section">
+        <div class="form-section-title">03 — Obiettivi</div>
+        <div class="form-group"><div class="form-label">Obiettivo principale<span class="req">*</span></div>
+          <select class="form-select" id="f_obiettivo">
+            <option value="">Seleziona</option>
+            <option>Forza massimale</option>
+            <option>Ipertrofia — massa muscolare</option>
+            <option>Skills avanzate (muscle up, planche...)</option>
+            <option>Perdita peso + composizione corporea</option>
+            <option>Mobilità e movimento</option>
+            <option>Performance sport specifico</option>
+            <option>Forma fisica generale</option>
+          </select>
+        </div>
+        <div class="form-group"><div class="form-label">Obiettivo specifico a 3 mesi</div><input class="form-input" id="f_obiettivo3m" type="text" placeholder="es. primo muscle up, 10 trazioni..."></div>
+        <div class="form-group"><div class="form-label">Disponibilità oraria settimanale<span class="req">*</span></div>
+          <select class="form-select" id="f_disponibilita">
+            <option value="">—</option>
+            <option>1-2 ore</option><option>3-4 ore</option><option>5-6 ore</option><option>7+ ore</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 04 ATTREZZATURA -->
+      <div class="form-section">
+        <div class="form-section-title">04 — Attrezzatura e luogo</div>
+        <div class="form-group"><div class="form-label">Dove ti alleni principalmente<span class="req">*</span></div>
+          <select class="form-select" id="f_luogo">
+            <option value="">—</option>
+            <option>Parco pubblico / outdoor</option>
+            <option>Palestra</option>
+            <option>Casa</option>
+            <option>Misto outdoor / palestra</option>
+            <option>Misto outdoor / casa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Attrezzatura disponibile</div>
+          <div class="check-group" id="checkAttr">
+            <label class="check-chip"><input type="checkbox" value="Sbarra"><span class="chip-box"></span>Sbarra</label>
+            <label class="check-chip"><input type="checkbox" value="Anelli"><span class="chip-box"></span>Anelli</label>
+            <label class="check-chip"><input type="checkbox" value="Parallele"><span class="chip-box"></span>Parallele</label>
+            <label class="check-chip"><input type="checkbox" value="Kettlebell"><span class="chip-box"></span>Kettlebell</label>
+            <label class="check-chip"><input type="checkbox" value="Bande elastiche"><span class="chip-box"></span>Bande elastiche</label>
+            <label class="check-chip"><input type="checkbox" value="Slackline"><span class="chip-box"></span>Slackline</label>
+            <label class="check-chip"><input type="checkbox" value="Solo bodyweight"><span class="chip-box"></span>Solo bodyweight</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 05 SALUTE -->
+      <div class="form-section">
+        <div class="form-section-title">05 — Salute e limitazioni</div>
+        <div class="form-group">
+          <div class="form-label">Hai infortuni attuali o pregressi?<span class="req">*</span></div>
+          <div class="toggle-row">
+            <button type="button" class="toggle-btn" id="togSi" onclick="setInfortuni('si')">Sì</button>
+            <button type="button" class="toggle-btn" id="togNo" onclick="setInfortuni('no')">No</button>
+          </div>
+        </div>
+        <div class="form-group" id="infortuniWrap" style="display:none;">
+          <div class="form-label">Descrivi brevemente</div>
+          <textarea class="form-textarea" id="f_infortuni" placeholder="es. tendinite spalla, lombalgia..."></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Altre limitazioni fisiche</div>
+          <textarea class="form-textarea" id="f_limitazioni" placeholder="es. problemi al ginocchio, interventi..."></textarea>
+        </div>
+        <div class="form-group"><div class="form-label">Stile di vita</div>
+          <select class="form-select" id="f_stile">
+            <option value="">—</option>
+            <option>Sedentario — lavoro d'ufficio</option>
+            <option>Moderatamente attivo</option>
+            <option>Molto attivo — lavoro fisico / outdoor</option>
+          </select>
+        </div>
+        <div class="form-group"><div class="form-label">Ore di sonno medie</div>
+          <select class="form-select" id="f_sonno">
+            <option value="">—</option>
+            <option>Meno di 6h</option><option>6-7h</option><option>7-8h</option><option>8h+</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 06 MOTIVAZIONE -->
+      <div class="form-section">
+        <div class="form-section-title">06 — Motivazione e note</div>
+        <div class="form-group">
+          <div class="form-label">Perché vuoi iniziare il coaching?<span class="req">*</span></div>
+          <textarea class="form-textarea" id="f_motivazione" placeholder="Raccontami cosa ti aspetti dal percorso..."></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Note libere</div>
+          <textarea class="form-textarea" id="f_note" placeholder="Qualsiasi cosa vuoi che io sappia..."></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button class="onboard-submit" id="onboardBtn" onclick="submitOnboard()">Invia richiesta coaching →</button>
+        <div class="form-note">Riceverai una mail di conferma immediata.<br>Il coach ti contatterà entro 24 ore.</div>
+        <div style="font-size:10px;color:var(--red);text-align:center;min-height:16px;" id="onboardErr"></div>
+      </div>
+    </div>
+
+    <div class="onboard-success" id="onboardSuccess">
+      <div class="success-glyph">✓</div>
+      <div class="success-title">Richiesta inviata!</div>
+      <div class="success-sub">Hai ricevuto una mail di conferma.<br>Carlo ti contatterà entro 24 ore.</div>
+      <button onclick="showScreen('loginScreen')" style="padding:11px 24px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;margin-top:8px;">← Torna al login</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="programModal">
+  <div class="modal">
+    <div class="modal-title">Assegna Programma</div>
+    <div class="modal-sub" id="programModalSub"></div>
+    <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="modalProgramName" placeholder="es. Body By Rings — Fase 1"></div>
+    <div class="modal-field"><div class="modal-label">Workout (separati da virgola)</div><input class="modal-input" id="modalWorkouts" placeholder="Push 1, Pull 1, Push 2, Pull 2"></div>
+    <div class="modal-field"><div class="modal-label">System prompt AI Coach</div><textarea class="modal-textarea" id="modalPrompt" placeholder="Incolla qui il programma e le istruzioni..."></textarea></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('programModal')">Annulla</button>
+      <button class="modal-save" onclick="saveProgram()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="logModal">
+  <div class="modal">
+    <div class="modal-title" id="logModalTitle">Workout Log</div>
+    <div class="log-entry" id="logModalContent"></div>
+    <div class="modal-btns"><button class="modal-cancel" onclick="closeModal('logModal')">Chiudi</button></div>
+  </div>
+</div>
+
+<script>
+// ── DB ────────────────────────────────────────────────────
+const DB = {
+  users: [
+    { id:1, name:'Marco Rossi', email:'atleta@test.com', password:'1234', role:'athlete', status:'active',
+      program:{ name:'Body By Rings — Fase 1', workouts:['Push 1','Pull 1','Push 2','Pull 2'],
+        prompt:`Sei un AI coach interattivo per il programma Body By Rings di Calislackline Südtirol. Guida l'atleta set per set.
+REGOLE: Un esercizio alla volta. Dopo ogni set chiedi reps, RIR opzionale, RPE opzionale, note opzionali. In base ai dati suggerisci: mantieni / aumenta / diminuisci / più recupero. Comandi: "skip"=prossimo esercizio, "fine"=termina+log, "recap"=riepilogo.
+PUSH 1: A1 Ring Dip 3-4x6-8 tempo 30X1 rest 1:30 elbows in | B1 Archer Pushup 3-4x4-6 L&R tempo 20X0 rest 1:30 | C1 Chest Fly 3x8-10 tempo 30X0 rest 1:30 | D1 Tricep Dip 3x6-10 tempo 20X0 rest 1:30 | E1 Tricep Extension 3x8-10 tempo 30X1 rest 1:30
+PULL 1: A1 Chinup 3-5x6-8 tempo 30X2 rest 2:00-3:00 | B1 Bodyweight Row 3-4x10-15 tempo 20X1 rest 1:30 | C1 Pelican Curl 3x5-8 tempo 30X0 rest 1:30 | D1 Face Pull 3x8-10 rest 1:30 | E1 Ring Rollout 3x8-10 tempo 40X0 rest 1:30
+PUSH 2: A1 Ring Dip 3-4x6-8 tempo 30X1 rest 1:30 | B1 Shoulder Pushup 3-4x4-8 tempo 30X1 rest 1:30 | C1 Bulgarian Pushup 3-4x6-10 rest 1:30 | D1 Shoulder Shrug 3-4x8-12 2s iso rest 1:30 | E1 Tricep Dip 3x6-10 rest 1:30
+PULL 2: A1 Mantle Chinup 3-5x4-6 L&R tempo 30X2 rest 1:30 | B1 Archer Row 3-4x4-8 L&R rest 1:30 | C1 Face Pull 3x8-10 rest 1:30 | D1 BW Bicep Curl 3-4x8-10 tempo 30X1 rest 1:30
+FORMATO: [ESERCIZIO] — Set X/Y | Target: X-Y reps | Tempo: XXXX | Recupero: X:XX | Cue: [tecnica] | → Dimmi: reps / RIR / RPE / note` },
+      sessions:[{ id:1, workout:'Push 1', date:'22 Mag 2026', log:'===== WORKOUT LOG =====\nWorkout: Push 1 | Data: 22/05/2026\nA1 Ring Dip\n  Set 1: 7 reps — RIR 2 — RPE 7\n  Set 2: 6 reps — RPE 8\n  Set 3: 6 reps — RPE 9\nNote: buona sessione.\n=======================' }]
+    },
+    { id:2, name:'Luca Bianchi', email:'luca@test.com', password:'1234', role:'athlete', status:'pending', program:null, sessions:[] },
+    { id:3, name:'Carlo Spolaore', email:'calislackline@gmail.com', password:'admin', role:'admin', status:'active', program:null, sessions:[] }
+  ]
+};
+
+let currentUser = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
+
+// ── AUTH ──────────────────────────────────────────────────
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginError');
+  const user = DB.users.find(u => u.email===email && u.password===pass);
+  if (!user) { err.textContent='Email o password non corretti.'; return; }
+  if (user.status==='inactive') { err.textContent='Account disattivato.'; return; }
+  err.textContent='';
+  currentUser = user;
+  user.role==='admin' ? showAdmin() : showDash();
+}
+function doLogout() { currentUser=null; showScreen('loginScreen'); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function showDash() {
+  showScreen('dashScreen');
+  document.getElementById('dashUserLabel').textContent = currentUser.name;
+  document.getElementById('dashWelcome').textContent = 'Ciao, ' + currentUser.name.split(' ')[0] + '!';
+  const u = currentUser;
+  if (u.program) {
+    document.getElementById('programEmpty').style.display='none';
+    document.getElementById('programContent').style.display='block';
+    document.getElementById('programName').textContent=u.program.name;
+    document.getElementById('programMeta').textContent=u.program.workouts.length+' workout disponibili';
+    const grid=document.getElementById('workoutGrid'); grid.innerHTML='';
+    u.program.workouts.forEach(w=>{
+      const c=document.createElement('div'); c.className='workout-card';
+      c.innerHTML='<div class="workout-card-name">'+w+'</div><div class="workout-card-badge">Inizia →</div>';
+      c.onclick=()=>startSession(w); grid.appendChild(c);
+    });
+  }
+  document.getElementById('statSessions').textContent=u.sessions.length;
+  document.getElementById('statWeek').textContent=u.sessions.filter(s=>(new Date()-new Date(s.date))<604800000).length;
+  document.getElementById('statStreak').textContent=u.sessions.length>0?'🔥'+Math.min(u.sessions.length,7):'0';
+  const ll=document.getElementById('logList');
+  if(!u.sessions.length){ll.innerHTML='<div style="font-size:12px;color:var(--muted);padding:16px 0;">Nessuna sessione ancora.</div>';return;}
+  ll.innerHTML='';
+  [...u.sessions].reverse().slice(0,5).forEach(s=>{
+    const i=document.createElement('div'); i.className='log-item';
+    i.innerHTML='<div><div class="log-item-name">'+s.workout+'</div><div class="log-item-date">'+s.date+'</div></div><div class="log-item-right">Vedi →</div>';
+    i.onclick=()=>openLogModal(s); ll.appendChild(i);
+  });
+}
+
+// ── SESSION ───────────────────────────────────────────────
+function startSession(workout) {
+  sessionWorkout=workout; sessionHistory=[]; selectedRpe=null; busy=false;
+  document.getElementById('sessionTitle').textContent=workout;
+  document.getElementById('messages').innerHTML='';
+  document.querySelectorAll('.rpe-btn').forEach(b=>b.classList.remove('sel'));
+  showScreen('sessionScreen');
+  aiSend(workout,true);
+}
+function qSend(t){addBubble('user',t);aiSend(t,false);}
+function selRpe(btn,val){document.querySelectorAll('.rpe-btn').forEach(b=>b.classList.remove('sel'));if(selectedRpe===val){selectedRpe=null;return;}btn.classList.add('sel');selectedRpe=val;}
+function sendMsg(){
+  const r=document.getElementById('inpReps'),ri=document.getElementById('inpRir'),n=document.getElementById('inpNote');
+  const reps=r.value.trim();
+  if(!reps){r.style.borderColor='var(--accent)';setTimeout(()=>r.style.borderColor='',600);return;}
+  let parts=['Reps: '+reps];
+  if(ri.value.trim())parts.push('RIR: '+ri.value.trim());
+  if(selectedRpe!==null)parts.push('RPE: '+selectedRpe+'/10');
+  if(n.value.trim())parts.push('Note: '+n.value.trim());
+  const txt=parts.join(' — ');
+  r.value='';ri.value='';n.value='';
+  document.querySelectorAll('.rpe-btn').forEach(b=>b.classList.remove('sel'));selectedRpe=null;
+  addBubble('user',txt);aiSend(txt,false);
+}
+async function aiSend(text,isFirst){
+  if(busy)return;
+  sessionHistory.push({role:'user',content:text});busy=true;
+  document.getElementById('sendBtn').disabled=true;
+  const tid=addTyping();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:currentUser.program.prompt,messages:sessionHistory})
+    });
+    const data=await res.json(); removeTyping(tid);
+    const reply=data.content?.[0]?.text||'Errore risposta.';
+    sessionHistory.push({role:'assistant',content:reply});
+    addBubble('ai',reply);
+    if(text==='fine'&&reply.includes('WORKOUT LOG'))saveLog(reply);
+  }catch(e){removeTyping(tid);addBubble('ai','Errore connessione.');}
+  busy=false;document.getElementById('sendBtn').disabled=false;
+}
+function saveLog(log){
+  const today=new Date().toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
+  currentUser.sessions.push({id:Date.now(),workout:sessionWorkout,date:today,log});
+}
+function addBubble(role,text){
+  const msgs=document.getElementById('messages');
+  const row=document.createElement('div');row.className='msg-row '+role;
+  const av=document.createElement('div');av.className='avatar '+role;av.textContent=role==='ai'?'AI':'TU';
+  const bub=document.createElement('div');bub.className='bubble';
+  bub.innerHTML=fmtText(text);
+  const m=role==='ai'&&text.match(/[Rr]ecupero[:\s]+(\d+):(\d+)/);
+  if(m)bub.appendChild(makeTimer(parseInt(m[1])*60+parseInt(m[2])));
+  row.appendChild(av);row.appendChild(bub);msgs.appendChild(row);msgs.scrollTop=msgs.scrollHeight;
+}
+function fmtText(t){
+  if(t.includes('WORKOUT LOG')||t.includes('====='))
+    return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">'+esc(t)+'</pre>';
+  return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
+}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function makeTimer(total){
+  const w=document.createElement('div');w.className='timer';
+  let left=total,iv=null,running=false;
+  const num=document.createElement('div');num.className='timer-num';num.textContent=fmt(total);
+  const lbl=document.createElement('div');lbl.className='timer-lbl';lbl.textContent='RECUPERO';
+  const go=document.createElement('button');go.className='tbtn tbtn-go';go.textContent='▶ Start';
+  const rst=document.createElement('button');rst.className='tbtn tbtn-rst';rst.textContent='Reset';
+  go.onclick=()=>{
+    if(running){clearInterval(iv);running=false;go.textContent='▶ Resume';num.classList.remove('on');}
+    else{if(left<=0)left=total;running=true;go.textContent='⏸ Pause';num.classList.add('on');
+      iv=setInterval(()=>{left--;num.textContent=fmt(left);if(left<=0){clearInterval(iv);running=false;go.textContent='✓ OK';num.classList.remove('on');}},1000);}
+  };
+  rst.onclick=()=>{clearInterval(iv);running=false;left=total;num.textContent=fmt(total);num.classList.remove('on');go.textContent='▶ Start';};
+  w.append(num,lbl,go,rst);return w;
+}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function addTyping(){
+  const msgs=document.getElementById('messages'),id='t_'+Date.now();
+  const row=document.createElement('div');row.className='msg-row ai';row.id=id;
+  row.innerHTML='<div class="avatar ai">AI</div><div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(row);msgs.scrollTop=msgs.scrollHeight;return id;
+}
+function removeTyping(id){document.getElementById(id)?.remove();}
+
+// ── ADMIN ─────────────────────────────────────────────────
+function showAdmin(){showScreen('adminScreen');renderUserTable();renderLogTable();}
+function switchTab(tab,btn){
+  document.querySelectorAll('.atab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');document.getElementById('tab-'+tab).classList.add('active');
+}
+function renderUserTable(){
+  const tbody=document.getElementById('userTableBody');
+  const athletes=DB.users.filter(u=>u.role==='athlete');
+  if(!athletes.length){tbody.innerHTML='<tr><td colspan="5" class="empty-table">Nessun atleta.</td></tr>';return;}
+  tbody.innerHTML=athletes.map(u=>`<tr>
+    <td>${u.name}</td><td style="color:var(--muted)">${u.email}</td>
+    <td>${u.program?u.program.name:'<span style="color:var(--muted)">—</span>'}</td>
+    <td><span class="badge badge-${u.status}">${u.status}</span></td>
+    <td><button class="action-btn primary" onclick="openProgramModal(${u.id})">Programma</button>
+    <button class="action-btn" onclick="toggleStatus(${u.id})">${u.status==='active'?'Disattiva':'Attiva'}</button></td>
+  </tr>`).join('');
+}
+function renderLogTable(){
+  const tbody=document.getElementById('logTableBody');
+  const all=[];DB.users.filter(u=>u.role==='athlete').forEach(u=>u.sessions.forEach(s=>all.push({...s,userName:u.name})));
+  if(!all.length){tbody.innerHTML='<tr><td colspan="4" class="empty-table">Nessuna sessione.</td></tr>';return;}
+  tbody.innerHTML=all.reverse().map(s=>`<tr>
+    <td>${s.userName}</td><td>${s.workout}</td><td style="color:var(--muted)">${s.date}</td>
+    <td><button class="action-btn" onclick='openLogModal(${JSON.stringify(s)})'>Vedi log</button></td>
+  </tr>`).join('');
+}
+let editingUserId=null;
+function openProgramModal(id){
+  editingUserId=id;const u=DB.users.find(x=>x.id===id);
+  document.getElementById('programModalSub').textContent='Atleta: '+u.name;
+  document.getElementById('modalProgramName').value=u.program?.name||'';
+  document.getElementById('modalWorkouts').value=u.program?.workouts.join(', ')||'';
+  document.getElementById('modalPrompt').value=u.program?.prompt||'';
+  document.getElementById('programModal').classList.add('open');
+}
+function saveProgram(){
+  const u=DB.users.find(x=>x.id===editingUserId);
+  const name=document.getElementById('modalProgramName').value.trim();
+  const wRaw=document.getElementById('modalWorkouts').value.trim();
+  const prompt=document.getElementById('modalPrompt').value.trim();
+  if(!name||!wRaw||!prompt){alert('Compila tutti i campi.');return;}
+  u.program={name,workouts:wRaw.split(',').map(w=>w.trim()).filter(Boolean),prompt};
+  u.status='active';closeModal('programModal');renderUserTable();
+}
+function toggleStatus(id){const u=DB.users.find(x=>x.id===id);u.status=u.status==='active'?'inactive':'active';renderUserTable();}
+function openLogModal(s){
+  document.getElementById('logModalTitle').textContent=s.workout+' — '+s.date;
+  document.getElementById('logModalContent').textContent=s.log||'Nessun log.';
+  document.getElementById('logModal').classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// ── ONBOARD ───────────────────────────────────────────────
+let infortuniVal=null;
+function setInfortuni(val){
+  infortuniVal=val;
+  document.getElementById('togSi').className='toggle-btn'+(val==='si'?' yes':'');
+  document.getElementById('togNo').className='toggle-btn'+(val==='no'?' no':'');
+  document.getElementById('infortuniWrap').style.display=val==='si'?'block':'none';
+}
+
+// Native checkbox handler
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.check-chip input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change',function(){
+      const chip=this.closest('.check-chip');
+      const box=chip.querySelector('.chip-box');
+      if(this.checked){chip.classList.add('is-checked');box.textContent='✓';}
+      else{chip.classList.remove('is-checked');box.textContent='';}
+      // Altro discipline
+      if(this.value==='Altro'&&chip.closest('#checkDiscipline')){
+        document.getElementById('altroDiscWrap').style.display=this.checked?'block':'none';
+        if(!this.checked)document.getElementById('f_altro_disc').value='';
+      }
+    });
+  });
+});
+
+function getChecked(groupId){
+  return Array.from(document.querySelectorAll('#'+groupId+' input[type=checkbox]:checked')).map(cb=>{
+    if(cb.value==='Altro'&&groupId==='checkDiscipline'){
+      const spec=document.getElementById('f_altro_disc')?.value.trim();
+      return spec?'Altro: '+spec:'Altro';
+    }
+    return cb.value;
+  }).join(', ')||'N/D';
+}
+function gv(id){const el=document.getElementById(id);return el?(el.value.trim()||'N/D'):'N/D';}
+
+async function submitOnboard(){
+  const btn=document.getElementById('onboardBtn'),errEl=document.getElementById('onboardErr');
+  const req=['f_nome','f_cognome','f_email','f_eta','f_livello','f_frequenza','f_obiettivo','f_disponibilita','f_luogo','f_motivazione'];
+  let missing=false;
+  req.forEach(id=>{const el=document.getElementById(id);if(!el.value.trim()){el.style.borderColor='var(--accent)';missing=true;}else el.style.borderColor='';});
+  if(infortuniVal===null){errEl.textContent='Indica se hai infortuni.';return;}
+  if(missing){errEl.textContent='Compila i campi obbligatori evidenziati.';return;}
+  errEl.textContent='';btn.disabled=true;btn.textContent='Invio in corso...';
+  const dati={
+    nome:gv('f_nome')+' '+gv('f_cognome'),email:gv('f_email'),telefono:gv('f_telefono'),
+    eta:gv('f_eta'),sesso:gv('f_sesso'),peso:gv('f_peso'),altezza:gv('f_altezza'),
+    livello:gv('f_livello'),frequenza:gv('f_frequenza'),
+    discipline:getChecked('checkDiscipline'),skill:getChecked('checkSkill'),
+    obiettivo:gv('f_obiettivo'),obiettivo3m:gv('f_obiettivo3m'),disponibilita:gv('f_disponibilita'),
+    luogo:gv('f_luogo'),attrezzatura:getChecked('checkAttr'),
+    infortuni:infortuniVal==='si'?gv('f_infortuni'):'No',
+    limitazioni:gv('f_limitazioni'),stile:gv('f_stile'),sonno:gv('f_sonno'),
+    motivazione:gv('f_motivazione'),note:gv('f_note'),
+    timestamp:new Date().toLocaleString('it-IT')
+  };
+  // SOSTITUISCI CON IL TUO APPS SCRIPT URL
+  const APPS_URL='https://script.google.com/macros/s/AKfycbyXlhVmHmBr-pkiqWbmuCTfJLKZKFNSHaG3c-2M-7YOY74DPHNd184bDuDhoQ7GyrX9/exec';
+  try{
+    if(APPS_URL!=='https://script.google.com/macros/s/AKfycbyXlhVmHmBr-pkiqWbmuCTfJLKZKFNSHaG3c-2M-7YOY74DPHNd184bDuDhoQ7GyrX9/exec'){
+      await fetch(APPS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(dati)});
+    }
+    document.getElementById('onboardForm').style.display='none';
+    document.getElementById('onboardSuccess').style.display='flex';
+    DB.users.push({id:DB.users.length+1,name:dati.nome,email:dati.email,password:Math.random().toString(36).slice(2,8),role:'athlete',status:'pending',program:null,sessions:[],onboardData:dati});
+  }catch(e){btn.disabled=false;btn.textContent='Invia richiesta coaching →';errEl.textContent='Errore. Riprova.';}
+}
+</script>
+</body>
+</html>
