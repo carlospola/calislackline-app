@@ -541,7 +541,14 @@ const ADMIN_EMAIL = 'calislackline@gmail.com';
 const APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec';
 
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    flowType: 'pkce',
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    persistSession: true
+  }
+});
 
 let currentUser = null;
 let currentProfile = null;
@@ -587,51 +594,25 @@ async function init() {
     if (!currentUser) { hideLoading(); showScreen('loginScreen'); }
   }, 10000);
 
+  // Con PKCE flow, onAuthStateChange gestisce automaticamente il callback
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
       clearTimeout(timeout);
-      if (window.location.hash.includes('access_token')) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
       await handleSession(session);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; currentProfile = null;
       hideLoading(); showScreen('loginScreen');
-    }
-  });
-
-  try {
-    // Prima controlla se c'è un token nell'hash URL (redirect OAuth)
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      if (accessToken) {
-        const { data, error } = await sb.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        });
-        if (data.session) {
-          clearTimeout(timeout);
-          window.history.replaceState({}, document.title, window.location.pathname);
-          await handleSession(data.session);
-          return;
-        }
+    } else if (event === 'INITIAL_SESSION') {
+      if (session) {
+        clearTimeout(timeout);
+        await handleSession(session);
+      } else {
+        clearTimeout(timeout);
+        hideLoading();
+        showScreen('loginScreen');
       }
     }
-
-    // Poi controlla sessione esistente
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      clearTimeout(timeout);
-      await handleSession(session);
-    }
-  } catch(e) {
-    clearTimeout(timeout);
-    hideLoading();
-    showScreen('loginScreen');
-  }
+  });
 }
 
 async function handleSession(session) {
