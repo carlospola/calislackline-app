@@ -583,13 +583,27 @@ function startDemoSession() {
 
 // ── INIT ──────────────────────────────────────────────────
 async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    await handleSession(session);
-  } else {
+  // Timeout di sicurezza — se Supabase non risponde in 6s mostra login
+  const timeout = setTimeout(() => {
+    hideLoading();
+    showScreen('loginScreen');
+  }, 6000);
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    clearTimeout(timeout);
+    if (session) {
+      await handleSession(session);
+    } else {
+      hideLoading();
+      showScreen('loginScreen');
+    }
+  } catch(e) {
+    clearTimeout(timeout);
     hideLoading();
     showScreen('loginScreen');
   }
+
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
       await handleSession(session);
