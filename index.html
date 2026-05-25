@@ -300,46 +300,63 @@ input::placeholder{color:#444;}
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
 
     <!-- ZONA 1: PROSSIMO SET -->
-    <div style="flex:0 0 auto;padding:10px 16px 8px;background:var(--surface);border-bottom:1px solid var(--border);">
+    <div style="flex:0 0 auto;padding:10px 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);">
       <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:6px;">Prossimo set</div>
       <div id="setInfoBox" style="font-size:13px;line-height:1.6;color:var(--text2);">In attesa...</div>
     </div>
 
-    <!-- ZONA 2: TIMER -->
-    <div style="flex:0 0 auto;padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2);">
-      <div style="font-size:8px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;width:36px;">Timer</div>
-      <div id="sessionTimerNum" style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--text);min-width:80px;font-variant-numeric:tabular-nums;">00:00</div>
-      <button id="sessionTimerGo" class="tbtn tbtn-go" onclick="sessionTimerToggle()" style="padding:7px 16px;font-size:11px;">▶ Start</button>
-      <button class="tbtn tbtn-rst" onclick="sessionTimerReset()" style="padding:7px 12px;font-size:11px;">Reset</button>
-    </div>
+    <!-- ZONA 2: CHAT scrollabile -->
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px;" id="messages"></div>
 
     <!-- ZONA 3: INPUT -->
-    <div style="flex:0 0 auto;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg);">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div class="field-wrap"><div class="field-lbl">Reps<span class="req">*</span></div><input type="number" id="inpReps" placeholder="8" min="0" max="99" style="font-size:16px;padding:10px;text-align:center;"></div>
-        <div class="field-wrap"><div class="field-lbl">RIR<span class="opt">opz</span></div><input type="number" id="inpRir" placeholder="2" min="0" max="10" style="font-size:16px;padding:10px;text-align:center;"></div>
-        <div class="field-wrap"><div class="field-lbl">Note<span class="opt">opz</span></div><input type="text" id="inpNote" placeholder="..." style="font-size:13px;padding:10px;"></div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <div style="flex:1;">
-          <div class="rpe-section-lbl" style="font-size:8px;margin-bottom:4px;">RPE<span style="color:#444;font-size:7px;margin-left:3px;">opz</span></div>
-          <div class="rpe-btns" id="rpeBtns">
-            <button class="rpe-btn" onclick="selRpe(this,1)">1</button><button class="rpe-btn" onclick="selRpe(this,2)">2</button>
-            <button class="rpe-btn" onclick="selRpe(this,3)">3</button><button class="rpe-btn" onclick="selRpe(this,4)">4</button>
-            <button class="rpe-btn" onclick="selRpe(this,5)">5</button><button class="rpe-btn" onclick="selRpe(this,6)">6</button>
-            <button class="rpe-btn" onclick="selRpe(this,7)">7</button><button class="rpe-btn" onclick="selRpe(this,8)">8</button>
-            <button class="rpe-btn" onclick="selRpe(this,9)">9</button><button class="rpe-btn" onclick="selRpe(this,10)">10</button>
-          </div>
+    <div style="flex:0 0 auto;padding:10px 16px max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;gap:8px;">
+
+      <!-- Riga 1: Reps + RIR -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Ripetizioni completate <span style="color:var(--accent);">*</span></div>
+          <input type="number" id="inpReps" placeholder="es. 8" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
         </div>
-        <button id="sendBtn" onclick="sendMsg()" style="width:52px;height:52px;background:var(--accent);border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Rip. in riserva <span style="color:#444;font-size:8px;">(opz)</span></div>
+          <input type="number" id="inpRir" placeholder="es. 2" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
+        </div>
+      </div>
+
+      <!-- Riga 2: Fatica percepita -->
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Fatica percepita <span style="color:#444;font-size:8px;">(opz)</span></div>
+        <div style="display:flex;gap:3px;align-items:center;">
+          <span style="font-size:9px;color:var(--muted);width:28px;text-align:center;">😴</span>
+          <div class="rpe-btns" id="rpeBtns" style="flex:1;display:flex;gap:2px;">
+            <button class="rpe-btn" onclick="selRpe(this,1)">1</button>
+            <button class="rpe-btn" onclick="selRpe(this,2)">2</button>
+            <button class="rpe-btn" onclick="selRpe(this,3)">3</button>
+            <button class="rpe-btn" onclick="selRpe(this,4)">4</button>
+            <button class="rpe-btn" onclick="selRpe(this,5)">5</button>
+            <button class="rpe-btn" onclick="selRpe(this,6)">6</button>
+            <button class="rpe-btn" onclick="selRpe(this,7)">7</button>
+            <button class="rpe-btn" onclick="selRpe(this,8)">8</button>
+            <button class="rpe-btn" onclick="selRpe(this,9)">9</button>
+            <button class="rpe-btn" onclick="selRpe(this,10)">10</button>
+          </div>
+          <span style="font-size:9px;color:var(--muted);width:28px;text-align:center;">🔥</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0 28px;">
+          <span style="font-size:8px;color:#444;">Facile</span>
+          <span style="font-size:8px;color:#444;">Al limite</span>
+        </div>
+      </div>
+
+      <!-- Riga 3: Note + Invio -->
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="inpNote" placeholder="Note (opzionale)..." style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px 13px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;">
+        <button id="sendBtn" onclick="sendMsg()" style="width:48px;height:48px;background:var(--accent);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;">
+          <svg viewBox="0 0 24 24" fill="none" width="17" height="17"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
+
     </div>
-
-    <!-- ZONA 4: CHAT MINI -->
-    <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 16px;" id="messages"></div>
-
   </div>
 </div>
 
