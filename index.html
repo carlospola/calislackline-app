@@ -861,14 +861,25 @@ async function aiSend(text, isFirst) {
   document.getElementById('sendBtn').disabled = true;
   const tid = addTyping();
   try {
-    const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system: currentProfile.ai_prompt, messages: sessionHistory }) });
-    const data = await res.json(); removeTyping(tid);
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: currentProfile.ai_prompt, messages: sessionHistory })
+    });
+    const data = await res.json();
+    removeTyping(tid);
     const reply = data.content?.[0]?.text || 'Errore risposta.';
     sessionHistory.push({ role: 'assistant', content: reply });
     addBubble('ai', reply);
     if (text === 'fine' && reply.includes('WORKOUT LOG')) saveSessionLog(reply);
-  } catch (e) { removeTyping(tid); addBubble('ai', 'Errore connessione.'); }
-  busy = false; document.getElementById('sendBtn').disabled = false;
+  } catch (e) {
+    removeTyping(tid);
+    addBubble('ai', 'Errore connessione. Riprova.');
+  } finally {
+    busy = false;
+    const btn = document.getElementById('sendBtn');
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function saveSessionLog(log) { await sb.from('sessions').insert({ user_id: currentUser.id, workout_name: sessionWorkout, log_text: log }); }
@@ -926,34 +937,28 @@ function updateSetInfo(text) {
   const box = document.getElementById('setInfoBox');
   if (!box) return;
 
-  // Cerca pattern tipo "A1: ESERCIZIO — Set X/Y" o "## A1: ESERCIZIO"
   const lines = text.split('\n').map(l => l.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()).filter(l => l);
 
   let esercizio = '', target = '', recupero = '', tempo = '';
 
   for (const line of lines) {
-    // Esercizio: linea con A1/B1/C1 o con "Set X/Y"
     if (!esercizio && line.match(/^[A-Z]\d[:–—-]/i)) {
-      esercizio = line.replace(/^[A-Z]\d[:–—-]\s*/i, '').split('—')[0].split('–')[0].trim();
+      esercizio = line.replace(/^[A-Z]\d[:–—-]\s*/i, '').split(/[—–]/)[0].trim();
     }
-    if (!esercizio && line.match(/set\s+\d+\/\d+/i)) {
-      esercizio = line.split('—')[0].split('–')[0].trim();
+    if (!esercizio && line.match(/set\s+\d+\/\d+/i) && !line.match(/superset/i)) {
+      esercizio = line.split(/[—–]/)[0].trim();
     }
-    // Target reps
-    if (!target && line.match(/target|reps/i)) {
+    if (!target && line.match(/target/i) && line.match(/\d/)) {
       target = line.trim();
     }
-    // Recupero
-    if (!recupero && line.match(/recupero/i)) {
+    if (!recupero && line.match(/recupero/i) && line.match(/\d+:\d+/)) {
       recupero = line.trim();
     }
-    // Tempo
-    if (!tempo && line.match(/tempo/i) && line.match(/\d/)) {
+    if (!tempo && line.match(/tempo/i) && line.match(/[0-9X]/i) && !line.match(/recupero/i)) {
       tempo = line.trim();
     }
   }
 
-  // Costruisci HTML
   let html = '';
   if (esercizio) html += `<div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;">${esc(esercizio)}</div>`;
   if (target) html += `<div style="font-size:11px;color:var(--text2);">${esc(target)}</div>`;
@@ -962,12 +967,10 @@ function updateSetInfo(text) {
 
   if (html) box.innerHTML = html;
 
-  // Auto-avvia timer se trova recupero con formato mm:ss
-  const m = text.match(/[Rr]ecupero[^:]*[:]\s*(\d+):(\d+)/);
+  const m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
   if (m) {
     const secs = parseInt(m[1]) * 60 + parseInt(m[2]);
     sessionTimerSet(secs);
-    sessionTimerToggle();
   }
 }
 
