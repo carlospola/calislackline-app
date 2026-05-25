@@ -590,27 +590,40 @@ function startDemoSession() {
 
 // ── INIT ──────────────────────────────────────────────────
 async function init() {
+  // Timeout sicurezza — mostra login se tutto fallisce
   const timeout = setTimeout(() => {
-    if (!currentUser) { hideLoading(); showScreen('loginScreen'); }
-  }, 10000);
+    hideLoading();
+    showScreen('loginScreen');
+  }, 5000);
 
-  // Con PKCE flow, onAuthStateChange gestisce automaticamente il callback
+  try {
+    // Gestisce redirect OAuth con ?code= (PKCE)
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    const { data: { session } } = await sb.auth.getSession();
+    clearTimeout(timeout);
+    if (session) {
+      await handleSession(session);
+    } else {
+      hideLoading();
+      showScreen('loginScreen');
+    }
+  } catch(e) {
+    clearTimeout(timeout);
+    hideLoading();
+    showScreen('loginScreen');
+  }
+
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-      clearTimeout(timeout);
       await handleSession(session);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; currentProfile = null;
-      hideLoading(); showScreen('loginScreen');
-    } else if (event === 'INITIAL_SESSION') {
-      if (session) {
-        clearTimeout(timeout);
-        await handleSession(session);
-      } else {
-        clearTimeout(timeout);
-        hideLoading();
-        showScreen('loginScreen');
-      }
+      showScreen('loginScreen');
     }
   });
 }
@@ -651,7 +664,7 @@ function showScreen(id) {
 async function loginGoogle() {
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: 'https://calislackline-app.vercel.app/api/callback' }
+    options: { redirectTo: window.location.origin }
   });
 }
 
