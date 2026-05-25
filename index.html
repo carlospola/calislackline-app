@@ -612,8 +612,12 @@ async function init() {
   // Aspetta un tick per dare tempo a Supabase di leggere l'hash
   await new Promise(r => setTimeout(r, 100));
 
+  console.log('HASH:', window.location.hash.substring(0, 80));
+  console.log('SEARCH:', window.location.search.substring(0, 80));
+
   try {
     const { data: { session } } = await sb.auth.getSession();
+    console.log('SESSION:', session ? 'found' : 'null');
     if (session) {
       clearTimeout(timeout);
       await handleSession(session);
@@ -673,7 +677,7 @@ function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.cl
 async function loginGoogle() {
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: 'https://calislackline-app.vercel.app' }
+    options: { redirectTo: 'https://calislackline.com' }
   });
 }
 
@@ -696,7 +700,7 @@ async function doResetPassword() {
   succ.textContent = '';
   if (!email) { err.textContent = 'Inserisci la tua email nel campo sopra.'; return; }
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://calislackline-app.vercel.app/reset'
+    redirectTo: 'https://calislackline.com/reset'
   });
   if (error) { err.textContent = 'Errore: ' + error.message; }
   else { succ.textContent = 'Email inviata! Controlla la tua casella di posta.'; }
