@@ -512,6 +512,20 @@ input::placeholder{color:#444;}
     <div class="modal-btns"><button class="modal-cancel" onclick="closeModal('logModal')">Chiudi</button></div>
   </div>
 </div>
+<!-- MODAL NUOVA PASSWORD -->
+<div class="modal-overlay" id="newPasswordModal">
+  <div class="modal">
+    <div class="modal-title">Imposta nuova password</div>
+    <div class="modal-sub">Scegli una nuova password per il tuo account.</div>
+    <div class="modal-field"><div class="modal-label">Nuova password</div><input class="modal-input" id="newPwdInput" type="password" placeholder="Minimo 6 caratteri"></div>
+    <div class="modal-field"><div class="modal-label">Conferma password</div><input class="modal-input" id="newPwdConfirm" type="password" placeholder="Ripeti la password"></div>
+    <div style="font-size:11px;color:var(--red);min-height:16px;" id="newPwdError"></div>
+    <div class="modal-btns">
+      <button class="modal-save" onclick="submitNewPassword()">Salva password</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="createUserModal">
   <div class="modal">
     <div class="modal-title">Crea Nuovo Atleta</div>
@@ -573,9 +587,17 @@ async function init() {
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
+    const type = params.get('type');
     const error = params.get('error');
     if (accessToken || error) window.history.replaceState({}, document.title, window.location.pathname);
     if (error) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Errore login. Riprova.'; return; }
+    if (accessToken && type === 'recovery') {
+      // Link reset password — imposta la sessione e mostra il modal nuova password
+      await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
+      clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
+      document.getElementById('newPasswordModal').classList.add('open');
+      return;
+    }
     if (accessToken) {
       const { data } = await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
       if (data.session) { clearTimeout(timeout); await handleSession(data.session); return; }
@@ -585,9 +607,26 @@ async function init() {
     if (session) { await handleSession(session); } else { hideLoading(); showScreen('loginScreen'); }
   } catch(e) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); }
   sb.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) { await handleSession(session); }
+    if (event === 'PASSWORD_RECOVERY') {
+      hideLoading(); showScreen('loginScreen');
+      document.getElementById('newPasswordModal').classList.add('open');
+    } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) { await handleSession(session); }
     else if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; showScreen('loginScreen'); }
   });
+}
+
+async function submitNewPassword() {
+  const pwd = document.getElementById('newPwdInput').value;
+  const pwd2 = document.getElementById('newPwdConfirm').value;
+  const errEl = document.getElementById('newPwdError');
+  errEl.textContent = '';
+  if (pwd.length < 6) { errEl.textContent = 'La password deve essere di almeno 6 caratteri.'; return; }
+  if (pwd !== pwd2) { errEl.textContent = 'Le password non coincidono.'; return; }
+  const { error } = await sb.auth.updateUser({ password: pwd });
+  if (error) { errEl.textContent = 'Errore: ' + error.message; return; }
+  document.getElementById('newPasswordModal').classList.remove('open');
+  document.getElementById('loginSuccess').textContent = 'Password aggiornata! Accedi con la nuova password.';
+  await sb.auth.signOut();
 }
 
 async function handleSession(session) {
