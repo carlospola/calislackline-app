@@ -1087,8 +1087,9 @@ function updateSetInfo(text) {
   }
 }
 
+let waitingForProgression = false;
+
 function extractOptions(text) {
-  // Cerca liste di opzioni nel testo AI (righe che iniziano con - o •)
   const lines = text.split('\n');
   const options = [];
   for (const line of lines) {
@@ -1099,6 +1100,19 @@ function extractOptions(text) {
     }
   }
   return options;
+}
+
+function setInputLocked(locked) {
+  waitingForProgression = locked;
+  const container = document.getElementById('inputContainer');
+  const rpeSection = container?.parentElement?.querySelector('.rpe-btns')?.closest('div');
+  const noteRow = document.getElementById('inpNote')?.parentElement;
+  const sendBtn = document.getElementById('sendBtn');
+  // Opacity only — fields still visible but dimmed
+  if (container) container.style.opacity = locked ? '0.3' : '1';
+  if (container) container.style.pointerEvents = locked ? 'none' : '';
+  if (sendBtn) sendBtn.style.opacity = locked ? '0.3' : '1';
+  if (sendBtn) sendBtn.style.pointerEvents = locked ? 'none' : '';
 }
 
 function addBubble(role, text) {
@@ -1118,24 +1132,32 @@ function addBubble(role, text) {
   if (role === 'ai') {
     detectAndRenderInput(text);
     const options = extractOptions(text);
+    const asksProgression = text.match(/quale progressione/i) || text.match(/progressione usi/i);
+    
     if (options.length >= 2 && options.length <= 6) {
+      // Lock input if asking for progression
+      if (asksProgression) setInputLocked(true);
+      
       const optRow = document.createElement('div');
       optRow.id = 'quickOptions';
-      optRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 2px 44px;';
+      optRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 8px 44px;';
       options.forEach(opt => {
         const btn = document.createElement('button');
         btn.textContent = opt;
-        btn.style.cssText = 'padding:7px 13px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;text-align:left;';
+        btn.style.cssText = 'padding:8px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;color:var(--text2);font-family:var(--mono);font-size:13px;cursor:pointer;transition:all .15s;text-align:left;';
         btn.onmouseover = () => { btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; };
         btn.onmouseout = () => { btn.style.borderColor = 'var(--border2)'; btn.style.color = 'var(--text2)'; };
         btn.onclick = () => {
           optRow.remove();
+          setInputLocked(false); // Unlock input after progression chosen
           addBubble('user', opt);
           aiSend(opt, false);
         };
         optRow.appendChild(btn);
       });
       msgs.appendChild(optRow);
+    } else {
+      setInputLocked(false);
     }
     updateSetInfo(text);
   }
@@ -1144,6 +1166,8 @@ function addBubble(role, text) {
 }
 
 function fmtText(t) {
+  // Rimuovi tag nascosti [SUPERSET:...] e [SET:...] dalla chat
+  t = t.replace(/\[SUPERSET:[^\]]+\]\s*/g, '').replace(/\[SET:[^\]]+\]\s*/g, '');
   if (t.includes('WORKOUT LOG') || t.includes('====='))
     return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">' + esc(t) + '</pre>';
   return esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
