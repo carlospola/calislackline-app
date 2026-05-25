@@ -1,48 +1,63 @@
-import { createClient } from '@supabase/supabase-js';
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const sb = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const { action, userId } = req.body;
+
+  async function supabaseRequest(method, path, body) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SERVICE_KEY,
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    return res;
+  }
 
   try {
     if (action === 'updateProgram') {
       const { program_name, workouts, ai_prompt, status } = req.body;
-      const { error } = await sb.from('profiles').update({
+      await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
         program_name, workouts, ai_prompt, status
-      }).eq('id', userId);
-      if (error) return res.status(400).json({ error: error.message });
+      });
       return res.status(200).json({ success: true });
     }
 
     if (action === 'updateStatus') {
       const { status } = req.body;
-      const { error } = await sb.from('profiles').update({ status }).eq('id', userId);
-      if (error) return res.status(400).json({ error: error.message });
+      await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, { status });
       return res.status(200).json({ success: true });
     }
 
     if (action === 'createUser') {
       const { email, password, name } = req.body;
-      const { data, error } = await sb.auth.admin.createUser({
-        email, password,
-        email_confirm: true,
-        user_metadata: { full_name: name }
+      const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SERVICE_KEY,
+          'Authorization': `Bearer ${SERVICE_KEY}`
+        },
+        body: JSON.stringify({
+          email, password,
+          email_confirm: true,
+          user_metadata: { full_name: name }
+        })
       });
-      if (error) return res.status(400).json({ error: error.message });
-      return res.status(200).json({ success: true, userId: data.user.id });
+      const data = await r.json();
+      if (data.error) return res.status(400).json({ error: data.error });
+      return res.status(200).json({ success: true, userId: data.id });
     }
 
     return res.status(400).json({ error: 'Action non valida' });
-
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }
