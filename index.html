@@ -526,6 +526,24 @@ input::placeholder{color:#444;}
   </div>
 </div>
 
+<!-- MODAL PROGRAMMI ATLETA -->
+<div class="modal-overlay" id="athleteProgramsModal">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-title">Programmi di <span id="athleteProgramsName"></span></div>
+    <div id="athleteProgramsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">+ Aggiungi nuovo programma</div>
+      <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="newProgName" placeholder="es. Home Hero"></div>
+      <div class="modal-field"><div class="modal-label">Workout (separati da virgola)</div><input class="modal-input" id="newProgWorkouts" placeholder="Full Body 1, Upper Body 1, Lower Body 1"></div>
+      <div class="modal-field"><div class="modal-label">System prompt AI Coach</div><textarea class="modal-textarea" id="newProgPrompt" placeholder="Incolla qui il programma e le istruzioni..."></textarea></div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
+      <button class="modal-save" onclick="addProgram()">Aggiungi programma</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="createUserModal">
   <div class="modal">
     <div class="modal-title">Crea Nuovo Atleta</div>
@@ -717,18 +735,27 @@ async function showDash() {
   const name = currentProfile?.name || currentUser.email.split('@')[0];
   document.getElementById('dashUserLabel').textContent = name;
   document.getElementById('dashWelcome').textContent = 'Ciao, ' + name.split(' ')[0] + '!';
-  if (currentProfile?.program_name && currentProfile?.workouts) {
+  // Carica programmi dalla tabella programs
+  const { data: programs } = await sb.from('programs').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
+  if (programs?.length) {
     document.getElementById('programEmpty').style.display = 'none';
     document.getElementById('programContent').style.display = 'block';
-    document.getElementById('programName').textContent = currentProfile.program_name;
-    const workouts = JSON.parse(currentProfile.workouts || '[]');
-    document.getElementById('programMeta').textContent = workouts.length + ' workout disponibili';
     const grid = document.getElementById('workoutGrid'); grid.innerHTML = '';
-    workouts.forEach(w => {
-      const c = document.createElement('div'); c.className = 'workout-card';
-      c.innerHTML = '<div class="workout-card-name">' + w + '</div><div class="workout-card-badge">Inizia →</div>';
-      c.onclick = () => startSession(w); grid.appendChild(c);
+    programs.forEach(prog => {
+      const workouts = JSON.parse(prog.workouts || '[]');
+      // Intestazione programma
+      const header = document.createElement('div');
+      header.style.cssText = 'grid-column:1/-1;font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px;';
+      header.textContent = prog.program_name;
+      grid.appendChild(header);
+      workouts.forEach(w => {
+        const c = document.createElement('div'); c.className = 'workout-card';
+        c.innerHTML = '<div class="workout-card-name">' + w + '</div><div class="workout-card-badge">Inizia →</div>';
+        c.onclick = () => startSessionWithPrompt(w, prog.ai_prompt); grid.appendChild(c);
+      });
     });
+    document.getElementById('programName').textContent = programs.length + ' programm' + (programs.length === 1 ? 'a' : 'i');
+    document.getElementById('programMeta').textContent = programs.reduce((acc, p) => acc + JSON.parse(p.workouts || '[]').length, 0) + ' workout totali';
   } else {
     document.getElementById('programEmpty').style.display = 'block';
     document.getElementById('programContent').style.display = 'none';
@@ -752,6 +779,12 @@ async function showDash() {
 
 function startSession(workout) {
   if (!currentProfile?.ai_prompt) { alert('Nessun programma AI configurato. Contatta il coach.'); return; }
+  startSessionWithPrompt(workout, currentProfile.ai_prompt);
+}
+
+function startSessionWithPrompt(workout, prompt) {
+  if (!prompt) { alert('Nessun programma AI configurato. Contatta il coach.'); return; }
+  currentProfile = { ...currentProfile, ai_prompt: prompt };
   sessionWorkout = workout; sessionHistory = []; selectedRpe = null; busy = false;
   document.getElementById('sessionTitle').textContent = workout;
   document.getElementById('messages').innerHTML = '';
@@ -858,7 +891,8 @@ async function renderUserTable() {
     <td>${u.program_name || '<span style="color:var(--muted)">—</span>'}</td>
     <td><span class="badge badge-${u.status || 'pending'}">${u.status || 'pending'}</span></td>
     <td>
-      <button class="action-btn primary" onclick="openProgramModal('${u.id}','${u.name || u.email}')">Programma</button>
+      <button class="action-btn primary" onclick="openAthleteProgramsModal('${u.id}','${u.name || u.email}')">Programmi</button>
+      <button class="action-btn" onclick="openProgramModal('${u.id}','${u.name || u.email}')">+Programma</button>
       <button class="action-btn ${u.status === 'active' ? 'danger' : ''}" onclick="toggleStatus('${u.id}','${u.status}')">${u.status === 'active' ? 'Disattiva' : 'Attiva'}</button>
     </td>
   </tr>`).join('');
@@ -936,6 +970,69 @@ async function createUser() {
     if (data.error) { alert('Errore: ' + data.error); return; }
     closeModal('createUserModal'); await renderUserTable();
     alert('Atleta creato. Può accedere con email e password temporanea.');
+  } catch(e) { alert('Errore di connessione.'); }
+}
+
+
+// ── MULTI-PROGRAMMA ──────────────────────────────────────
+let athleteProgramsUserId = null;
+
+async function openAthleteProgramsModal(userId, userName) {
+  athleteProgramsUserId = userId;
+  document.getElementById('athleteProgramsName').textContent = userName;
+  document.getElementById('newProgName').value = '';
+  document.getElementById('newProgWorkouts').value = '';
+  document.getElementById('newProgPrompt').value = '';
+  await renderAthletePrograms();
+  document.getElementById('athleteProgramsModal').classList.add('open');
+}
+
+async function renderAthletePrograms() {
+  const list = document.getElementById('athleteProgramsList');
+  const { data: programs } = await sb.from('programs').select('*').eq('user_id', athleteProgramsUserId).order('created_at', { ascending: true });
+  if (!programs?.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0;">Nessun programma assegnato.</div>';
+    return;
+  }
+  list.innerHTML = programs.map(p => `
+    <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-family:var(--display);font-size:13px;font-weight:700;">${p.program_name}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">${JSON.parse(p.workouts || '[]').join(', ')}</div>
+      </div>
+      <button class="action-btn danger" onclick="removeProgram('${p.id}')">Rimuovi</button>
+    </div>
+  `).join('');
+}
+
+async function addProgram() {
+  const name = document.getElementById('newProgName').value.trim();
+  const wRaw = document.getElementById('newProgWorkouts').value.trim();
+  const prompt = document.getElementById('newProgPrompt').value.trim();
+  if (!name || !wRaw || !prompt) { alert('Compila tutti i campi.'); return; }
+  const workouts = wRaw.split(',').map(w => w.trim()).filter(Boolean);
+  try {
+    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addProgram', userId: athleteProgramsUserId, program_name: name, workouts: JSON.stringify(workouts), ai_prompt: prompt }) });
+    const data = await res.json();
+    if (data.error) { alert('Errore: ' + data.error); return; }
+    document.getElementById('newProgName').value = '';
+    document.getElementById('newProgWorkouts').value = '';
+    document.getElementById('newProgPrompt').value = '';
+    await renderAthletePrograms();
+    await renderUserTable();
+  } catch(e) { alert('Errore di connessione.'); }
+}
+
+async function removeProgram(programId) {
+  if (!confirm('Rimuovere questo programma?')) return;
+  try {
+    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'removeProgram', programId }) });
+    const data = await res.json();
+    if (data.error) { alert('Errore: ' + data.error); return; }
+    await renderAthletePrograms();
+    await renderUserTable();
   } catch(e) { alert('Errore di connessione.'); }
 }
 
