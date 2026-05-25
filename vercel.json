@@ -1,0 +1,7 @@
+{
+  "routes": [
+    { "src": "/reset", "dest": "/reset.html" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
