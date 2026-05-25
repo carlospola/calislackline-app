@@ -23,6 +23,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Mantieni compatibilità con vecchio sistema
     if (action === 'updateProgram') {
       const { program_name, workouts, ai_prompt, status } = req.body;
       await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
@@ -39,11 +40,26 @@ export default async function handler(req, res) {
 
     if (action === 'resetProgram') {
       await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
-        program_name: null,
-        workouts: null,
-        ai_prompt: null,
-        status: 'pending'
+        program_name: null, workouts: null, ai_prompt: null, status: 'pending'
       });
+      return res.status(200).json({ success: true });
+    }
+
+    // Nuovo sistema multi-programma
+    if (action === 'addProgram') {
+      const { program_name, workouts, ai_prompt } = req.body;
+      const r = await supabaseRequest('POST', 'programs', {
+        user_id: userId, program_name, workouts, ai_prompt
+      });
+      if (!r.ok) return res.status(400).json({ error: 'Errore aggiunta programma' });
+      // Aggiorna status atleta ad active
+      await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, { status: 'active' });
+      return res.status(200).json({ success: true });
+    }
+
+    if (action === 'removeProgram') {
+      const { programId } = req.body;
+      await supabaseRequest('DELETE', `programs?id=eq.${programId}`, undefined);
       return res.status(200).json({ success: true });
     }
 
@@ -57,9 +73,7 @@ export default async function handler(req, res) {
           'Authorization': `Bearer ${SERVICE_KEY}`
         },
         body: JSON.stringify({
-          email,
-          password,
-          email_confirm: true,
+          email, password, email_confirm: true,
           user_metadata: { full_name: name }
         })
       });
@@ -68,11 +82,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: data.error?.message || data.msg || 'Errore creazione utente' });
       }
       await supabaseRequest('POST', 'profiles', {
-        id: data.user.id,
-        email,
-        name,
-        role: 'athlete',
-        status: 'pending'
+        id: data.user.id, email, name, role: 'athlete', status: 'pending'
       });
       return res.status(200).json({ success: true, userId: data.user.id });
     }
