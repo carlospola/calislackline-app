@@ -583,36 +583,54 @@ function startDemoSession() {
 
 async function init() {
   const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 5000);
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type = params.get('type');
-    const error = params.get('error');
-    if (accessToken || error) window.history.replaceState({}, document.title, window.location.pathname);
-    if (error) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Errore login. Riprova.'; return; }
-    if (accessToken && type === 'recovery') {
-      // Link reset password — imposta la sessione e mostra il modal nuova password
-      await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
-      clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
+
+  // Leggi parametri sia da query string che da hash (Supabase PKCE usa l'hash)
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+  const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
+  const refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
+  const type = searchParams.get('type') || hashParams.get('type');
+  const error = searchParams.get('error') || hashParams.get('error');
+
+  // Pulisci URL subito
+  if (accessToken || error || window.location.hash) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  // Gestisci recovery PRIMA di tutto il resto
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      clearTimeout(timeout);
+      hideLoading(); showScreen('loginScreen');
       document.getElementById('newPasswordModal').classList.add('open');
+    } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+      // Ignora SIGNED_IN se siamo in recovery
+      if (document.getElementById('newPasswordModal').classList.contains('open')) return;
+      await handleSession(session);
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null; currentProfile = null; showScreen('loginScreen');
+    }
+  });
+
+  try {
+    if (error) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Errore login. Riprova.'; return; }
+
+    if (accessToken && type === 'recovery') {
+      await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
+      // onAuthStateChange intercetta PASSWORD_RECOVERY e mostra il modal
+      clearTimeout(timeout);
       return;
     }
+
     if (accessToken) {
       const { data } = await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
       if (data.session) { clearTimeout(timeout); await handleSession(data.session); return; }
     }
+
     const { data: { session } } = await sb.auth.getSession();
     clearTimeout(timeout);
     if (session) { await handleSession(session); } else { hideLoading(); showScreen('loginScreen'); }
   } catch(e) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); }
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      hideLoading(); showScreen('loginScreen');
-      document.getElementById('newPasswordModal').classList.add('open');
-    } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) { await handleSession(session); }
-    else if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; showScreen('loginScreen'); }
-  });
 }
 
 async function submitNewPassword() {
