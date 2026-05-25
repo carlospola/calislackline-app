@@ -584,14 +584,13 @@ function startDemoSession() {
 async function init() {
   const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 8000);
 
-  // Leggi access_token dai query params (arriva dal callback.js dopo Google OAuth)
   const params = new URLSearchParams(window.location.search);
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
+  const code = params.get('code');
   const error = params.get('error');
 
-  // Pulisci URL subito
-  if (accessToken || error) {
+  if (accessToken || error || code) {
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
@@ -613,6 +612,19 @@ async function init() {
     if (error) {
       clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
       document.getElementById('loginError').textContent = 'Errore login. Riprova.';
+      return;
+    }
+
+    if (code) {
+      // Il client Supabase usa il code_verifier da localStorage per completare il PKCE
+      const { data, error: exchErr } = await sb.auth.exchangeCodeForSession(code);
+      if (exchErr || !data.session) {
+        clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
+        document.getElementById('loginError').textContent = 'Errore autenticazione. Riprova.';
+        return;
+      }
+      clearTimeout(timeout);
+      await handleSession(data.session);
       return;
     }
 
