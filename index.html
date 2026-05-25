@@ -576,9 +576,9 @@ REGOLE:
 FORMATO: [ESERCIZIO] — Set X/Y | Target: X-Y reps | Tempo: XXXX | Recupero: X:XX | Cue: [tecnica] | → Dimmi: reps / RPE / note`;
 
 function startDemoSession() {
-  const demoProfile = { ai_prompt: DEMO_PROMPT, program_name: 'Demo', workouts: '["Demo Calisthenics Base"]' };
-  const origProfile = currentProfile;
-  currentProfile = { ...currentProfile, ...demoProfile };
+  // Salva il profilo originale per ripristinarlo al ritorno
+  const origProfile = JSON.parse(JSON.stringify(currentProfile || {}));
+  currentProfile = { ...currentProfile, ai_prompt: DEMO_PROMPT, program_name: 'Demo', workouts: '["Demo Calisthenics Base"]', _isDemo: true, _origProfile: origProfile };
   sessionWorkout = 'Demo Calisthenics Base';
   sessionHistory = []; selectedRpe = null; busy = false;
   document.getElementById('sessionTitle').textContent = '◎ Demo — Calisthenics Base';
@@ -709,6 +709,10 @@ async function doLogout() {
 
 // ── DASHBOARD ─────────────────────────────────────────────
 async function showDash() {
+  // Ripristina profilo originale se tornando da sessione demo
+  if (currentProfile?._isDemo && currentProfile?._origProfile) {
+    currentProfile = currentProfile._origProfile;
+  }
   showScreen('dashScreen');
   const name = currentProfile?.name || currentUser.email.split('@')[0];
   document.getElementById('dashUserLabel').textContent = name;
