@@ -83,7 +83,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;flex-shrink:0;margin-top:2px;}
 .avatar.ai{background:var(--accent);color:#000;}
 .avatar.user{background:var(--surface2);color:var(--text2);}
-.bubble{max-width:calc(100% - 40px);padding:11px 14px;border-radius:10px;font-size:12.5px;line-height:1.65;}
+.bubble{max-width:calc(100% - 40px);padding:11px 14px;border-radius:10px;font-size:14px;line-height:1.7;}
 .msg-row.ai .bubble{background:var(--surface);border:1px solid var(--border);border-top-left-radius:3px;}
 .msg-row.user .bubble{background:var(--surface2);border:1px solid var(--border2);color:#bbb;border-top-right-radius:3px;}
 .typing-dots{display:flex;gap:5px;padding:3px 0;}
@@ -306,10 +306,10 @@ input::placeholder{color:#444;}
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Prossimo set</div>
-          <div id="setInfoBox" style="font-size:12px;line-height:1.5;color:var(--text2);">In attesa...</div>
+          <div id="setInfoBox" style="font-size:14px;line-height:1.6;color:var(--text2);">In attesa...</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;">
-          <div id="sessionTimerNum" style="font-family:var(--display);font-size:24px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
+          <div id="sessionTimerNum" style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
           <div style="display:flex;gap:4px;">
             <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:4px 12px;background:var(--accent);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">▶</button>
             <button onclick="sessionTimerReset()" style="padding:4px 8px;background:var(--border);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">↺</button>
@@ -947,6 +947,10 @@ function sendMsg() {
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
   selectedRpe = null;
   addBubble('user', txt);
+  // Avvia timer automaticamente quando si inviano le reps
+  if (parts.some(p => p.includes('reps') || p.includes('Reps'))) {
+    sessionTimerToggle();
+  }
   aiSend(txt, false);
 }
 
@@ -1032,36 +1036,50 @@ function updateSetInfo(text) {
   const box = document.getElementById('setInfoBox');
   if (!box) return;
 
-  const lines = text.split('\n').map(l => l.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()).filter(l => l);
+  const lines = text.split('\n').map(l => l.replace(/\*\*/g, '').trim()).filter(l => l);
 
-  let esercizio = '', target = '', recupero = '', tempo = '';
+  // Cerca blocco SUPERSET X — Set N/N
+  let header = '', exercises = [], recupero = '';
+  let inBlock = false;
 
-  for (const line of lines) {
-    if (!esercizio && line.match(/^[A-Z]\d[:–—-]/i)) {
-      esercizio = line.replace(/^[A-Z]\d[:–—-]\s*/i, '').split(/[—–]/)[0].trim();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Header superset o set
+    if (line.match(/SUPERSET\s+[A-Z]\s*[–—-]\s*Set\s+\d+\/\d+/i) || line.match(/^[A-Z]\d[:.].*Set\s+\d+\/\d+/i)) {
+      header = line;
+      inBlock = true;
+      exercises = [];
+      continue;
     }
-    if (!esercizio && line.match(/set\s+\d+\/\d+/i) && !line.match(/superset/i)) {
-      esercizio = line.split(/[—–]/)[0].trim();
-    }
-    if (!target && line.match(/target/i) && line.match(/\d/)) {
-      target = line.trim();
-    }
-    if (!recupero && line.match(/recupero/i) && line.match(/\d+:\d+/)) {
-      recupero = line.trim();
-    }
-    if (!tempo && line.match(/tempo/i) && line.match(/[0-9X]/i) && !line.match(/recupero/i)) {
-      tempo = line.trim();
+    if (inBlock) {
+      // Linee esercizi: "Nome: X-Y reps"
+      if (line.match(/^[A-Za-z].+:\s*\d/) && !line.match(/recupero/i) && !line.match(/^→/)) {
+        exercises.push(line);
+      }
+      // Recupero
+      if (line.match(/recupero/i) && line.match(/\d+:\d+/)) {
+        recupero = line;
+        break;
+      }
+      // Fine blocco
+      if (line.match(/^→/) || line.match(/^✓/)) break;
     }
   }
 
   let html = '';
-  if (esercizio) html += `<div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;">${esc(esercizio)}</div>`;
-  if (target) html += `<div style="font-size:11px;color:var(--text2);">${esc(target)}</div>`;
-  if (tempo) html += `<div style="font-size:11px;color:var(--text2);">${esc(tempo)}</div>`;
-  if (recupero) html += `<div style="font-size:11px;color:var(--accent);">${esc(recupero)}</div>`;
+  if (header) {
+    html += `<div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px;">${esc(header)}</div>`;
+  }
+  exercises.forEach(ex => {
+    html += `<div style="font-size:12px;color:var(--text2);">${esc(ex)}</div>`;
+  });
+  if (recupero) {
+    html += `<div style="font-size:11px;color:var(--accent);margin-top:3px;">${esc(recupero)}</div>`;
+  }
 
   if (html) box.innerHTML = html;
 
+  // Timer: imposta ma NON avviare automaticamente qui
   const m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
   if (m) {
     const secs = parseInt(m[1]) * 60 + parseInt(m[2]);
