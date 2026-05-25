@@ -912,19 +912,45 @@ function fmtTime(s) { return String(Math.floor(Math.max(s,0) / 60)).padStart(2, 
 function updateSetInfo(text) {
   const box = document.getElementById('setInfoBox');
   if (!box) return;
-  // Estrai info chiave dal testo AI
-  const lines = text.split(/\n/).filter(l => l.trim());
-  let info = '';
+
+  // Cerca pattern tipo "A1: ESERCIZIO — Set X/Y" o "## A1: ESERCIZIO"
+  const lines = text.split('\n').map(l => l.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()).filter(l => l);
+
+  let esercizio = '', target = '', recupero = '', tempo = '';
+
   for (const line of lines) {
-    if (line.match(/set|reps|target|tempo|recupero|esercizio/i) && !line.includes('WORKOUT LOG')) {
-      info = line.replace(/\*\*/g, '').trim();
-      break;
+    // Esercizio: linea con A1/B1/C1 o con "Set X/Y"
+    if (!esercizio && line.match(/^[A-Z]\d[:–—-]/i)) {
+      esercizio = line.replace(/^[A-Z]\d[:–—-]\s*/i, '').split('—')[0].split('–')[0].trim();
+    }
+    if (!esercizio && line.match(/set\s+\d+\/\d+/i)) {
+      esercizio = line.split('—')[0].split('–')[0].trim();
+    }
+    // Target reps
+    if (!target && line.match(/target|reps/i)) {
+      target = line.trim();
+    }
+    // Recupero
+    if (!recupero && line.match(/recupero/i)) {
+      recupero = line.trim();
+    }
+    // Tempo
+    if (!tempo && line.match(/tempo/i) && line.match(/\d/)) {
+      tempo = line.trim();
     }
   }
-  if (info) box.innerHTML = '<span style="color:var(--text);font-size:13px;">' + esc(info) + '</span>';
 
-  // Auto-avvia timer se trova recupero
-  const m = text.match(/[Rr]ecupero[:\s]+(\d+):(\d+)/);
+  // Costruisci HTML
+  let html = '';
+  if (esercizio) html += `<div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;">${esc(esercizio)}</div>`;
+  if (target) html += `<div style="font-size:11px;color:var(--text2);">${esc(target)}</div>`;
+  if (tempo) html += `<div style="font-size:11px;color:var(--text2);">${esc(tempo)}</div>`;
+  if (recupero) html += `<div style="font-size:11px;color:var(--accent);">${esc(recupero)}</div>`;
+
+  if (html) box.innerHTML = html;
+
+  // Auto-avvia timer se trova recupero con formato mm:ss
+  const m = text.match(/[Rr]ecupero[^:]*[:]\s*(\d+):(\d+)/);
   if (m) {
     const secs = parseInt(m[1]) * 60 + parseInt(m[2]);
     sessionTimerSet(secs);
