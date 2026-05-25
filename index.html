@@ -351,9 +351,12 @@ input::placeholder{color:#444;}
     <div class="topbar-right"><div class="topbar-user">Carlo Spolaore</div><button class="topbar-btn" onclick="doLogout()">Esci</button></div>
   </div>
   <div class="admin-body">
-    <div class="admin-tabs">
-      <button class="atab active" onclick="switchTab('users',this)">Atleti</button>
-      <button class="atab" onclick="switchTab('logs',this)">Sessioni</button>
+    <div class="admin-tabs" style="justify-content:space-between;align-items:center;">
+      <div style="display:flex;gap:4px;">
+        <button class="atab active" onclick="switchTab('users',this)">Atleti</button>
+        <button class="atab" onclick="switchTab('logs',this)">Sessioni</button>
+      </div>
+      <button onclick="openCreateUserModal()" style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-bottom:1px;">+ Nuovo atleta</button>
     </div>
     <div class="admin-section active" id="tab-users">
       <table class="user-table">
@@ -533,6 +536,21 @@ input::placeholder{color:#444;}
   </div>
 </div>
 
+<div class="modal-overlay" id="createUserModal">
+  <div class="modal">
+    <div class="modal-title">Crea Nuovo Atleta</div>
+    <div class="modal-sub">L'atleta riceverà le credenziali per accedere.</div>
+    <div class="modal-field"><div class="modal-label">Nome completo</div><input class="modal-input" id="newUserName" placeholder="Mario Rossi"></div>
+    <div class="modal-field"><div class="modal-label">Email</div><input class="modal-input" id="newUserEmail" type="email" placeholder="mario@email.com"></div>
+    <div class="modal-field"><div class="modal-label">Password temporanea</div><input class="modal-input" id="newUserPass" type="text" placeholder="es. Calis2024!"></div>
+    <div style="font-size:10px;color:var(--muted);">L'atleta potrà cambiare la password dopo il primo accesso.</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('createUserModal')">Annulla</button>
+      <button class="modal-save" onclick="createUser()">Crea account</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── SUPABASE ──────────────────────────────────────────────
 const SUPABASE_URL = 'https://efziohgwsvplqandzawz.supabase.co';
@@ -658,6 +676,11 @@ async function handleSession(session) {
   hideLoading();
   if (currentUser.email === ADMIN_EMAIL) {
     showAdmin();
+  } else if (currentProfile?.status === 'inactive') {
+    await sb.auth.signOut();
+    currentUser = null; currentProfile = null;
+    showScreen('loginScreen');
+    document.getElementById('loginError').textContent = 'Account disattivato. Contatta il coach.';
   } else {
     showDash();
   }
