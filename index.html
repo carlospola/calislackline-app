@@ -674,7 +674,7 @@ async function loadProfile() {
 function hideLoading() { document.getElementById('loadingScreen').style.display = 'none'; }
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-async function loginGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://calislackline-app.vercel.app/api/callback' } }); }
+async function loginGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://calislackline-app.vercel.app' } }); }
 
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
