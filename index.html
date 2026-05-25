@@ -337,7 +337,7 @@ input::placeholder{color:#444;}
     </div>
     <div class="admin-section active" id="tab-users">
       <table class="user-table">
-        <thead><tr><th>Atleta</th><th>Email</th><th>Programma</th><th>Stato</th><th>Azioni</th></tr></thead>
+        <thead><tr><th>Atleta</th><th>Email</th><th>Stato</th><th>Azioni</th></tr></thead>
         <tbody id="userTableBody"><tr><td colspan="5" class="empty-table">Caricamento...</td></tr></tbody>
       </table>
     </div>
@@ -888,7 +888,6 @@ async function renderUserTable() {
   tbody.innerHTML = athletes.map(u => `<tr>
     <td>${u.name || '—'}</td>
     <td style="color:var(--muted)">${u.email}</td>
-    <td>${u.program_name || '<span style="color:var(--muted)">—</span>'}</td>
     <td><span class="badge badge-${u.status || 'pending'}">${u.status || 'pending'}</span></td>
     <td>
       <button class="action-btn primary" onclick="openAthleteProgramsModal('${u.id}','${u.name || u.email}')">Programmi</button>
@@ -995,14 +994,48 @@ async function renderAthletePrograms() {
     return;
   }
   list.innerHTML = programs.map(p => `
-    <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-family:var(--display);font-size:13px;font-weight:700;">${p.program_name}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px;">${JSON.parse(p.workouts || '[]').join(', ')}</div>
+    <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div>
+          <div style="font-family:var(--display);font-size:13px;font-weight:700;">${p.program_name}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">${JSON.parse(p.workouts || '[]').join(', ')}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="action-btn primary" onclick="editProgram('${p.id}','${p.program_name.replace(/'/g,"\'")}','${JSON.parse(p.workouts||'[]').join(', ').replace(/'/g,"\'")}')">Modifica</button>
+          <button class="action-btn danger" onclick="removeProgram('${p.id}')">Rimuovi</button>
+        </div>
       </div>
-      <button class="action-btn danger" onclick="removeProgram('${p.id}')">Rimuovi</button>
+      <div id="edit_${p.id}" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">
+        <div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_${p.id}" value="${p.program_name}"></div>
+        <div class="modal-field"><div class="modal-label">Workout</div><input class="modal-input" id="editWorkouts_${p.id}" value="${JSON.parse(p.workouts||'[]').join(', ')}"></div>
+        <div class="modal-field"><div class="modal-label">System prompt</div><textarea class="modal-textarea" id="editPrompt_${p.id}" style="min-height:100px;">${p.ai_prompt || ''}</textarea></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button class="modal-cancel" onclick="document.getElementById('edit_${p.id}').style.display='none'">Annulla</button>
+          <button class="modal-save" onclick="saveEditProgram('${p.id}')">Salva</button>
+        </div>
+      </div>
     </div>
   `).join('');
+}
+
+function editProgram(id) {
+  const el = document.getElementById('edit_' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveEditProgram(programId) {
+  const name = document.getElementById('editName_' + programId).value.trim();
+  const wRaw = document.getElementById('editWorkouts_' + programId).value.trim();
+  const prompt = document.getElementById('editPrompt_' + programId).value.trim();
+  if (!name || !wRaw || !prompt) { alert('Compila tutti i campi.'); return; }
+  const workouts = wRaw.split(',').map(w => w.trim()).filter(Boolean);
+  try {
+    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'editProgram', programId, program_name: name, workouts: JSON.stringify(workouts), ai_prompt: prompt }) });
+    const data = await res.json();
+    if (data.error) { alert('Errore: ' + data.error); return; }
+    await renderAthletePrograms();
+  } catch(e) { alert('Errore di connessione.'); }
 }
 
 async function addProgram() {
