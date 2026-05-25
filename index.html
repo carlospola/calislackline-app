@@ -705,6 +705,13 @@ async function doLogin() {
 
 async function doLogout() {
   await sb.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  sessionHistory = [];
+  document.getElementById('loadingScreen').style.display = 'none';
+  showScreen('loginScreen');
+  // Pulisce eventuali token nell'URL
+  window.history.replaceState({}, document.title, window.location.pathname);
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────
