@@ -989,15 +989,59 @@ function updateSetInfo(text) {
   }
 }
 
+function extractOptions(text) {
+  // Cerca liste di opzioni nel testo AI (righe che iniziano con - o •)
+  const lines = text.split('\n');
+  const options = [];
+  for (const line of lines) {
+    const m = line.match(/^[\s]*[-•]\s+(.+)$/);
+    if (m) {
+      const opt = m[1].replace(/\*\*/g, '').trim();
+      if (opt.length > 0 && opt.length < 60) options.push(opt);
+    }
+  }
+  return options;
+}
+
 function addBubble(role, text) {
   const msgs = document.getElementById('messages');
+
+  // Rimuovi bottoni opzione precedenti
+  const oldOpts = document.getElementById('quickOptions');
+  if (oldOpts) oldOpts.remove();
+
   const row = document.createElement('div'); row.className = 'msg-row ' + role;
   const av = document.createElement('div'); av.className = 'avatar ' + role; av.textContent = role === 'ai' ? 'AI' : 'TU';
   const bub = document.createElement('div'); bub.className = 'bubble';
   bub.innerHTML = fmtText(text);
-  row.appendChild(av); row.appendChild(bub); msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
-  // Aggiorna setInfoBox con l'ultimo messaggio AI
-  if (role === 'ai') updateSetInfo(text);
+  row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
+
+  // Se è un messaggio AI con lista opzioni, mostra bottoni
+  if (role === 'ai') {
+    const options = extractOptions(text);
+    if (options.length >= 2 && options.length <= 6) {
+      const optRow = document.createElement('div');
+      optRow.id = 'quickOptions';
+      optRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 2px 44px;';
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        btn.style.cssText = 'padding:7px 13px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;text-align:left;';
+        btn.onmouseover = () => { btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; };
+        btn.onmouseout = () => { btn.style.borderColor = 'var(--border2)'; btn.style.color = 'var(--text2)'; };
+        btn.onclick = () => {
+          optRow.remove();
+          addBubble('user', opt);
+          aiSend(opt, false);
+        };
+        optRow.appendChild(btn);
+      });
+      msgs.appendChild(optRow);
+    }
+    updateSetInfo(text);
+  }
+
+  msgs.scrollTop = msgs.scrollHeight;
 }
 
 function fmtText(t) {
