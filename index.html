@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calislackline Südtirol</title>
+<title>AILISTENICS</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
@@ -214,7 +214,7 @@ input::placeholder{color:#444;}
   <div class="login-box">
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
       <div class="login-glyph">◎</div>
-      <div class="login-name">CALISLACKLINE<br>SÜDTIROL</div>
+      <div class="login-name">AILISTENICS</div>
       <div class="login-tagline">AI Coaching · Personalized · Adaptive</div>
     </div>
     <div class="login-form">
@@ -239,7 +239,7 @@ input::placeholder{color:#444;}
 <!-- DASHBOARD -->
 <div class="screen" id="dashScreen">
   <div class="topbar">
-    <div class="topbar-brand">CALISLACKLINE SÜDTIROL</div>
+    <div class="topbar-brand">AILISTENICS</div>
     <div class="topbar-right"><div class="topbar-user" id="dashUserLabel"></div><button class="topbar-btn" onclick="doLogout()">Esci</button></div>
   </div>
   <div class="dash-body">
@@ -324,7 +324,7 @@ input::placeholder{color:#444;}
 <!-- ADMIN -->
 <div class="screen" id="adminScreen">
   <div class="topbar">
-    <div class="topbar-brand">CALISLACKLINE <span style="color:var(--accent);font-size:9px;letter-spacing:.15em;margin-left:6px;">ADMIN</span></div>
+    <div class="topbar-brand">AILISTENICS <span style="color:var(--accent);font-size:9px;letter-spacing:.15em;margin-left:6px;">ADMIN</span></div>
     <div class="topbar-right"><div class="topbar-user">Carlo Spolaore</div><button class="topbar-btn" onclick="doLogout()">Esci</button></div>
   </div>
   <div class="admin-body">
@@ -676,7 +676,7 @@ function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.cl
 async function loginGoogle() {
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: 'https://calislackline.com' }
+    options: { redirectTo: 'https://calislackline.com/api/callback' }
   });
 }
 
