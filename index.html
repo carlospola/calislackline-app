@@ -585,12 +585,10 @@ async function init() {
   const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 8000);
 
   const params = new URLSearchParams(window.location.search);
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
   const code = params.get('code');
   const error = params.get('error');
 
-  if (accessToken || error || code) {
+  if (code || error) {
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
@@ -616,7 +614,6 @@ async function init() {
     }
 
     if (code) {
-      // Il client Supabase usa il code_verifier da localStorage per completare il PKCE
       const { data, error: exchErr } = await sb.auth.exchangeCodeForSession(code);
       if (exchErr || !data.session) {
         clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
@@ -626,11 +623,6 @@ async function init() {
       clearTimeout(timeout);
       await handleSession(data.session);
       return;
-    }
-
-    if (accessToken) {
-      const { data } = await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
-      if (data.session) { clearTimeout(timeout); await handleSession(data.session); return; }
     }
 
     const { data: { session } } = await sb.auth.getSession();
@@ -683,7 +675,12 @@ async function loadProfile() {
 function hideLoading() { document.getElementById('loadingScreen').style.display = 'none'; }
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-async function loginGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://calislackline-app.vercel.app/api/callback' } }); }
+async function loginGoogle() {
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: 'https://calislackline-app.vercel.app' }
+  });
+}
 
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
