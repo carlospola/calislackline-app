@@ -674,7 +674,7 @@ async function loadProfile() {
 function hideLoading() { document.getElementById('loadingScreen').style.display = 'none'; }
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-async function loginGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }); }
+async function loginGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://calislackline-app.vercel.app/reset' } }); }
 
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
@@ -695,7 +695,7 @@ async function doResetPassword() {
   succ.textContent = '';
   if (!email) { err.textContent = 'Inserisci la tua email nel campo sopra.'; return; }
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin
+    redirectTo: 'https://calislackline-app.vercel.app/reset'
   });
   if (error) { err.textContent = 'Errore: ' + error.message; }
   else { succ.textContent = 'Email inviata! Controlla la tua casella di posta.'; }
