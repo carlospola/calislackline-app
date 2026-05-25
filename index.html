@@ -548,7 +548,7 @@ const ADMIN_EMAIL = 'calislackline@gmail.com';
 const APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { flowType: 'implicit', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
+  auth: { flowType: 'pkce', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
 });
 let currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 
@@ -585,7 +585,13 @@ async function init() {
   const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 10000);
 
   const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
   const error = params.get('error');
+
+  // Pulisci URL subito per evitare riprocessamenti
+  if (code || error) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
 
   if (error) {
     clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
@@ -593,41 +599,34 @@ async function init() {
     return;
   }
 
-  let handled = false;
-
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (handled) return;
     if (event === 'PASSWORD_RECOVERY') {
-      handled = true;
       clearTimeout(timeout);
       hideLoading(); showScreen('loginScreen');
       document.getElementById('newPasswordModal').classList.add('open');
-    } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-      if (document.getElementById('newPasswordModal').classList.contains('open')) return;
-      handled = true;
-      clearTimeout(timeout);
-      await handleSession(session);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; currentProfile = null; showScreen('loginScreen');
     }
   });
 
-  // Aspetta che Supabase processi l'hash (implicit flow)
-  await new Promise(r => setTimeout(r, 500));
-
-  if (handled) return;
-
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && !handled) {
-      handled = true;
+    if (code) {
+      // PKCE: il client ha il code_verifier in localStorage, exchangeCodeForSession funziona
+      const { data, error: exchErr } = await sb.auth.exchangeCodeForSession(code);
+      if (exchErr || !data.session) {
+        clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
+        document.getElementById('loginError').textContent = 'Errore autenticazione. Riprova.';
+        return;
+      }
       clearTimeout(timeout);
-      await handleSession(session);
-    } else if (!handled && !window.location.hash.includes('access_token')) {
-      clearTimeout(timeout);
-      hideLoading();
-      showScreen('loginScreen');
+      await handleSession(data.session);
+      return;
     }
+
+    const { data: { session } } = await sb.auth.getSession();
+    clearTimeout(timeout);
+    if (session) { await handleSession(session); }
+    else { hideLoading(); showScreen('loginScreen'); }
   } catch(e) {
     clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
   }
