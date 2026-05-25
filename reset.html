@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nuova password — Calislackline Südtirol</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#080808;--surface:#141414;--border:#222;--border2:#2e2e2e;
+  --text:#e8e8e8;--text2:#aaa;--muted:#666;
+  --accent:#c8f060;--accent-dark:#9ab840;
+  --red:#ff5f5f;--mono:'DM Mono',monospace;--display:'Syne',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);display:flex;align-items:center;justify-content:center;}
+body{background:radial-gradient(ellipse at 50% 0%,#1a2200 0%,var(--bg) 70%);}
+.box{width:100%;max-width:380px;padding:0 24px;display:flex;flex-direction:column;align-items:center;gap:28px;}
+.glyph{width:52px;height:52px;border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(200,240,96,0.07);}
+.title{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:.06em;text-align:center;}
+.sub{font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;text-align:center;}
+.form{width:100%;display:flex;flex-direction:column;gap:12px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;}
+.input{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;width:100%;transition:border-color .15s;}
+.input:focus{border-color:#444;}
+.input::placeholder{color:#333;}
+.btn{padding:13px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:4px;}
+.btn:hover{background:var(--accent-dark);}
+.btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;}
+.error{font-size:11px;color:var(--red);text-align:center;min-height:16px;}
+.success{font-size:11px;color:var(--accent);text-align:center;}
+.loading{font-size:12px;color:var(--muted);text-align:center;}
+</style>
+</head>
+<body>
+<div class="box" id="loadingBox">
+  <div class="glyph">◎</div>
+  <div class="loading">Verifica in corso...</div>
+</div>
+
+<div class="box" id="resetBox" style="display:none">
+  <div class="glyph">◎</div>
+  <div class="title">NUOVA PASSWORD</div>
+  <div class="sub">Calislackline Südtirol</div>
+  <div class="form">
+    <div class="field"><div class="label">Nuova password</div><input class="input" id="pwd1" type="password" placeholder="Minimo 6 caratteri"></div>
+    <div class="field"><div class="label">Conferma password</div><input class="input" id="pwd2" type="password" placeholder="Ripeti la password" onkeydown="if(event.key==='Enter')submitPwd()"></div>
+    <div class="error" id="errMsg"></div>
+    <button class="btn" id="saveBtn" onclick="submitPwd()">Salva nuova password</button>
+  </div>
+</div>
+
+<div class="box" id="doneBox" style="display:none">
+  <div class="glyph" style="font-size:28px;width:64px;height:64px;color:var(--accent);">✓</div>
+  <div class="title">PASSWORD AGGIORNATA</div>
+  <div class="success">Ora puoi accedere con la nuova password.</div>
+  <a href="/" style="padding:13px 32px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;margin-top:8px;">Vai al login →</a>
+</div>
+
+<div class="box" id="errorBox" style="display:none">
+  <div class="glyph">◎</div>
+  <div class="title">LINK NON VALIDO</div>
+  <div class="error" style="font-size:12px;">Il link è scaduto o non valido.<br>Richiedi un nuovo reset password.</div>
+  <a href="/" style="padding:13px 32px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:12px;text-decoration:none;margin-top:8px;">← Torna al login</a>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://efziohgwsvplqandzawz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_R-LAgce572sW0gzDAWyJlA_eXr6H0s7';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { flowType: 'pkce', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
+});
+
+function show(id) {
+  ['loadingBox','resetBox','doneBox','errorBox'].forEach(b => document.getElementById(b).style.display = 'none');
+  document.getElementById(id).style.display = 'flex';
+}
+
+async function init() {
+  // Supabase PKCE manda il code come query param
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const hashParams = new URLSearchParams(window.location.hash.replace('#',''));
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+  const type = hashParams.get('type') || params.get('type');
+
+  try {
+    if (code) {
+      // PKCE flow — scambia il code per la sessione
+      const { data, error } = await sb.auth.exchangeCodeForSession(code);
+      if (error || !data.session) { show('errorBox'); return; }
+      window.history.replaceState({}, document.title, window.location.pathname);
+      show('resetBox');
+      return;
+    }
+
+    if (accessToken && type === 'recovery') {
+      await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
+      window.history.replaceState({}, document.title, window.location.pathname);
+      show('resetBox');
+      return;
+    }
+
+    // Controlla se c'è già una sessione recovery attiva
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { show('resetBox'); return; }
+
+    show('errorBox');
+  } catch(e) {
+    show('errorBox');
+  }
+}
+
+async function submitPwd() {
+  const pwd1 = document.getElementById('pwd1').value;
+  const pwd2 = document.getElementById('pwd2').value;
+  const err = document.getElementById('errMsg');
+  const btn = document.getElementById('saveBtn');
+  err.textContent = '';
+  if (pwd1.length < 6) { err.textContent = 'La password deve essere di almeno 6 caratteri.'; return; }
+  if (pwd1 !== pwd2) { err.textContent = 'Le password non coincidono.'; return; }
+  btn.disabled = true; btn.textContent = 'Salvataggio...';
+  const { error } = await sb.auth.updateUser({ password: pwd1 });
+  if (error) { err.textContent = 'Errore: ' + error.message; btn.disabled = false; btn.textContent = 'Salva nuova password'; return; }
+  await sb.auth.signOut();
+  show('doneBox');
+}
+
+init();
+</script>
+</body>
+</html>
