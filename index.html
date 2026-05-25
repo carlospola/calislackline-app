@@ -590,20 +590,44 @@ function startDemoSession() {
 
 // ── INIT ──────────────────────────────────────────────────
 async function init() {
-  // Timeout sicurezza — mostra login se tutto fallisce
   const timeout = setTimeout(() => {
     hideLoading();
     showScreen('loginScreen');
   }, 5000);
 
   try {
-    // Gestisce redirect OAuth con ?code= (PKCE)
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (code) {
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const error = params.get('error');
+
+    // Pulisci URL
+    if (accessToken || error) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
+    if (error) {
+      clearTimeout(timeout);
+      hideLoading();
+      showScreen('loginScreen');
+      document.getElementById('loginError').textContent = 'Errore login. Riprova.';
+      return;
+    }
+
+    // Token arrivati dal callback server
+    if (accessToken) {
+      const { data, error: sessErr } = await sb.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken || ''
+      });
+      if (data.session) {
+        clearTimeout(timeout);
+        await handleSession(data.session);
+        return;
+      }
+    }
+
+    // Sessione esistente
     const { data: { session } } = await sb.auth.getSession();
     clearTimeout(timeout);
     if (session) {
