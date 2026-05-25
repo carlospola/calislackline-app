@@ -548,7 +548,7 @@ const ADMIN_EMAIL = 'calislackline@gmail.com';
 const APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { flowType: 'pkce', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
+  auth: { flowType: 'implicit', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
 });
 let currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 
@@ -585,13 +585,16 @@ async function init() {
   const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 8000);
 
   const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
   const error = params.get('error');
 
-  if (code || error) {
-    window.history.replaceState({}, document.title, window.location.pathname);
+  if (error) {
+    clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
+    document.getElementById('loginError').textContent = 'Errore login. Riprova.';
+    return;
   }
 
+  // Con implicit flow Supabase legge automaticamente il token dall'hash
+  // onAuthStateChange viene triggerato quando trova il token
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
       clearTimeout(timeout);
@@ -600,35 +603,27 @@ async function init() {
     } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
       if (document.getElementById('newPasswordModal').classList.contains('open')) return;
       clearTimeout(timeout);
-      await handleSession(session);
+      if (!currentUser) await handleSession(session);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; currentProfile = null; showScreen('loginScreen');
     }
   });
 
+  // Aspetta un tick per dare tempo a Supabase di leggere l'hash
+  await new Promise(r => setTimeout(r, 100));
+
   try {
-    if (error) {
-      clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
-      document.getElementById('loginError').textContent = 'Errore login. Riprova.';
-      return;
-    }
-
-    if (code) {
-      const { data, error: exchErr } = await sb.auth.exchangeCodeForSession(code);
-      if (exchErr || !data.session) {
-        clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
-        document.getElementById('loginError').textContent = 'Errore autenticazione. Riprova.';
-        return;
-      }
-      clearTimeout(timeout);
-      await handleSession(data.session);
-      return;
-    }
-
     const { data: { session } } = await sb.auth.getSession();
-    clearTimeout(timeout);
-    if (session) { await handleSession(session); }
-    else { hideLoading(); showScreen('loginScreen'); }
+    if (session) {
+      clearTimeout(timeout);
+      await handleSession(session);
+    } else if (!window.location.hash.includes('access_token')) {
+      // Nessun token in hash e nessuna sessione — vai al login
+      clearTimeout(timeout);
+      hideLoading();
+      showScreen('loginScreen');
+    }
+    // Se c'è access_token nell'hash aspetta onAuthStateChange
   } catch(e) {
     clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
   }
