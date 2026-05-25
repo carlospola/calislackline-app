@@ -57,6 +57,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
+    if (action === 'editProgram') {
+      const { programId, program_name, workouts, ai_prompt } = req.body;
+      await supabaseRequest('PATCH', `programs?id=eq.${programId}`, { program_name, workouts, ai_prompt });
+      return res.status(200).json({ success: true });
+    }
+
     if (action === 'removeProgram') {
       const { programId } = req.body;
       await supabaseRequest('DELETE', `programs?id=eq.${programId}`, undefined);
