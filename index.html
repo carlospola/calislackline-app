@@ -535,11 +535,10 @@ input::placeholder{color:#444;}
     <div class="modal-btns"><button class="modal-cancel" onclick="closeModal('logModal')">Chiudi</button></div>
   </div>
 </div>
-
 <div class="modal-overlay" id="createUserModal">
   <div class="modal">
     <div class="modal-title">Crea Nuovo Atleta</div>
-    <div class="modal-sub">L'atleta riceverà le credenziali per accedere.</div>
+    <div class="modal-sub">L'atleta potrà accedere con email e password.</div>
     <div class="modal-field"><div class="modal-label">Nome completo</div><input class="modal-input" id="newUserName" placeholder="Mario Rossi"></div>
     <div class="modal-field"><div class="modal-label">Email</div><input class="modal-input" id="newUserEmail" type="email" placeholder="mario@email.com"></div>
     <div class="modal-field"><div class="modal-label">Password temporanea</div><input class="modal-input" id="newUserPass" type="text" placeholder="es. Calis2024!"></div>
@@ -594,7 +593,6 @@ REGOLE:
 FORMATO: [ESERCIZIO] — Set X/Y | Target: X-Y reps | Tempo: XXXX | Recupero: X:XX | Cue: [tecnica] | → Dimmi: reps / RPE / note`;
 
 function startDemoSession() {
-  // Salva il profilo originale per ripristinarlo al ritorno
   const origProfile = JSON.parse(JSON.stringify(currentProfile || {}));
   currentProfile = { ...currentProfile, ai_prompt: DEMO_PROMPT, program_name: 'Demo', workouts: '["Demo Calisthenics Base"]', _isDemo: true, _origProfile: origProfile };
   sessionWorkout = 'Demo Calisthenics Base';
@@ -619,7 +617,6 @@ async function init() {
     const refreshToken = params.get('refresh_token');
     const error = params.get('error');
 
-    // Pulisci URL
     if (accessToken || error) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -632,7 +629,6 @@ async function init() {
       return;
     }
 
-    // Token arrivati dal callback server
     if (accessToken) {
       const { data, error: sessErr } = await sb.auth.setSession({
         access_token: accessToken,
@@ -645,7 +641,6 @@ async function init() {
       }
     }
 
-    // Sessione esistente
     const { data: { session } } = await sb.auth.getSession();
     clearTimeout(timeout);
     if (session) {
@@ -733,13 +728,11 @@ async function doLogout() {
   sessionHistory = [];
   document.getElementById('loadingScreen').style.display = 'none';
   showScreen('loginScreen');
-  // Pulisce eventuali token nell'URL
   window.history.replaceState({}, document.title, window.location.pathname);
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────
 async function showDash() {
-  // Ripristina profilo originale se tornando da sessione demo
   if (currentProfile?._isDemo && currentProfile?._origProfile) {
     currentProfile = currentProfile._origProfile;
   }
@@ -760,6 +753,9 @@ async function showDash() {
       c.innerHTML = '<div class="workout-card-name">' + w + '</div><div class="workout-card-badge">Inizia →</div>';
       c.onclick = () => startSession(w); grid.appendChild(c);
     });
+  } else {
+    document.getElementById('programEmpty').style.display = 'block';
+    document.getElementById('programContent').style.display = 'none';
   }
 
   const { data: sessions } = await sb.from('sessions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
@@ -905,7 +901,7 @@ async function renderUserTable() {
     <td><span class="badge badge-${u.status || 'pending'}">${u.status || 'pending'}</span></td>
     <td>
       <button class="action-btn primary" onclick="openProgramModal('${u.id}','${u.name || u.email}')">Programma</button>
-      <button class="action-btn" onclick="toggleStatus('${u.id}','${u.status}')">${u.status === 'active' ? 'Disattiva' : 'Attiva'}</button>
+      <button class="action-btn ${u.status === 'active' ? 'danger' : ''}" onclick="toggleStatus('${u.id}','${u.status}')">${u.status === 'active' ? 'Disattiva' : 'Attiva'}</button>
     </td>
   </tr>`).join('');
 }
@@ -929,6 +925,9 @@ let editingUserId = null;
 function openProgramModal(userId, userName) {
   editingUserId = userId;
   document.getElementById('programModalSub').textContent = 'Atleta: ' + userName;
+  document.getElementById('modalProgramName').value = '';
+  document.getElementById('modalWorkouts').value = '';
+  document.getElementById('modalPrompt').value = '';
   document.getElementById('programModal').classList.add('open');
 }
 
@@ -938,7 +937,6 @@ async function saveProgram() {
   const prompt = document.getElementById('modalPrompt').value.trim();
   if (!name || !wRaw || !prompt) { alert('Compila tutti i campi.'); return; }
   const workouts = wRaw.split(',').map(w => w.trim()).filter(Boolean);
-
   try {
     const res = await fetch('/api/admin', {
       method: 'POST',
@@ -961,9 +959,10 @@ async function saveProgram() {
   }
 }
 
+// BUG 1 FIX — Disattiva = reset programma, non ban
 async function toggleStatus(userId, currentStatus) {
   if (currentStatus === 'active') {
-    if (!confirm('Vuoi rimuovere il programma da questo atleta? Tornerà alla dashboard senza programma.')) return;
+    if (!confirm('Vuoi rimuovere il programma da questo atleta?\nL\'account resterà attivo ma tornerà alla dashboard senza programma.')) return;
     try {
       const res = await fetch('/api/admin', {
         method: 'POST',
@@ -986,6 +985,33 @@ async function toggleStatus(userId, currentStatus) {
       await renderUserTable();
     } catch(e) { alert('Errore di connessione.'); }
   }
+}
+
+// BUG 2 FIX — Crea nuovo atleta
+function openCreateUserModal() {
+  document.getElementById('newUserName').value = '';
+  document.getElementById('newUserEmail').value = '';
+  document.getElementById('newUserPass').value = '';
+  document.getElementById('createUserModal').classList.add('open');
+}
+
+async function createUser() {
+  const name = document.getElementById('newUserName').value.trim();
+  const email = document.getElementById('newUserEmail').value.trim();
+  const pass = document.getElementById('newUserPass').value.trim();
+  if (!name || !email || !pass) { alert('Compila tutti i campi.'); return; }
+  try {
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'createUser', name, email, password: pass })
+    });
+    const data = await res.json();
+    if (data.error) { alert('Errore: ' + data.error); return; }
+    closeModal('createUserModal');
+    await renderUserTable();
+    alert('Atleta creato. Può accedere con email e password.');
+  } catch(e) { alert('Errore di connessione.'); }
 }
 
 function openLogModal(s) {
