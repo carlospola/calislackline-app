@@ -1175,8 +1175,17 @@ function addBubble(role, text) {
 }
 
 function fmtText(t) {
-  // Rimuovi tag nascosti [SUPERSET:...] e [SET:...] dalla chat
-  t = t.replace(/\[SUPERSET:[^\]]+\]\s*/g, '').replace(/\[SET:[^\]]+\]\s*/g, '');
+  // Rimuovi tag nascosti
+  t = t.replace(/\[SUPERSET:[^\]]+\]\s*/g, '')
+       .replace(/\[SET:[^\]]+\]\s*/g, '')
+       .replace(/\[CUE:[^\]]+\]\s*/g, '');
+  // Rimuovi frasi ridondanti
+  t = t.replace(/Quando sei pronto[^.\n]*[.\n]/gi, '')
+       .replace(/Dimmi quante reps[^.\n]*[.\n]/gi, '')
+       .replace(/Quante reps[^.\n]*[.\n]/gi, '')
+       .replace(/dimmi quante[^.\n]*[.\n]/gi, '');
+  // Pulisci righe vuote multiple
+  t = t.replace(/\n{3,}/g, '\n\n').trim();
   if (t.includes('WORKOUT LOG') || t.includes('====='))
     return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">' + esc(t) + '</pre>';
   return esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
