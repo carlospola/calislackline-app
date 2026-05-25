@@ -37,7 +37,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // Reset programma — rimuove il programma ma lascia l'account attivo
     if (action === 'resetProgram') {
       await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
         program_name: null,
@@ -50,7 +49,6 @@ export default async function handler(req, res) {
 
     if (action === 'createUser') {
       const { email, password, name } = req.body;
-      // Crea utente in Supabase Auth
       const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
         method: 'POST',
         headers: {
@@ -69,19 +67,17 @@ export default async function handler(req, res) {
       if (!r.ok || data.error) {
         return res.status(400).json({ error: data.error?.message || data.msg || 'Errore creazione utente' });
       }
-      // Crea profilo nella tabella profiles
       await supabaseRequest('POST', 'profiles', {
-        id: data.id,
+        id: data.user.id,
         email,
         name,
         role: 'athlete',
         status: 'pending'
       });
-      return res.status(200).json({ success: true, userId: data.id });
+      return res.status(200).json({ success: true, userId: data.user.id });
     }
 
     return res.status(400).json({ error: 'Action non valida' });
-
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }
