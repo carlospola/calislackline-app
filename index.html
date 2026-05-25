@@ -584,20 +584,25 @@ function startDemoSession() {
 async function init() {
   const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 8000);
 
-  // Con flowType: 'implicit', Supabase legge il token dall'hash automaticamente
-  // NON pulire l'hash prima — lascia che detectSessionInUrl lo processi
+  // Leggi access_token dai query params (arriva dal callback.js dopo Google OAuth)
+  const params = new URLSearchParams(window.location.search);
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  const error = params.get('error');
 
-  // onAuthStateChange cattura tutto: login Google, recovery, token refresh
+  // Pulisci URL subito
+  if (accessToken || error) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
   sb.auth.onAuthStateChange(async (event, session) => {
-    clearTimeout(timeout);
     if (event === 'PASSWORD_RECOVERY') {
+      clearTimeout(timeout);
       hideLoading(); showScreen('loginScreen');
       document.getElementById('newPasswordModal').classList.add('open');
-    } else if (event === 'SIGNED_IN' && session) {
+    } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
       if (document.getElementById('newPasswordModal').classList.contains('open')) return;
-      await handleSession(session);
-    } else if (event === 'TOKEN_REFRESHED' && session) {
-      if (currentUser) return; // già loggato, ignora
+      clearTimeout(timeout);
       await handleSession(session);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; currentProfile = null; showScreen('loginScreen');
@@ -605,22 +610,23 @@ async function init() {
   });
 
   try {
-    // Controlla se c'è già una sessione attiva (es. refresh pagina)
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      clearTimeout(timeout);
-      await handleSession(session);
-    } else if (!window.location.hash && !window.location.search.includes('code')) {
-      // Nessun token in arrivo e nessuna sessione — vai al login
-      clearTimeout(timeout);
-      hideLoading();
-      showScreen('loginScreen');
+    if (error) {
+      clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
+      document.getElementById('loginError').textContent = 'Errore login. Riprova.';
+      return;
     }
-    // Se c'è hash o code, aspetta onAuthStateChange
-  } catch(e) {
+
+    if (accessToken) {
+      const { data } = await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
+      if (data.session) { clearTimeout(timeout); await handleSession(data.session); return; }
+    }
+
+    const { data: { session } } = await sb.auth.getSession();
     clearTimeout(timeout);
-    hideLoading();
-    showScreen('loginScreen');
+    if (session) { await handleSession(session); }
+    else { hideLoading(); showScreen('loginScreen'); }
+  } catch(e) {
+    clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
   }
 }
 
