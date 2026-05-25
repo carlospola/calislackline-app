@@ -548,7 +548,7 @@ const ADMIN_EMAIL = 'calislackline@gmail.com';
 const APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { flowType: 'implicit', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
+  auth: { flowType: 'pkce', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
 });
 let currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 
@@ -582,30 +582,22 @@ function startDemoSession() {
 }
 
 async function init() {
-  const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 5000);
+  const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 8000);
 
-  // Leggi parametri sia da query string che da hash (Supabase PKCE usa l'hash)
-  const searchParams = new URLSearchParams(window.location.search);
-  const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
-  const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
-  const refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
-  const type = searchParams.get('type') || hashParams.get('type');
-  const error = searchParams.get('error') || hashParams.get('error');
+  // Con flowType: 'implicit', Supabase legge il token dall'hash automaticamente
+  // NON pulire l'hash prima — lascia che detectSessionInUrl lo processi
 
-  // Pulisci URL subito
-  if (accessToken || error || window.location.hash) {
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-
-  // Gestisci recovery PRIMA di tutto il resto
+  // onAuthStateChange cattura tutto: login Google, recovery, token refresh
   sb.auth.onAuthStateChange(async (event, session) => {
+    clearTimeout(timeout);
     if (event === 'PASSWORD_RECOVERY') {
-      clearTimeout(timeout);
       hideLoading(); showScreen('loginScreen');
       document.getElementById('newPasswordModal').classList.add('open');
-    } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-      // Ignora SIGNED_IN se siamo in recovery
+    } else if (event === 'SIGNED_IN' && session) {
       if (document.getElementById('newPasswordModal').classList.contains('open')) return;
+      await handleSession(session);
+    } else if (event === 'TOKEN_REFRESHED' && session) {
+      if (currentUser) return; // già loggato, ignora
       await handleSession(session);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; currentProfile = null; showScreen('loginScreen');
@@ -613,24 +605,23 @@ async function init() {
   });
 
   try {
-    if (error) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Errore login. Riprova.'; return; }
-
-    if (accessToken && type === 'recovery') {
-      await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
-      // onAuthStateChange intercetta PASSWORD_RECOVERY e mostra il modal
-      clearTimeout(timeout);
-      return;
-    }
-
-    if (accessToken) {
-      const { data } = await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
-      if (data.session) { clearTimeout(timeout); await handleSession(data.session); return; }
-    }
-
+    // Controlla se c'è già una sessione attiva (es. refresh pagina)
     const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      clearTimeout(timeout);
+      await handleSession(session);
+    } else if (!window.location.hash && !window.location.search.includes('code')) {
+      // Nessun token in arrivo e nessuna sessione — vai al login
+      clearTimeout(timeout);
+      hideLoading();
+      showScreen('loginScreen');
+    }
+    // Se c'è hash o code, aspetta onAuthStateChange
+  } catch(e) {
     clearTimeout(timeout);
-    if (session) { await handleSession(session); } else { hideLoading(); showScreen('loginScreen'); }
-  } catch(e) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); }
+    hideLoading();
+    showScreen('loginScreen');
+  }
 }
 
 async function submitNewPassword() {
@@ -674,7 +665,7 @@ async function loadProfile() {
 function hideLoading() { document.getElementById('loadingScreen').style.display = 'none'; }
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-async function loginGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://calislackline-app.vercel.app' } }); }
+async function loginGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://calislackline-app.vercel.app/api/callback' } }); }
 
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
