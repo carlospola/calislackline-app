@@ -825,17 +825,13 @@ function startSessionWithPrompt(workout, prompt) {
   if (!prompt) { alert('Nessun programma AI configurato. Contatta il coach.'); return; }
   currentProfile = { ...currentProfile, ai_prompt: prompt };
   sessionWorkout = workout; sessionHistory = []; selectedRpe = null; busy = false;
+  showScreen('sessionScreen');
   document.getElementById('sessionTitle').textContent = workout;
   document.getElementById('messages').innerHTML = '';
-  document.getElementById('setInfoBox').innerHTML = 'In attesa...';
+  const box = document.getElementById('setInfoBox');
+  if (box) box.innerHTML = 'In attesa...';
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
-  // Reset timer
-  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
-  sessionTimerRunning = false; sessionTimerLeft = 0; sessionTimerTotal = 0;
-  document.getElementById('sessionTimerNum').textContent = '00:00';
-  document.getElementById('sessionTimerNum').style.color = 'var(--text)';
-  document.getElementById('sessionTimerGo').textContent = '▶ Start';
-  showScreen('sessionScreen'); aiSend(workout, true);
+  aiSend(workout, true);
 }
 
 function qSend(t) { addBubble('user', t); aiSend(t, false); }
