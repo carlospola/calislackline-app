@@ -3,6 +3,5 @@ export default async function handler(req, res) {
   if (type === 'recovery' && code) {
     return res.redirect(302, `/reset?code=${code}`);
   }
-  // Per tutto il resto lascia gestire al client Supabase
   return res.redirect(302, '/');
 }
