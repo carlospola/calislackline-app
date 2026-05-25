@@ -314,7 +314,7 @@ input::placeholder{color:#444;}
       <!-- Riga 1: Reps + RIR -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div style="display:flex;flex-direction:column;gap:4px;">
-          <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Ripetizioni completate <span style="color:var(--accent);">*</span></div>
+          <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Ripetizioni completate <span style="color:#444;font-size:8px;">(opz)</span></div>
           <input type="number" id="inpReps" placeholder="es. 8" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;">
@@ -842,17 +842,32 @@ function selRpe(btn, val) {
 }
 
 function sendMsg() {
-  const r = document.getElementById('inpReps'), ri = document.getElementById('inpRir'), n = document.getElementById('inpNote');
+  const r = document.getElementById('inpReps');
+  const ri = document.getElementById('inpRir');
+  const n = document.getElementById('inpNote');
   const reps = r.value.trim();
-  if (!reps) { r.style.borderColor = 'var(--accent)'; setTimeout(() => r.style.borderColor = '', 600); return; }
-  let parts = ['Reps: ' + reps];
-  if (ri.value.trim()) parts.push('RIR: ' + ri.value.trim());
-  if (selectedRpe !== null) parts.push('RPE: ' + selectedRpe + '/10');
-  if (n.value.trim()) parts.push('Note: ' + n.value.trim());
+  const rir = ri.value.trim();
+  const note = n.value.trim();
+
+  // Almeno un campo deve essere compilato
+  if (!reps && !note) {
+    n.style.borderColor = 'var(--accent)';
+    setTimeout(() => n.style.borderColor = '', 800);
+    return;
+  }
+
+  let parts = [];
+  if (reps) parts.push('Reps: ' + reps);
+  if (rir) parts.push('RIR: ' + rir);
+  if (selectedRpe !== null) parts.push('Fatica: ' + selectedRpe + '/10');
+  if (note) parts.push(parts.length ? 'Note: ' + note : note);
+
   const txt = parts.join(' — ');
   r.value = ''; ri.value = ''; n.value = '';
-  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel')); selectedRpe = null;
-  addBubble('user', txt); aiSend(txt, false);
+  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  selectedRpe = null;
+  addBubble('user', txt);
+  aiSend(txt, false);
 }
 
 async function aiSend(text, isFirst) {
