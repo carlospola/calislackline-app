@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const { action, userId } = req.body;
 
   async function supabaseRequest(method, path, body) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
       },
       body: body ? JSON.stringify(body) : undefined
     });
-    return res;
+    return r;
   }
 
   try {
@@ -27,6 +27,16 @@ export default async function handler(req, res) {
       const { program_name, workouts, ai_prompt, status } = req.body;
       await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
         program_name, workouts, ai_prompt, status
+      });
+      return res.status(200).json({ success: true });
+    }
+
+    if (action === 'resetProgram') {
+      await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
+        program_name: null,
+        workouts: null,
+        ai_prompt: null,
+        status: 'pending'
       });
       return res.status(200).json({ success: true });
     }
@@ -53,8 +63,17 @@ export default async function handler(req, res) {
         })
       });
       const data = await r.json();
-      if (data.error) return res.status(400).json({ error: data.error });
-      return res.status(200).json({ success: true, userId: data.id });
+      if (!r.ok) return res.status(400).json({ error: data.message || data.error });
+
+      await supabaseRequest('POST', 'profiles', {
+        id: data.user.id,
+        email,
+        name,
+        role: 'athlete',
+        status: 'pending'
+      });
+
+      return res.status(200).json({ success: true, userId: data.user.id });
     }
 
     return res.status(400).json({ error: 'Action non valida' });
