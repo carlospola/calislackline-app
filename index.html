@@ -582,7 +582,7 @@ function startDemoSession() {
 }
 
 async function init() {
-  const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 8000);
+  const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 10000);
 
   const params = new URLSearchParams(window.location.search);
   const error = params.get('error');
@@ -593,41 +593,41 @@ async function init() {
     return;
   }
 
-  // Con implicit flow Supabase legge automaticamente il token dall'hash
-  // onAuthStateChange viene triggerato quando trova il token
+  let handled = false;
+
   sb.auth.onAuthStateChange(async (event, session) => {
+    if (handled) return;
     if (event === 'PASSWORD_RECOVERY') {
+      handled = true;
       clearTimeout(timeout);
       hideLoading(); showScreen('loginScreen');
       document.getElementById('newPasswordModal').classList.add('open');
     } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
       if (document.getElementById('newPasswordModal').classList.contains('open')) return;
+      handled = true;
       clearTimeout(timeout);
-      if (!currentUser) await handleSession(session);
+      await handleSession(session);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; currentProfile = null; showScreen('loginScreen');
     }
   });
 
-  // Aspetta un tick per dare tempo a Supabase di leggere l'hash
-  await new Promise(r => setTimeout(r, 100));
+  // Aspetta che Supabase processi l'hash (implicit flow)
+  await new Promise(r => setTimeout(r, 500));
 
-  console.log('HASH:', window.location.hash.substring(0, 80));
-  console.log('SEARCH:', window.location.search.substring(0, 80));
+  if (handled) return;
 
   try {
     const { data: { session } } = await sb.auth.getSession();
-    console.log('SESSION:', session ? 'found' : 'null');
-    if (session) {
+    if (session && !handled) {
+      handled = true;
       clearTimeout(timeout);
       await handleSession(session);
-    } else if (!window.location.hash.includes('access_token')) {
-      // Nessun token in hash e nessuna sessione — vai al login
+    } else if (!handled && !window.location.hash.includes('access_token')) {
       clearTimeout(timeout);
       hideLoading();
       showScreen('loginScreen');
     }
-    // Se c'è access_token nell'hash aspetta onAuthStateChange
   } catch(e) {
     clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
   }
