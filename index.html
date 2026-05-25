@@ -301,18 +301,25 @@ input::placeholder{color:#444;}
     <!-- ZONA 1: CHAT scrollabile -->
     <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px;" id="messages"></div>
 
-    <!-- ZONA 2: PROSSIMO SET + TIMER -->
-    <div style="flex:0 0 auto;padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <!-- ZONA 2: PROSSIMO SET + CUE + TIMER -->
+    <div style="flex:0 0 auto;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+      <!-- Header: esercizi -->
+      <div style="padding:8px 16px 6px;">
+        <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Prossimo set</div>
+        <div id="setInfoBox" style="font-size:13px;line-height:1.55;color:var(--text);">In attesa...</div>
+      </div>
+      <!-- Footer: cue + timer -->
+      <div style="display:flex;align-items:center;border-top:1px solid var(--border);padding:6px 16px;gap:10px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Prossimo set</div>
-          <div id="setInfoBox" style="font-size:14px;line-height:1.6;color:var(--text2);">In attesa...</div>
+          <div style="font-size:8px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:2px;">Cue tecnico</div>
+          <div id="cueBox" style="font-size:12px;color:var(--text2);font-style:italic;">—</div>
         </div>
+        <div style="width:1px;background:var(--border2);height:32px;flex-shrink:0;"></div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;">
-          <div id="sessionTimerNum" style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
+          <div id="sessionTimerNum" style="font-family:var(--display);font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
           <div style="display:flex;gap:4px;">
-            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:4px 12px;background:var(--accent);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">▶</button>
-            <button onclick="sessionTimerReset()" style="padding:4px 8px;background:var(--border);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">↺</button>
+            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:3px 12px;background:var(--accent);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">▶</button>
+            <button onclick="sessionTimerReset()" style="padding:3px 8px;background:var(--border);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">↺</button>
           </div>
         </div>
       </div>
@@ -830,6 +837,8 @@ function startSessionWithPrompt(workout, prompt) {
   document.getElementById('messages').innerHTML = '';
   const box = document.getElementById('setInfoBox');
   if (box) box.innerHTML = 'In attesa...';
+  const cueB = document.getElementById('cueBox');
+  if (cueB) cueB.textContent = '—';
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
   currentSetMode = 'single'; currentExercises = [];
   renderInputFields('single', []);
@@ -1034,16 +1043,21 @@ function fmtTime(s) { return String(Math.floor(Math.max(s,0) / 60)).padStart(2, 
 
 function updateSetInfo(text) {
   const box = document.getElementById('setInfoBox');
+  const cueBox = document.getElementById('cueBox');
   if (!box) return;
 
   const lines = text.split('\n').map(l => l.replace(/\*\*/g, '').trim()).filter(l => l);
 
-  // Cerca blocco SUPERSET X — Set N/N
-  let header = '', exercises = [], recupero = '';
+  let header = '', exercises = [], recupero = '', cue = '';
   let inBlock = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    // Estrai CUE tag
+    const cueMatch = line.match(/\[CUE:([^\]]+)\]/);
+    if (cueMatch) { cue = cueMatch[1].trim(); continue; }
+
     // Header superset o set
     if (line.match(/SUPERSET\s+[A-Z]\s*[–—-]\s*Set\s+\d+\/\d+/i) || line.match(/^[A-Z]\d[:.].*Set\s+\d+\/\d+/i)) {
       header = line;
@@ -1052,34 +1066,29 @@ function updateSetInfo(text) {
       continue;
     }
     if (inBlock) {
-      // Linee esercizi: "Nome: X-Y reps"
-      if (line.match(/^[A-Za-z].+:\s*\d/) && !line.match(/recupero/i) && !line.match(/^→/)) {
+      if (line.match(/^[A-Za-z].+:\s*[\d5-]/) && !line.match(/recupero/i) && !line.match(/^→/) && !line.match(/^\[/)) {
         exercises.push(line);
       }
-      // Recupero
       if (line.match(/recupero/i) && line.match(/\d+:\d+/)) {
         recupero = line;
         break;
       }
-      // Fine blocco
       if (line.match(/^→/) || line.match(/^✓/)) break;
     }
   }
 
+  // Update header + exercises
   let html = '';
-  if (header) {
-    html += `<div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px;">${esc(header)}</div>`;
-  }
+  if (header) html += `<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">${esc(header)}</div>`;
   exercises.forEach(ex => {
-    html += `<div style="font-size:12px;color:var(--text2);">${esc(ex)}</div>`;
+    html += `<div style="font-size:13px;color:var(--text);">${esc(ex)}</div>`;
   });
-  if (recupero) {
-    html += `<div style="font-size:11px;color:var(--accent);margin-top:3px;">${esc(recupero)}</div>`;
-  }
-
   if (html) box.innerHTML = html;
 
-  // Timer: imposta ma NON avviare automaticamente qui
+  // Update cue
+  if (cueBox && cue) cueBox.textContent = cue;
+
+  // Set timer
   const m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
   if (m) {
     const secs = parseInt(m[1]) * 60 + parseInt(m[2]);
