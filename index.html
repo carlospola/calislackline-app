@@ -908,20 +908,39 @@ async function saveProgram() {
   const prompt = document.getElementById('modalPrompt').value.trim();
   if (!name || !wRaw || !prompt) { alert('Compila tutti i campi.'); return; }
   const workouts = wRaw.split(',').map(w => w.trim()).filter(Boolean);
-  await sb.from('profiles').update({
-    program_name: name,
-    workouts: JSON.stringify(workouts),
-    ai_prompt: prompt,
-    status: 'active'
-  }).eq('id', editingUserId);
-  closeModal('programModal');
-  await renderUserTable();
+
+  try {
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'updateProgram',
+        userId: editingUserId,
+        program_name: name,
+        workouts: JSON.stringify(workouts),
+        ai_prompt: prompt,
+        status: 'active'
+      })
+    });
+    const data = await res.json();
+    if (data.error) { alert('Errore: ' + data.error); return; }
+    closeModal('programModal');
+    await renderUserTable();
+  } catch(e) {
+    alert('Errore di connessione.');
+  }
 }
 
 async function toggleStatus(userId, currentStatus) {
   const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-  await sb.from('profiles').update({ status: newStatus }).eq('id', userId);
-  await renderUserTable();
+  try {
+    await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateStatus', userId, status: newStatus })
+    });
+    await renderUserTable();
+  } catch(e) { alert('Errore.'); }
 }
 
 function openLogModal(s) {
