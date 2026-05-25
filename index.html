@@ -299,40 +299,31 @@ input::placeholder{color:#444;}
 
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
 
-    <!-- ZONA 1: PROSSIMO SET + TIMER -->
-    <div style="flex:0 0 auto;padding:10px 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+    <!-- ZONA 1: CHAT scrollabile -->
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px;" id="messages"></div>
+
+    <!-- ZONA 2: PROSSIMO SET + TIMER -->
+    <div style="flex:0 0 auto;padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:5px;">Prossimo set</div>
-          <div id="setInfoBox" style="font-size:13px;line-height:1.55;color:var(--text2);">In attesa...</div>
+          <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Prossimo set</div>
+          <div id="setInfoBox" style="font-size:12px;line-height:1.5;color:var(--text2);">In attesa...</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;">
-          <div id="sessionTimerNum" style="font-family:var(--display);font-size:22px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;">
+          <div id="sessionTimerNum" style="font-family:var(--display);font-size:24px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
           <div style="display:flex;gap:4px;">
-            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:4px 10px;background:var(--accent);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">▶</button>
+            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:4px 12px;background:var(--accent);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">▶</button>
             <button onclick="sessionTimerReset()" style="padding:4px 8px;background:var(--border);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">↺</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ZONA 2: CHAT scrollabile -->
-    <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px;" id="messages"></div>
-
     <!-- ZONA 3: INPUT -->
     <div style="flex:0 0 auto;padding:10px 16px max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;gap:8px;">
 
-      <!-- Riga 1: Reps + RIR -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Ripetizioni completate <span style="color:#444;font-size:8px;">(opz)</span></div>
-          <input type="number" id="inpReps" placeholder="es. 8" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Rip. in riserva <span style="color:#444;font-size:8px;">(opz)</span></div>
-          <input type="number" id="inpRir" placeholder="es. 2" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
-        </div>
-      </div>
+      <!-- Riga 1: Input dinamico (singolo o superset) -->
+      <div id="inputContainer"></div>
 
       <!-- Riga 2: Fatica percepita -->
       <div style="display:flex;flex-direction:column;gap:5px;">
@@ -842,6 +833,8 @@ function startSessionWithPrompt(workout, prompt) {
   const box = document.getElementById('setInfoBox');
   if (box) box.innerHTML = 'In attesa...';
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  currentSetMode = 'single'; currentExercises = [];
+  renderInputFields('single', []);
   aiSend(workout, true);
 }
 
@@ -852,29 +845,107 @@ function selRpe(btn, val) {
   btn.classList.add('sel'); selectedRpe = val;
 }
 
-function sendMsg() {
-  const r = document.getElementById('inpReps');
-  const ri = document.getElementById('inpRir');
-  const n = document.getElementById('inpNote');
-  const reps = r.value.trim();
-  const rir = ri.value.trim();
-  const note = n.value.trim();
+// ── INPUT DINAMICO SINGOLO / SUPERSET ────────────────────
+let currentSetMode = 'single'; // 'single' | 'superset'
+let currentExercises = []; // nomi esercizi nel set corrente
 
-  // Almeno un campo deve essere compilato
-  if (!reps && !note) {
-    n.style.borderColor = 'var(--accent)';
-    setTimeout(() => n.style.borderColor = '', 800);
-    return;
+function inputField(id, label) {
+  return `<div style="display:flex;flex-direction:column;gap:3px;flex:1;">
+    <div style="font-size:8px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;font-weight:600;">${label}</div>
+    <div style="display:flex;gap:5px;">
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+        <div style="font-size:8px;color:var(--muted);">Reps</div>
+        <input type="number" id="reps_${id}" placeholder="—" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+        <div style="font-size:8px;color:var(--muted);">RIR</div>
+        <input type="number" id="rir_${id}" placeholder="—" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderInputFields(mode, exercises) {
+  currentSetMode = mode;
+  currentExercises = exercises;
+  const container = document.getElementById('inputContainer');
+  if (!container) return;
+
+  if (mode === 'superset' && exercises.length >= 2) {
+    const [ex1, ex2] = exercises;
+    container.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:stretch;">
+        ${inputField('a', ex1)}
+        <div style="width:1px;background:var(--border2);flex-shrink:0;margin:4px 0;"></div>
+        ${inputField('b', ex2)}
+      </div>`;
+  } else {
+    const ex = exercises[0] || '';
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Ripetizioni <span style="color:#444;font-size:8px;">(opz)</span></div>
+          <input type="number" id="reps_a" placeholder="es. 8" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Rip. riserva <span style="color:#444;font-size:8px;">(opz)</span></div>
+          <input type="number" id="rir_a" placeholder="es. 2" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
+        </div>
+      </div>`;
+  }
+}
+
+function detectAndRenderInput(text) {
+  // Cerca tag [SUPERSET:Ex1,Ex2] o [SET:Ex]
+  const supersetMatch = text.match(/\[SUPERSET:([^\]]+)\]/);
+  const setMatch = text.match(/\[SET:([^\]]+)\]/);
+  if (supersetMatch) {
+    const exercises = supersetMatch[1].split(',').map(e => e.trim());
+    renderInputFields('superset', exercises);
+  } else if (setMatch) {
+    renderInputFields('single', [setMatch[1].trim()]);
+  }
+  // Se non trova tag, mantieni layout corrente
+}
+
+function sendMsg() {
+  const n = document.getElementById('inpNote');
+  const note = n ? n.value.trim() : '';
+  let parts = [];
+
+  if (currentSetMode === 'superset' && currentExercises.length >= 2) {
+    const repsA = document.getElementById('reps_a')?.value.trim();
+    const rirA = document.getElementById('rir_a')?.value.trim();
+    const repsB = document.getElementById('reps_b')?.value.trim();
+    const rirB = document.getElementById('rir_b')?.value.trim();
+    if (!repsA && !repsB && !note) {
+      if (n) { n.style.borderColor = 'var(--accent)'; setTimeout(() => n.style.borderColor = '', 800); }
+      return;
+    }
+    if (repsA) parts.push(currentExercises[0] + ': ' + repsA + ' reps' + (rirA ? ' / RIR ' + rirA : ''));
+    if (repsB) parts.push(currentExercises[1] + ': ' + repsB + ' reps' + (rirB ? ' / RIR ' + rirB : ''));
+    if (document.getElementById('reps_a')) document.getElementById('reps_a').value = '';
+    if (document.getElementById('rir_a')) document.getElementById('rir_a').value = '';
+    if (document.getElementById('reps_b')) document.getElementById('reps_b').value = '';
+    if (document.getElementById('rir_b')) document.getElementById('rir_b').value = '';
+  } else {
+    const reps = document.getElementById('reps_a')?.value.trim();
+    const rir = document.getElementById('rir_a')?.value.trim();
+    if (!reps && !note) {
+      if (n) { n.style.borderColor = 'var(--accent)'; setTimeout(() => n.style.borderColor = '', 800); }
+      return;
+    }
+    if (reps) parts.push('Reps: ' + reps);
+    if (rir) parts.push('RIR: ' + rir);
+    if (document.getElementById('reps_a')) document.getElementById('reps_a').value = '';
+    if (document.getElementById('rir_a')) document.getElementById('rir_a').value = '';
   }
 
-  let parts = [];
-  if (reps) parts.push('Reps: ' + reps);
-  if (rir) parts.push('RIR: ' + rir);
   if (selectedRpe !== null) parts.push('Fatica: ' + selectedRpe + '/10');
-  if (note) parts.push(parts.length ? 'Note: ' + note : note);
+  if (note) parts.push(note);
 
   const txt = parts.join(' — ');
-  r.value = ''; ri.value = ''; n.value = '';
+  if (n) n.value = '';
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
   selectedRpe = null;
   addBubble('user', txt);
@@ -1029,6 +1100,7 @@ function addBubble(role, text) {
 
   // Se è un messaggio AI con lista opzioni, mostra bottoni
   if (role === 'ai') {
+    detectAndRenderInput(text);
     const options = extractOptions(text);
     if (options.length >= 2 && options.length <= 6) {
       const optRow = document.createElement('div');
