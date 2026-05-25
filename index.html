@@ -279,32 +279,50 @@ input::placeholder{color:#444;}
 
 <!-- SESSION -->
 <div class="screen" id="sessionScreen">
-  <div class="topbar">
+  <div class="topbar" style="padding:10px 16px;">
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="topbar-btn" onclick="showDash()">← Torna</button>
-      <div style="font-family:var(--display);font-size:13px;font-weight:700;" id="sessionTitle"></div>
+      <div style="font-family:var(--display);font-size:12px;font-weight:700;" id="sessionTitle"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px;font-size:9px;color:var(--accent);letter-spacing:.15em;">
-      <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite;"></div>LIVE
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--accent);letter-spacing:.15em;">
+        <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite;"></div>LIVE
+      </div>
+      <div style="display:flex;gap:4px;">
+        <button class="qbtn" onclick="qSend('skip')">skip</button>
+        <button class="qbtn" onclick="qSend('recap')">recap</button>
+        <button class="qbtn" onclick="qSend('fine')">fine</button>
+      </div>
     </div>
   </div>
   <style>@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}</style>
-  <div class="session-body">
-    <div class="messages" id="messages"></div>
-    <div class="quick">
-      <button class="qbtn" onclick="qSend('skip')">skip</button>
-      <button class="qbtn" onclick="qSend('recap')">recap</button>
-      <button class="qbtn" onclick="qSend('fine')">termina</button>
+
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
+
+    <!-- ZONA 1: PROSSIMO SET -->
+    <div style="flex:0 0 auto;padding:10px 16px 8px;background:var(--surface);border-bottom:1px solid var(--border);">
+      <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:6px;">Prossimo set</div>
+      <div id="setInfoBox" style="font-size:13px;line-height:1.6;color:var(--text2);">In attesa...</div>
     </div>
-    <div class="input-panel">
-      <div class="input-fields">
-        <div class="field-wrap"><div class="field-lbl">Reps<span class="req">*</span></div><input type="number" id="inpReps" placeholder="8" min="0" max="99"></div>
-        <div class="field-wrap"><div class="field-lbl">RIR<span class="opt">opz</span></div><input type="number" id="inpRir" placeholder="2" min="0" max="10"></div>
-        <div class="field-wrap"><div class="field-lbl">Note<span class="opt">opz</span></div><input type="text" id="inpNote" placeholder="..."></div>
+
+    <!-- ZONA 2: TIMER -->
+    <div style="flex:0 0 auto;padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2);">
+      <div style="font-size:8px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;width:36px;">Timer</div>
+      <div id="sessionTimerNum" style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--text);min-width:80px;font-variant-numeric:tabular-nums;">00:00</div>
+      <button id="sessionTimerGo" class="tbtn tbtn-go" onclick="sessionTimerToggle()" style="padding:7px 16px;font-size:11px;">▶ Start</button>
+      <button class="tbtn tbtn-rst" onclick="sessionTimerReset()" style="padding:7px 12px;font-size:11px;">Reset</button>
+    </div>
+
+    <!-- ZONA 3: INPUT -->
+    <div style="flex:0 0 auto;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg);">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="field-wrap"><div class="field-lbl">Reps<span class="req">*</span></div><input type="number" id="inpReps" placeholder="8" min="0" max="99" style="font-size:16px;padding:10px;text-align:center;"></div>
+        <div class="field-wrap"><div class="field-lbl">RIR<span class="opt">opz</span></div><input type="number" id="inpRir" placeholder="2" min="0" max="10" style="font-size:16px;padding:10px;text-align:center;"></div>
+        <div class="field-wrap"><div class="field-lbl">Note<span class="opt">opz</span></div><input type="text" id="inpNote" placeholder="..." style="font-size:13px;padding:10px;"></div>
       </div>
-      <div class="input-bottom">
-        <div class="rpe-section">
-          <div class="rpe-section-lbl">RPE<span style="color:#444;font-size:8px;margin-left:4px;">opz</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;">
+          <div class="rpe-section-lbl" style="font-size:8px;margin-bottom:4px;">RPE<span style="color:#444;font-size:7px;margin-left:3px;">opz</span></div>
           <div class="rpe-btns" id="rpeBtns">
             <button class="rpe-btn" onclick="selRpe(this,1)">1</button><button class="rpe-btn" onclick="selRpe(this,2)">2</button>
             <button class="rpe-btn" onclick="selRpe(this,3)">3</button><button class="rpe-btn" onclick="selRpe(this,4)">4</button>
@@ -313,11 +331,15 @@ input::placeholder{color:#444;}
             <button class="rpe-btn" onclick="selRpe(this,9)">9</button><button class="rpe-btn" onclick="selRpe(this,10)">10</button>
           </div>
         </div>
-        <button class="send-btn" id="sendBtn" onclick="sendMsg()">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button id="sendBtn" onclick="sendMsg()" style="width:52px;height:52px;background:var(--accent);border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </div>
+
+    <!-- ZONA 4: CHAT MINI -->
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 16px;" id="messages"></div>
+
   </div>
 </div>
 
@@ -788,7 +810,14 @@ function startSessionWithPrompt(workout, prompt) {
   sessionWorkout = workout; sessionHistory = []; selectedRpe = null; busy = false;
   document.getElementById('sessionTitle').textContent = workout;
   document.getElementById('messages').innerHTML = '';
+  document.getElementById('setInfoBox').innerHTML = 'In attesa...';
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  // Reset timer
+  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+  sessionTimerRunning = false; sessionTimerLeft = 0; sessionTimerTotal = 0;
+  document.getElementById('sessionTimerNum').textContent = '00:00';
+  document.getElementById('sessionTimerNum').style.color = 'var(--text)';
+  document.getElementById('sessionTimerGo').textContent = '▶ Start';
   showScreen('sessionScreen'); aiSend(workout, true);
 }
 
@@ -831,15 +860,87 @@ async function aiSend(text, isFirst) {
 
 async function saveSessionLog(log) { await sb.from('sessions').insert({ user_id: currentUser.id, workout_name: sessionWorkout, log_text: log }); }
 
+// ── SESSION TIMER ────────────────────────────────────────
+let sessionTimerInterval = null;
+let sessionTimerRunning = false;
+let sessionTimerLeft = 0;
+let sessionTimerTotal = 0;
+
+function sessionTimerSet(seconds) {
+  sessionTimerTotal = seconds;
+  sessionTimerLeft = seconds;
+  sessionTimerRunning = false;
+  if (sessionTimerInterval) { clearInterval(sessionTimerInterval); sessionTimerInterval = null; }
+  document.getElementById('sessionTimerNum').textContent = fmtTime(seconds);
+  document.getElementById('sessionTimerNum').style.color = 'var(--text)';
+  document.getElementById('sessionTimerGo').textContent = '▶ Start';
+}
+
+function sessionTimerToggle() {
+  if (sessionTimerRunning) {
+    clearInterval(sessionTimerInterval); sessionTimerRunning = false;
+    document.getElementById('sessionTimerGo').textContent = '▶ Resume';
+    document.getElementById('sessionTimerNum').style.color = 'var(--text)';
+  } else {
+    if (sessionTimerLeft <= 0) sessionTimerLeft = sessionTimerTotal || 90;
+    sessionTimerRunning = true;
+    document.getElementById('sessionTimerGo').textContent = '⏸ Pausa';
+    document.getElementById('sessionTimerNum').style.color = 'var(--accent)';
+    sessionTimerInterval = setInterval(() => {
+      sessionTimerLeft--;
+      document.getElementById('sessionTimerNum').textContent = fmtTime(sessionTimerLeft);
+      if (sessionTimerLeft <= 0) {
+        clearInterval(sessionTimerInterval); sessionTimerRunning = false;
+        document.getElementById('sessionTimerGo').textContent = '✓ OK';
+        document.getElementById('sessionTimerNum').style.color = 'var(--accent)';
+      }
+    }, 1000);
+  }
+}
+
+function sessionTimerReset() {
+  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+  sessionTimerRunning = false;
+  sessionTimerLeft = sessionTimerTotal;
+  document.getElementById('sessionTimerNum').textContent = fmtTime(sessionTimerTotal);
+  document.getElementById('sessionTimerNum').style.color = 'var(--text)';
+  document.getElementById('sessionTimerGo').textContent = '▶ Start';
+}
+
+function fmtTime(s) { return String(Math.floor(Math.max(s,0) / 60)).padStart(2, '0') + ':' + String(Math.max(s,0) % 60).padStart(2, '0'); }
+
+function updateSetInfo(text) {
+  const box = document.getElementById('setInfoBox');
+  if (!box) return;
+  // Estrai info chiave dal testo AI
+  const lines = text.split(/\n/).filter(l => l.trim());
+  let info = '';
+  for (const line of lines) {
+    if (line.match(/set|reps|target|tempo|recupero|esercizio/i) && !line.includes('WORKOUT LOG')) {
+      info = line.replace(/\*\*/g, '').trim();
+      break;
+    }
+  }
+  if (info) box.innerHTML = '<span style="color:var(--text);font-size:13px;">' + esc(info) + '</span>';
+
+  // Auto-avvia timer se trova recupero
+  const m = text.match(/[Rr]ecupero[:\s]+(\d+):(\d+)/);
+  if (m) {
+    const secs = parseInt(m[1]) * 60 + parseInt(m[2]);
+    sessionTimerSet(secs);
+    sessionTimerToggle();
+  }
+}
+
 function addBubble(role, text) {
   const msgs = document.getElementById('messages');
   const row = document.createElement('div'); row.className = 'msg-row ' + role;
   const av = document.createElement('div'); av.className = 'avatar ' + role; av.textContent = role === 'ai' ? 'AI' : 'TU';
   const bub = document.createElement('div'); bub.className = 'bubble';
   bub.innerHTML = fmtText(text);
-  const m = role === 'ai' && text.match(/[Rr]ecupero[:\s]+(\d+):(\d+)/);
-  if (m) bub.appendChild(makeTimer(parseInt(m[1]) * 60 + parseInt(m[2])));
   row.appendChild(av); row.appendChild(bub); msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
+  // Aggiorna setInfoBox con l'ultimo messaggio AI
+  if (role === 'ai') updateSetInfo(text);
 }
 
 function fmtText(t) {
@@ -849,22 +950,7 @@ function fmtText(t) {
 }
 function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-function makeTimer(total) {
-  const w = document.createElement('div'); w.className = 'timer';
-  let left = total, iv = null, running = false;
-  const num = document.createElement('div'); num.className = 'timer-num'; num.textContent = fmt(total);
-  const lbl = document.createElement('div'); lbl.className = 'timer-lbl'; lbl.textContent = 'RECUPERO';
-  const go = document.createElement('button'); go.className = 'tbtn tbtn-go'; go.textContent = '▶ Start';
-  const rst = document.createElement('button'); rst.className = 'tbtn tbtn-rst'; rst.textContent = 'Reset';
-  go.onclick = () => {
-    if (running) { clearInterval(iv); running = false; go.textContent = '▶ Resume'; num.classList.remove('on'); }
-    else { if (left <= 0) left = total; running = true; go.textContent = '⏸ Pause'; num.classList.add('on');
-      iv = setInterval(() => { left--; num.textContent = fmt(left); if (left <= 0) { clearInterval(iv); running = false; go.textContent = '✓ OK'; num.classList.remove('on'); } }, 1000); }
-  };
-  rst.onclick = () => { clearInterval(iv); running = false; left = total; num.textContent = fmt(total); num.classList.remove('on'); go.textContent = '▶ Start'; };
-  w.append(num, lbl, go, rst); return w;
-}
-function fmt(s) { return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+// Timer ora gestito da sessionTimer*
 function addTyping() {
   const msgs = document.getElementById('messages'), id = 't_' + Date.now();
   const row = document.createElement('div'); row.className = 'msg-row ai'; row.id = id;
