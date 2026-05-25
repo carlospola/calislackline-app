@@ -962,15 +962,30 @@ async function saveProgram() {
 }
 
 async function toggleStatus(userId, currentStatus) {
-  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-  try {
-    await fetch('/api/admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'updateStatus', userId, status: newStatus })
-    });
-    await renderUserTable();
-  } catch(e) { alert('Errore.'); }
+  if (currentStatus === 'active') {
+    if (!confirm('Vuoi rimuovere il programma da questo atleta? Tornerà alla dashboard senza programma.')) return;
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'resetProgram', userId })
+      });
+      const data = await res.json();
+      if (data.error) { alert('Errore: ' + data.error); return; }
+      await renderUserTable();
+    } catch(e) { alert('Errore di connessione.'); }
+  } else {
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'updateStatus', userId, status: 'active' })
+      });
+      const data = await res.json();
+      if (data.error) { alert('Errore: ' + data.error); return; }
+      await renderUserTable();
+    } catch(e) { alert('Errore di connessione.'); }
+  }
 }
 
 function openLogModal(s) {
