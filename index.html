@@ -969,10 +969,13 @@ async function aiSend(text, isFirst) {
   document.getElementById('sendBtn').disabled = true;
   const tid = addTyping();
   try {
+    // Aggiungi profilo atleta al system prompt
+    const athleteContext = buildAthleteContext(currentProfile);
+    const systemPrompt = (currentProfile.ai_prompt || '') + athleteContext;
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: currentProfile.ai_prompt, messages: sessionHistory })
+      body: JSON.stringify({ system: systemPrompt, messages: sessionHistory })
     });
     const data = await res.json();
     removeTyping(tid);
@@ -1057,9 +1060,9 @@ function updateSetInfo(text) {
     const cueMatch = line.match(/\[CUE:([^\]]+)\]/);
     if (cueMatch) { cue = cueMatch[1].trim(); continue; }
 
-    // Formato nuovo: "NomeEsercizio — Set N/3 | X-Y reps | Recupero: mm:ss"
-    if (line.match(/—\s*Set\s+\d+\/\d+/i) && !line.match(/SUPERSET/i)) {
-      header = line.replace(/\s*\|.*$/, '').trim(); // prendi solo "Nome — Set N/3"
+    // Formato nuovo: "NomeEsercizio — Set N/3 | ..." o "NomeEsercizio — Warm-up | ..."
+    if (line.match(/—\s*(Set\s+\d+\/\d+|Warm-up)/i) && !line.match(/SUPERSET/i)) {
+      header = line.replace(/\s*\|.*$/, '').trim();
       exercises = [];
       continue;
     }
@@ -1466,10 +1469,65 @@ async function submitOnboard() {
     motivazione: gv('f_motivazione'), note: gv('f_note'), timestamp: new Date().toLocaleString('it-IT')
   };
   try {
+    // 1. Manda email via Apps Script
     await fetch(APPS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dati) });
+
+    // 2. Salva profilo in Supabase se l'utente è loggato
+    if (currentUser) {
+      await sb.from('profiles').update({
+        eta: parseInt(dati.eta) || null,
+        sesso: dati.sesso !== 'N/D' ? dati.sesso : null,
+        peso: parseFloat(dati.peso) || null,
+        altezza: parseFloat(dati.altezza) || null,
+        livello: dati.livello !== 'N/D' ? dati.livello : null,
+        frequenza: dati.frequenza !== 'N/D' ? dati.frequenza : null,
+        discipline: dati.discipline !== 'N/D' ? dati.discipline : null,
+        skill: dati.skill !== 'N/D' ? dati.skill : null,
+        obiettivo: dati.obiettivo !== 'N/D' ? dati.obiettivo : null,
+        obiettivo3m: dati.obiettivo3m !== 'N/D' ? dati.obiettivo3m : null,
+        disponibilita: dati.disponibilita !== 'N/D' ? dati.disponibilita : null,
+        luogo: dati.luogo !== 'N/D' ? dati.luogo : null,
+        attrezzatura: dati.attrezzatura !== 'N/D' ? dati.attrezzatura : null,
+        infortuni: dati.infortuni,
+        limitazioni: dati.limitazioni !== 'N/D' ? dati.limitazioni : null,
+        stile: dati.stile !== 'N/D' ? dati.stile : null,
+        sonno: dati.sonno !== 'N/D' ? dati.sonno : null,
+        motivazione: dati.motivazione !== 'N/D' ? dati.motivazione : null,
+        note_libere: dati.note !== 'N/D' ? dati.note : null,
+        name: dati.nome
+      }).eq('id', currentUser.id);
+      // Aggiorna profilo locale
+      await loadProfile();
+    }
+
     document.getElementById('onboardForm').style.display = 'none';
     document.getElementById('onboardSuccess').style.display = 'flex';
   } catch (e) { btn.disabled = false; btn.textContent = 'Invia richiesta coaching →'; errEl.textContent = 'Errore. Riprova.'; }
+}
+
+function buildAthleteContext(profile) {
+  if (!profile) return '';
+  const fields = [
+    profile.eta ? `Età: ${profile.eta}` : null,
+    profile.sesso ? `Sesso: ${profile.sesso}` : null,
+    profile.peso ? `Peso: ${profile.peso} kg` : null,
+    profile.altezza ? `Altezza: ${profile.altezza} cm` : null,
+    profile.livello ? `Livello: ${profile.livello}` : null,
+    profile.frequenza ? `Frequenza: ${profile.frequenza}` : null,
+    profile.discipline ? `Discipline: ${profile.discipline}` : null,
+    profile.skill ? `Skill: ${profile.skill}` : null,
+    profile.obiettivo ? `Obiettivo: ${profile.obiettivo}` : null,
+    profile.obiettivo3m ? `Obiettivo 3 mesi: ${profile.obiettivo3m}` : null,
+    profile.disponibilita ? `Disponibilità: ${profile.disponibilita}` : null,
+    profile.luogo ? `Luogo allenamento: ${profile.luogo}` : null,
+    profile.attrezzatura ? `Attrezzatura: ${profile.attrezzatura}` : null,
+    profile.infortuni ? `Infortuni: ${profile.infortuni}` : null,
+    profile.limitazioni ? `Limitazioni: ${profile.limitazioni}` : null,
+    profile.stile ? `Stile di vita: ${profile.stile}` : null,
+    profile.sonno ? `Sonno: ${profile.sonno}` : null,
+  ].filter(Boolean);
+  if (!fields.length) return '';
+  return `\n\nPROFILO ATLETA:\n${fields.join('\n')}`;
 }
 </script>
 </body>
