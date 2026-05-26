@@ -84,6 +84,22 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
+    if (action === 'deleteUser') {
+      const { userId } = req.body;
+      // Elimina sessioni
+      await supabaseRequest('DELETE', `sessions?user_id=eq.${userId}`, undefined);
+      // Elimina programmi
+      await supabaseRequest('DELETE', `programs?user_id=eq.${userId}`, undefined);
+      // Elimina profilo
+      await supabaseRequest('DELETE', `profiles?id=eq.${userId}`, undefined);
+      // Elimina utente auth
+      await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` }
+      });
+      return res.status(200).json({ success: true });
+    }
+
     if (action === 'createUser') {
       const { email, password, name } = req.body;
       const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
