@@ -716,6 +716,40 @@ input::placeholder{color:#444;}
   </div>
 </div>
 
+<!-- MODAL PROFILO ATLETA -->
+<div class="modal-overlay" id="athleteProfileModal">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-title">Profilo di <span id="athleteProfileName"></span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+      <div class="modal-field"><div class="modal-label">Età</div><input class="modal-input" id="apEta" type="number" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Sesso</div><input class="modal-input" id="apSesso" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Peso (kg)</div><input class="modal-input" id="apPeso" type="number" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Altezza (cm)</div><input class="modal-input" id="apAltezza" type="number" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Livello</div><input class="modal-input" id="apLivello" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Frequenza</div><input class="modal-input" id="apFrequenza" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Obiettivo</div><input class="modal-input" id="apObiettivo" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Obiettivo 3 mesi</div><input class="modal-input" id="apObiettivo3m" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Luogo</div><input class="modal-input" id="apLuogo" placeholder="—"></div>
+      <div class="modal-field"><div class="modal-label">Disponibilità</div><input class="modal-input" id="apDisponibilita" placeholder="—"></div>
+    </div>
+    <div class="modal-field"><div class="modal-label">Discipline</div><input class="modal-input" id="apDiscipline" placeholder="—"></div>
+    <div class="modal-field"><div class="modal-label">Skill</div><input class="modal-input" id="apSkill" placeholder="—"></div>
+    <div class="modal-field"><div class="modal-label">Attrezzatura</div><input class="modal-input" id="apAttrezzatura" placeholder="—"></div>
+    <div class="modal-field"><div class="modal-label">Infortuni</div><input class="modal-input" id="apInfortuni" placeholder="—"></div>
+    <div class="modal-field"><div class="modal-label">Limitazioni</div><input class="modal-input" id="apLimitazioni" placeholder="—"></div>
+    <div class="modal-field"><div class="modal-label">Stile di vita</div><input class="modal-input" id="apStile" placeholder="—"></div>
+    <div class="modal-field"><div class="modal-label">Sonno</div><input class="modal-input" id="apSonno" placeholder="—"></div>
+    <div class="modal-field"><div class="modal-label">Motivazione</div><textarea class="modal-textarea" id="apMotivazione" style="min-height:60px;" placeholder="—"></textarea></div>
+    <div class="modal-field"><div class="modal-label">Note libere</div><textarea class="modal-textarea" id="apNote" style="min-height:60px;" placeholder="—"></textarea></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('athleteProfileModal')">Chiudi</button>
+      <button style="padding:9px 18px;background:transparent;border:1px solid rgba(255,95,95,.4);border-radius:7px;color:var(--red);font-family:var(--mono);font-size:11px;cursor:pointer;" onclick="resetAthleteProfile()">Reset</button>
+      <button style="padding:9px 18px;background:var(--red);border:none;border-radius:7px;color:#fff;font-family:var(--mono);font-size:11px;cursor:pointer;" onclick="deleteAthlete()">Elimina</button>
+      <button class="modal-save" onclick="saveAthleteProfile()">Salva</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="createUserModal">
   <div class="modal">
     <div class="modal-title">Crea Nuovo Atleta</div>
@@ -1526,6 +1560,7 @@ async function renderUserTable() {
     <td style="color:var(--muted)">${u.email}</td>
     <td><span class="badge badge-${u.status || 'pending'}">${u.status || 'pending'}</span></td>
     <td>
+      <button class="action-btn" onclick="openAthleteProfileModal('${u.id}','${u.name || u.email}')">Profilo</button>
       <button class="action-btn primary" onclick="openAthleteProgramsModal('${u.id}','${u.name || u.email}')">Programmi</button>
       <button class="action-btn" onclick="openProgramModal('${u.id}','${u.name || u.email}')">+Programma</button>
       <button class="action-btn ${u.status === 'active' ? 'danger' : ''}" onclick="toggleStatus('${u.id}','${u.status}')">${u.status === 'active' ? 'Disattiva' : 'Attiva'}</button>
@@ -1673,34 +1708,56 @@ async function deleteAthlete() {
   } catch(e) { alert('Errore di connessione.'); }
 }
 
+async function openAthleteProfileModal(userId, userName) {
+  athleteProgramsUserId = userId;
+  document.getElementById('athleteProfileName').textContent = userName;
+  const { data } = await sb.from('profiles').select('*').eq('id', userId).single();
+  if (data) {
+    const map = {
+      apEta: data.eta, apSesso: data.sesso, apPeso: data.peso, apAltezza: data.altezza,
+      apLivello: data.livello, apFrequenza: data.frequenza, apObiettivo: data.obiettivo,
+      apObiettivo3m: data.obiettivo3m, apLuogo: data.luogo, apDisponibilita: data.disponibilita,
+      apDiscipline: data.discipline, apSkill: data.skill, apAttrezzatura: data.attrezzatura,
+      apInfortuni: data.infortuni, apLimitazioni: data.limitazioni, apStile: data.stile,
+      apSonno: data.sonno, apMotivazione: data.motivazione, apNote: data.note_libere
+    };
+    Object.entries(map).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val || '';
+    });
+  }
+  document.getElementById('athleteProfileModal').classList.add('open');
+}
+
 async function saveAthleteProfile() {
   try {
     const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'updateProfile', userId: athleteProgramsUserId,
-        eta: document.getElementById('profEta').value || null,
-        sesso: document.getElementById('profSesso').value || null,
-        peso: document.getElementById('profPeso').value || null,
-        altezza: document.getElementById('profAltezza').value || null,
-        livello: document.getElementById('profLivello').value || null,
-        frequenza: document.getElementById('profFrequenza').value || null,
-        obiettivo: document.getElementById('profObiettivo').value || null,
-        obiettivo3m: document.getElementById('profObiettivo3m').value || null,
-        luogo: document.getElementById('profLuogo').value || null,
-        disponibilita: document.getElementById('profDisponibilita').value || null,
-        discipline: document.getElementById('profDiscipline').value || null,
-        skill: document.getElementById('profSkill').value || null,
-        attrezzatura: document.getElementById('profAttrezzatura').value || null,
-        infortuni: document.getElementById('profInfortuni').value || null,
-        limitazioni: document.getElementById('profLimitazioni').value || null,
-        stile: document.getElementById('profStile').value || null,
-        sonno: document.getElementById('profSonno').value || null,
-        motivazione: document.getElementById('profMotivazione').value || null,
-        note_libere: document.getElementById('profNote').value || null,
+        eta: document.getElementById('apEta').value || null,
+        sesso: document.getElementById('apSesso').value || null,
+        peso: document.getElementById('apPeso').value || null,
+        altezza: document.getElementById('apAltezza').value || null,
+        livello: document.getElementById('apLivello').value || null,
+        frequenza: document.getElementById('apFrequenza').value || null,
+        obiettivo: document.getElementById('apObiettivo').value || null,
+        obiettivo3m: document.getElementById('apObiettivo3m').value || null,
+        luogo: document.getElementById('apLuogo').value || null,
+        disponibilita: document.getElementById('apDisponibilita').value || null,
+        discipline: document.getElementById('apDiscipline').value || null,
+        skill: document.getElementById('apSkill').value || null,
+        attrezzatura: document.getElementById('apAttrezzatura').value || null,
+        infortuni: document.getElementById('apInfortuni').value || null,
+        limitazioni: document.getElementById('apLimitazioni').value || null,
+        stile: document.getElementById('apStile').value || null,
+        sonno: document.getElementById('apSonno').value || null,
+        motivazione: document.getElementById('apMotivazione').value || null,
+        note_libere: document.getElementById('apNote').value || null,
       })
     });
     const data = await res.json();
     if (data.error) { alert('Errore: ' + data.error); return; }
+    closeModal('athleteProfileModal');
     alert('Profilo salvato.');
   } catch(e) { alert('Errore di connessione.'); }
 }
