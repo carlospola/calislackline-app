@@ -19,7 +19,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .screen.active{display:flex;}
 #loginScreen{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,#1a2200 0%,var(--bg) 70%);}
 .login-box{width:100%;max-width:380px;padding:0 24px;display:flex;flex-direction:column;align-items:center;gap:28px;}
-.login-glyph{width:52px;height:52px;border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--accent-dim);}
 .login-name{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:.06em;text-align:center;line-height:1.3;}
 .login-tagline{font-size:9px;letter-spacing:.25em;color:var(--muted);text-transform:uppercase;text-align:center;}
 .login-form{width:100%;display:flex;flex-direction:column;gap:12px;}
@@ -55,13 +54,16 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .section-label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
 .program-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
 .program-empty{font-size:12px;color:var(--muted);text-align:center;padding:20px 0;line-height:1.8;}
-.program-name{font-family:var(--display);font-size:15px;font-weight:700;margin-bottom:6px;}
-.program-meta{font-size:11px;color:var(--text2);margin-bottom:14px;}
-.workout-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.workout-card{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px;}
-.workout-card:hover{border-color:#444;background:var(--surface);}
-.workout-card-name{font-family:var(--display);font-size:13px;font-weight:700;}
-.workout-card-badge{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--accent-dim);color:var(--accent);width:fit-content;}
+
+/* ── NUOVA card programma atleta ── */
+.prog-item{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.prog-item:last-child{margin-bottom:0;}
+.prog-item-info{display:flex;flex-direction:column;gap:4px;}
+.prog-item-name{font-family:var(--display);font-size:14px;font-weight:700;}
+.prog-item-meta{font-size:10px;color:var(--muted);}
+.prog-item-btn{padding:10px 20px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+.prog-item-btn:hover{background:var(--accent-dark);}
+
 .stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
 .stat-num{font-family:var(--display);font-size:22px;font-weight:800;color:var(--accent);}
@@ -73,7 +75,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .log-item-date{font-size:10px;color:var(--muted);}
 .log-item-right{font-size:10px;color:var(--muted);}
 #sessionScreen{overflow:hidden;}
-.session-body{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
 .messages{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;}
 .messages::-webkit-scrollbar{width:3px;}
 .messages::-webkit-scrollbar-thumb{background:var(--border2);}
@@ -91,38 +92,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .typing-dots span:nth-child(2){animation-delay:.15s;}
 .typing-dots span:nth-child(3){animation-delay:.3s;}
 @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-5px);opacity:1;}}
-.timer{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;}
-.timer-num{font-family:var(--display);font-size:20px;font-weight:700;color:var(--text);min-width:52px;font-variant-numeric:tabular-nums;}
-.timer-num.on{color:var(--accent);}
-.timer-lbl{flex:1;font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
-.tbtn{padding:5px 12px;border-radius:5px;font-family:var(--mono);font-size:10px;cursor:pointer;border:none;transition:all .15s;}
-.tbtn-go{background:var(--accent);color:#000;}
-.tbtn-go:hover{background:var(--accent-dark);}
-.tbtn-rst{background:var(--border);color:var(--text2);}
-.quick{padding:0 20px 6px;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
-.qbtn{padding:4px 11px;background:transparent;border:1px solid var(--border2);border-radius:20px;color:var(--text2);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;}
-.qbtn:hover{color:var(--text);border-color:#444;}
-.input-panel{padding:10px 20px max(16px,env(safe-area-inset-bottom));border-top:1px solid var(--border);display:flex;flex-direction:column;gap:9px;flex-shrink:0;}
-.input-fields{display:grid;grid-template-columns:72px 72px 1fr;gap:8px;align-items:end;}
-.field-wrap{display:flex;flex-direction:column;gap:4px;}
-.field-lbl{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#999;padding-left:2px;}
-.field-lbl .req{color:var(--accent);margin-left:1px;}
-.field-lbl .opt{color:#444;font-size:8px;margin-left:2px;}
-input[type=number],input[type=text],input[type=email],input[type=password]{background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px 11px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;width:100%;transition:border-color .15s;-moz-appearance:textfield;}
-input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
-input[type=number]:focus,input[type=text]:focus,input[type=email]:focus,input[type=password]:focus{border-color:#3a3a3a;}
-input::placeholder{color:#444;}
-.input-bottom{display:flex;gap:8px;align-items:flex-end;}
-.rpe-section{display:flex;flex-direction:column;gap:5px;flex:1;}
-.rpe-section-lbl{font-size:9px;letter-spacing:.15em;color:#999;text-transform:uppercase;}
-.rpe-btns{display:flex;gap:3px;flex-wrap:nowrap;}
-.rpe-btn{padding:5px 4px;background:transparent;border:1px solid var(--border2);border-radius:5px;color:#888;font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .12s;min-width:22px;text-align:center;flex:1;}
-.rpe-btn:hover{color:var(--text);border-color:#444;}
-.rpe-btn.sel{background:var(--accent);color:#000;border-color:var(--accent);}
-.send-btn{width:40px;height:40px;background:var(--accent);border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
-.send-btn:hover{background:var(--accent-dark);}
-.send-btn:disabled{background:var(--border);cursor:not-allowed;}
-.send-btn svg{width:14px;height:14px;}
 #adminScreen{overflow:hidden;}
 .admin-body{flex:1;overflow-y:auto;padding:20px;}
 .admin-body::-webkit-scrollbar{width:3px;}
@@ -162,6 +131,19 @@ input::placeholder{color:#444;}
 .modal-save{padding:9px 18px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;}
 .modal-save:hover{background:var(--accent-dark);}
 .log-entry{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;line-height:1.7;color:var(--text2);white-space:pre-wrap;max-height:300px;overflow-y:auto;}
+
+/* ── AI COMPOSER ── */
+.composer-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.composer-label{font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;}
+.composer-desc{background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:10px 13px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;width:100%;resize:vertical;min-height:70px;line-height:1.6;transition:border-color .15s;}
+.composer-desc:focus{border-color:#444;}
+.composer-desc::placeholder{color:#333;}
+.generate-btn{padding:10px 16px;background:transparent;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;width:fit-content;}
+.generate-btn:hover{background:var(--accent-dim);}
+.generate-btn:disabled{opacity:.4;cursor:not-allowed;}
+.generate-spinner{width:10px;height:10px;border:1.5px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
 #onboardScreen{overflow-y:auto;background:radial-gradient(ellipse at 50% 0%,#1a2200 0%,var(--bg) 60%);}
 #onboardScreen::-webkit-scrollbar{width:3px;}
 #onboardScreen::-webkit-scrollbar-thumb{background:var(--border2);}
@@ -203,6 +185,9 @@ input::placeholder{color:#444;}
 .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;}
 .loading-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:ldot 1.2s infinite ease-in-out;}
 @keyframes ldot{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
+
+/* ── PROFILO ATLETA (schermata utente) ── */
+#profileScreen{overflow:hidden;}
 </style>
 </head>
 <body>
@@ -244,7 +229,7 @@ input::placeholder{color:#444;}
   <div class="dash-body">
     <div><div class="dash-name" id="dashWelcome">Ciao!</div><div class="dash-sub">Pronto per allenarti oggi?</div></div>
     <div>
-      <div class="section-label">Il tuo programma</div>
+      <div class="section-label">I tuoi programmi</div>
       <div class="program-card">
         <div class="program-empty" id="programEmpty">
           Nessun programma assegnato.<br>Il coach lo caricherà presto.<br><br>
@@ -254,9 +239,7 @@ input::placeholder{color:#444;}
           </div>
         </div>
         <div id="programContent" style="display:none">
-          <div class="program-name" id="programName"></div>
-          <div class="program-meta" id="programMeta"></div>
-          <div class="workout-grid" id="workoutGrid"></div>
+          <div id="programList"></div>
         </div>
       </div>
     </div>
@@ -275,7 +258,7 @@ input::placeholder{color:#444;}
   </div>
 </div>
 
-<!-- PROFILO ATLETA -->
+<!-- PROFILO ATLETA (schermata utente) -->
 <div class="screen" id="profileScreen">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px;">
@@ -359,9 +342,9 @@ input::placeholder{color:#444;}
         <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite;"></div>LIVE
       </div>
       <div style="display:flex;gap:4px;">
-        <button class="qbtn" onclick="qSend('skip')">skip</button>
-        <button class="qbtn" onclick="qSend('recap')">recap</button>
-        <button class="qbtn" onclick="qSend('fine')">fine</button>
+        <button class="topbar-btn" onclick="qSend('skip')">skip</button>
+        <button class="topbar-btn" onclick="qSend('recap')">recap</button>
+        <button class="topbar-btn" onclick="qSend('fine')">fine</button>
       </div>
     </div>
   </div>
@@ -455,7 +438,6 @@ input::placeholder{color:#444;}
     </div>
 
     <div class="admin-section" id="tab-library">
-      <!-- Toolbar -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
         <input type="text" id="libSearch" placeholder="Cerca esercizio..." oninput="filterLibrary()"
           style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;flex:1;min-width:140px;">
@@ -483,9 +465,7 @@ input::placeholder{color:#444;}
         </select>
         <button onclick="openExerciseModal(null)" style="padding:8px 16px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Esercizio</button>
       </div>
-      <!-- Contatore -->
       <div id="libCount" style="font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.05em;"></div>
-      <!-- Tabella -->
       <table class="user-table">
         <thead>
           <tr>
@@ -498,7 +478,6 @@ input::placeholder{color:#444;}
         </tbody>
       </table>
     </div>
-
   </div>
 </div>
 
@@ -638,8 +617,8 @@ input::placeholder{color:#444;}
       <div class="success-title">Richiesta inviata!</div>
       <div class="success-sub">Hai ricevuto una mail di conferma.<br>Carlo ti contatterà entro 24 ore.</div>
       <button onclick="showDash()" style="padding:11px 24px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;margin-top:8px;">← Torna alla dashboard</button>
-      <div id="onboardSuccessDemo" style="display:none;margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:8px;">
-        <div style="font-size:11px;color:var(--muted);">Nel frattempo prova una sessione personalizzata —<br>l'AI conosce già il tuo profilo.</div>
+      <div id="onboardSuccessDemo" style="display:none;margin-top:8px;flex-direction:column;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--muted);">Nel frattempo prova una sessione personalizzata.</div>
         <button onclick="startDemoSession()" style="padding:11px 24px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;">▶ Inizia sessione personalizzata</button>
       </div>
     </div>
@@ -703,25 +682,10 @@ input::placeholder{color:#444;}
         <textarea class="modal-textarea" id="exNotes" style="min-height:60px;" placeholder="Note aggiuntive..."></textarea>
       </div>
     </div>
-    <div style="font-size:10px;color:var(--muted);padding:4px 0;">Gli esercizi aggiunti da admin sono visibili a tutti i coach.</div>
     <div style="font-size:11px;color:var(--red);min-height:16px;" id="exError"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('exerciseModal')">Annulla</button>
       <button class="modal-save" onclick="saveExercise()">Salva</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="programModal">
-  <div class="modal">
-    <div class="modal-title">Assegna Programma</div>
-    <div class="modal-sub" id="programModalSub"></div>
-    <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="modalProgramName" placeholder="es. Body By Rings — Fase 1"></div>
-    <div class="modal-field"><div class="modal-label">Workout (separati da virgola)</div><input class="modal-input" id="modalWorkouts" placeholder="Push 1, Pull 1, Push 2, Pull 2"></div>
-    <div class="modal-field"><div class="modal-label">System prompt AI Coach</div><textarea class="modal-textarea" id="modalPrompt" placeholder="Incolla qui il programma e le istruzioni..."></textarea></div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeModal('programModal')">Annulla</button>
-      <button class="modal-save" onclick="saveProgram()">Salva</button>
     </div>
   </div>
 </div>
@@ -747,16 +711,38 @@ input::placeholder{color:#444;}
   </div>
 </div>
 
+<!-- ── MODAL PROGRAMMI ATLETA (con compositore AI) ── -->
 <div class="modal-overlay" id="athleteProgramsModal">
-  <div class="modal" style="max-width:680px;">
+  <div class="modal" style="max-width:700px;">
     <div class="modal-title">Programmi di <span id="athleteProgramsName"></span></div>
     <div id="athleteProgramsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
-    <div style="border-top:1px solid var(--border);padding-top:16px;">
-      <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">+ Aggiungi nuovo programma</div>
-      <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="newProgName" placeholder="es. Home Hero"></div>
-      <div class="modal-field"><div class="modal-label">Workout (separati da virgola)</div><input class="modal-input" id="newProgWorkouts" placeholder="Full Body 1, Upper Body 1, Lower Body 1"></div>
-      <div class="modal-field"><div class="modal-label">System prompt AI Coach</div><textarea class="modal-textarea" id="newProgPrompt" placeholder="Incolla qui il programma e le istruzioni..."></textarea></div>
+
+    <!-- COMPOSITORE AI -->
+    <div style="border-top:1px solid var(--border);padding-top:18px;display:flex;flex-direction:column;gap:14px;">
+      <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;">+ Aggiungi nuovo programma</div>
+
+      <div class="modal-field">
+        <div class="modal-label">Nome programma</div>
+        <input class="modal-input" id="newProgName" placeholder="es. Body By Rings — Fase 1">
+      </div>
+
+      <!-- Compositore AI -->
+      <div class="composer-box">
+        <div class="composer-label">✦ Compositore AI</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Descrivi il programma in linguaggio naturale. L'AI genererà il system prompt usando il profilo atleta e la libreria esercizi.</div>
+        <textarea class="composer-desc" id="composerDesc" placeholder="es. Push/pull split 4 giorni, focus forza upper body, niente overhead per la spalla, recuperi lunghi..."></textarea>
+        <button class="generate-btn" id="generateBtn" onclick="generateProgram()">
+          <div class="generate-spinner" id="generateSpinner"></div>
+          <span id="generateBtnLabel">✦ Genera con AI</span>
+        </button>
+      </div>
+
+      <div class="modal-field">
+        <div class="modal-label">System prompt AI Coach <span style="color:#444;font-size:9px;">(generato o scrivi tu)</span></div>
+        <textarea class="modal-textarea" id="newProgPrompt" placeholder="Il prompt verrà generato dall'AI, oppure scrivi il tuo..." style="min-height:200px;"></textarea>
+      </div>
     </div>
+
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
       <button class="modal-save" onclick="addProgram()">Aggiungi programma</button>
@@ -764,10 +750,18 @@ input::placeholder{color:#444;}
   </div>
 </div>
 
+<!-- MODAL PROFILO ATLETA (admin) — con campo Nome -->
 <div class="modal-overlay" id="athleteProfileModal">
   <div class="modal" style="max-width:680px;">
     <div class="modal-title">Profilo di <span id="athleteProfileName"></span></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+
+    <!-- CAMPO NOME -->
+    <div class="modal-field">
+      <div class="modal-label">Nome completo</div>
+      <input class="modal-input" id="apName" placeholder="Mario Rossi">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0px;">
       <div class="modal-field"><div class="modal-label">Età</div><input class="modal-input" id="apEta" type="number" placeholder="—"></div>
       <div class="modal-field"><div class="modal-label">Sesso</div><input class="modal-input" id="apSesso" placeholder="—"></div>
       <div class="modal-field"><div class="modal-label">Peso (kg)</div><input class="modal-input" id="apPeso" type="number" placeholder="—"></div>
@@ -812,6 +806,12 @@ input::placeholder{color:#444;}
   </div>
 </div>
 
+<style>
+.rpe-btn{padding:5px 4px;background:transparent;border:1px solid var(--border2);border-radius:5px;color:#888;font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .12s;min-width:22px;text-align:center;flex:1;}
+.rpe-btn:hover{color:var(--text);border-color:#444;}
+.rpe-btn.sel{background:var(--accent);color:#000;border-color:var(--accent);}
+</style>
+
 <script>
 const SUPABASE_URL = 'https://efziohgwsvplqandzawz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_R-LAgce572sW0gzDAWyJlA_eXr6H0s7';
@@ -823,6 +823,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 let currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 
+// ── DEMO PROMPT ──────────────────────────────────────────────────────────────
 const DEMO_PROMPT = `Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.
 
 REGOLE ASSOLUTE:
@@ -884,38 +885,13 @@ Recupero: mm:ss
 FEEDBACK:
 ✓ [max 4 parole]. Recupero: mm:ss
 
-CRITERI COSTRUZIONE WORKOUT:
+CRITERI:
 30 min → 3 esercizi, 3 sets, recupero 01:00
 45 min → 4 esercizi, 3 sets, recupero 01:30
 60 min → 5 esercizi, 3 sets, recupero 01:30
 90 min → 6 esercizi, 4 sets, recupero 02:00
-
 Stanco → volume -1 set, recupero +30 sec
 Carico → fascia alta reps, esercizi più difficili
-
-ESERCIZI PER LUOGO:
-
-CASA BODYWEIGHT:
-Push-Up, Pike Push-Up, Dip su sedie, Pseudo Planche Push-Up
-Pistol Squat, Box Squat, Step-Up, Sissy Squat
-Nordic Curl Eccentric, Reverse Nordic Curl, Glute Bridge
-Hollow Body Hold, L-Sit su sedie, Side Plank, Dead Bug
-
-PARCO:
-Pull-Up, Chin-up, Close Grip Pull-Up
-Dip, Pike Push-Up, Back to Wall HSPU
-Pistol Squat, Skater Squat, Step-Up, Split Squat
-Hanging Abs, L-Sit, Hollow Body Hold
-
-PALESTRA:
-Tutto sopra più:
-Glute Ham Raise, Adductor Bridge, Reverse Hyperextension
-Kneeling Quad Extension, Wall Squat, Single Leg Deadlift
-Archer Row, Archer Push-Up, Finger Assisted Chin-Up
-Explosive Calf Raise, Walking Calf Raise
-
-CASA CON ATTREZZI:
-Tutto bodyweight più esercizi con bande o TRX se disponibili
 
 WORKOUT LOG:
 WORKOUT LOG
@@ -924,17 +900,16 @@ Data: [data]
 Durata: [X] min | Luogo: [luogo]
 [Esercizio]: [sets x reps]`;
 
+// ── INIT ─────────────────────────────────────────────────────────────────────
 function startDemoSession() {
   const origProfile = JSON.parse(JSON.stringify(currentProfile || {}));
-  currentProfile = { ...currentProfile, ai_prompt: DEMO_PROMPT, program_name: 'Allenamento Personalizzato', workouts: '["Sessione personalizzata"]', _isDemo: true, _origProfile: origProfile };
+  currentProfile = { ...currentProfile, ai_prompt: DEMO_PROMPT, program_name: 'Allenamento Personalizzato', _isDemo: true, _origProfile: origProfile };
   sessionWorkout = 'Sessione personalizzata';
   sessionHistory = []; selectedRpe = null; busy = false;
   document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
-  const box = document.getElementById('setInfoBox');
-  if (box) box.innerHTML = 'In attesa...';
-  const cueB = document.getElementById('cueBox');
-  if (cueB) cueB.textContent = '—';
+  const box = document.getElementById('setInfoBox'); if (box) box.innerHTML = 'In attesa...';
+  const cueB = document.getElementById('cueBox'); if (cueB) cueB.textContent = '—';
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
   currentSetMode = 'single'; currentExercises = [];
   renderInputFields('single', []);
@@ -945,47 +920,27 @@ function startDemoSession() {
 async function init() {
   const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 10000);
   const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  const error = params.get('error');
+  const code = params.get('code'), error = params.get('error');
   if (code || error) window.history.replaceState({}, document.title, window.location.pathname);
-  if (error) {
-    clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
-    document.getElementById('loginError').textContent = 'Errore login. Riprova.';
-    return;
-  }
+  if (error) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Errore login. Riprova.'; return; }
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      clearTimeout(timeout);
-      hideLoading(); showScreen('loginScreen');
-      document.getElementById('newPasswordModal').classList.add('open');
-    } else if (event === 'SIGNED_OUT') {
-      currentUser = null; currentProfile = null; showScreen('loginScreen');
-    }
+    if (event === 'PASSWORD_RECOVERY') { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('newPasswordModal').classList.add('open'); }
+    else if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; showScreen('loginScreen'); }
   });
   try {
     if (code) {
       const { data, error: exchErr } = await sb.auth.exchangeCodeForSession(code);
-      if (exchErr || !data.session) {
-        clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
-        document.getElementById('loginError').textContent = 'Errore autenticazione. Riprova.';
-        return;
-      }
-      clearTimeout(timeout);
-      await handleSession(data.session);
-      return;
+      if (exchErr || !data.session) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Errore autenticazione. Riprova.'; return; }
+      clearTimeout(timeout); await handleSession(data.session); return;
     }
     const { data: { session } } = await sb.auth.getSession();
     clearTimeout(timeout);
-    if (session) { await handleSession(session); }
-    else { hideLoading(); showScreen('loginScreen'); }
-  } catch(e) {
-    clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
-  }
+    if (session) { await handleSession(session); } else { hideLoading(); showScreen('loginScreen'); }
+  } catch(e) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); }
 }
 
 async function submitNewPassword() {
-  const pwd = document.getElementById('newPwdInput').value;
-  const pwd2 = document.getElementById('newPwdConfirm').value;
+  const pwd = document.getElementById('newPwdInput').value, pwd2 = document.getElementById('newPwdConfirm').value;
   const errEl = document.getElementById('newPwdError');
   errEl.textContent = '';
   if (pwd.length < 6) { errEl.textContent = 'La password deve essere di almeno 6 caratteri.'; return; }
@@ -1092,7 +1047,7 @@ async function saveProfile() {
     const { error } = await sb.from('profiles').update(updates).eq('id', currentUser.id);
     if (error) { errEl.textContent = 'Errore salvataggio.'; return; }
     Object.assign(currentProfile, updates);
-    succEl.textContent = 'Profilo salvato! L\'AI userà questi dati nelle prossime sessioni.';
+    succEl.textContent = 'Profilo salvato!';
     setTimeout(() => succEl.textContent = '', 3000);
   } catch(e) { errEl.textContent = 'Errore di connessione.'; }
 }
@@ -1103,62 +1058,74 @@ async function doLogout() {
   showScreen('loginScreen'); window.history.replaceState({}, document.title, window.location.pathname);
 }
 
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
 async function showDash() {
   if (currentProfile?._isDemo && currentProfile?._origProfile) currentProfile = currentProfile._origProfile;
   showScreen('dashScreen');
   const name = currentProfile?.name || currentUser.email.split('@')[0];
   document.getElementById('dashUserLabel').textContent = name;
   document.getElementById('dashWelcome').textContent = 'Ciao, ' + name.split(' ')[0] + '!';
+  const hasProfile = currentProfile?.obiettivo || currentProfile?.livello || currentProfile?.eta;
   const requestBtn = document.getElementById('requestProgramBtn');
   const sessionBtn = document.getElementById('personalizedSessionBtn');
-  const hasProfile = currentProfile?.obiettivo || currentProfile?.livello || currentProfile?.eta;
   if (requestBtn) requestBtn.style.display = hasProfile ? 'none' : 'inline-block';
   if (sessionBtn) sessionBtn.style.display = hasProfile ? 'block' : 'none';
+
+  // Carica programmi dalla tabella programs
   const { data: programs } = await sb.from('programs').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
+
   if (programs?.length) {
     document.getElementById('programEmpty').style.display = 'none';
     document.getElementById('programContent').style.display = 'block';
-    const grid = document.getElementById('workoutGrid'); grid.innerHTML = '';
+    const list = document.getElementById('programList');
+    list.innerHTML = '';
     programs.forEach(prog => {
-      const workouts = JSON.parse(prog.workouts || '[]');
-      const header = document.createElement('div');
-      header.style.cssText = 'grid-column:1/-1;font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px;';
-      header.textContent = prog.program_name;
-      grid.appendChild(header);
-      workouts.forEach(w => {
-        const c = document.createElement('div'); c.className = 'workout-card';
-        c.innerHTML = '<div class="workout-card-name">' + w + '</div><div class="workout-card-badge">Inizia →</div>';
-        c.onclick = () => startSessionWithPrompt(w, prog.ai_prompt); grid.appendChild(c);
-      });
+      const item = document.createElement('div');
+      item.className = 'prog-item';
+      // Conta i workout dal campo workouts (JSON array) — solo per mostrare info
+      let workoutCount = 0;
+      try { workoutCount = JSON.parse(prog.workouts || '[]').length; } catch(e) {}
+      item.innerHTML = `
+        <div class="prog-item-info">
+          <div class="prog-item-name">${esc(prog.program_name)}</div>
+          ${workoutCount ? `<div class="prog-item-meta">${workoutCount} workout</div>` : ''}
+        </div>
+        <button class="prog-item-btn" onclick="startSessionWithPrompt('${esc(prog.program_name)}','${escAttr(prog.ai_prompt)}')">Inizia →</button>
+      `;
+      list.appendChild(item);
     });
-    document.getElementById('programName').textContent = programs.length + ' programm' + (programs.length === 1 ? 'a' : 'i');
-    document.getElementById('programMeta').textContent = programs.reduce((acc, p) => acc + JSON.parse(p.workouts || '[]').length, 0) + ' workout totali';
   } else {
     document.getElementById('programEmpty').style.display = 'block';
     document.getElementById('programContent').style.display = 'none';
   }
+
+  // Stats
   const { data: sessions } = await sb.from('sessions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   const sess = sessions || [];
   document.getElementById('statSessions').textContent = sess.length;
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   document.getElementById('statWeek').textContent = sess.filter(s => new Date(s.created_at) > weekAgo).length;
   document.getElementById('statStreak').textContent = sess.length > 0 ? '🔥' + Math.min(sess.length, 7) : '0';
+
+  // Log recenti
   const ll = document.getElementById('logList');
   if (!sess.length) { ll.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:16px 0;">Nessuna sessione ancora.</div>'; return; }
   ll.innerHTML = '';
   sess.slice(0, 5).forEach(s => {
     const i = document.createElement('div'); i.className = 'log-item';
     const date = new Date(s.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
-    i.innerHTML = '<div><div class="log-item-name">' + s.workout_name + '</div><div class="log-item-date">' + date + '</div></div><div class="log-item-right">Vedi →</div>';
+    i.innerHTML = `<div><div class="log-item-name">${s.workout_name}</div><div class="log-item-date">${date}</div></div><div class="log-item-right">Vedi →</div>`;
     i.onclick = () => openLogModal(s); ll.appendChild(i);
   });
 }
 
-function startSession(workout) {
-  if (!currentProfile?.ai_prompt) { alert('Nessun programma AI configurato. Contatta il coach.'); return; }
-  startSessionWithPrompt(workout, currentProfile.ai_prompt);
+// escAttr: escape per attributo HTML onclick
+function escAttr(s) {
+  if (!s) return '';
+  return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'');
 }
 
+// ── SESSIONE ──────────────────────────────────────────────────────────────────
 function startSessionWithPrompt(workout, prompt) {
   if (!prompt) { alert('Nessun programma AI configurato. Contatta il coach.'); return; }
   currentProfile = { ...currentProfile, ai_prompt: prompt };
@@ -1166,25 +1133,24 @@ function startSessionWithPrompt(workout, prompt) {
   showScreen('sessionScreen');
   document.getElementById('sessionTitle').textContent = workout;
   document.getElementById('messages').innerHTML = '';
-  const box = document.getElementById('setInfoBox');
-  if (box) box.innerHTML = 'In attesa...';
-  const cueB = document.getElementById('cueBox');
-  if (cueB) cueB.textContent = '—';
+  const box = document.getElementById('setInfoBox'); if (box) box.innerHTML = 'In attesa...';
+  const cueB = document.getElementById('cueBox'); if (cueB) cueB.textContent = '—';
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
   currentSetMode = 'single'; currentExercises = [];
   renderInputFields('single', []);
+  // Avvia la sessione chiedendo all'AI quale workout fare oggi
   aiSend(workout, true);
 }
 
 function qSend(t) { addBubble('user', t); aiSend(t, false); }
+
 function selRpe(btn, val) {
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
   if (selectedRpe === val) { selectedRpe = null; return; }
   btn.classList.add('sel'); selectedRpe = val;
 }
 
-let currentSetMode = 'single';
-let currentExercises = [];
+let currentSetMode = 'single', currentExercises = [];
 
 function inputField(id, label) {
   return `<div style="display:flex;flex-direction:column;gap:3px;flex:1;">
@@ -1226,11 +1192,8 @@ function renderInputFields(mode, exercises) {
 function detectAndRenderInput(text) {
   const supersetMatch = text.match(/\[SUPERSET:([^\]]+)\]/);
   const setMatch = text.match(/\[SET:([^\]]+)\]/);
-  if (supersetMatch) {
-    renderInputFields('superset', supersetMatch[1].split(',').map(e => e.trim()));
-  } else if (setMatch) {
-    renderInputFields('single', [setMatch[1].trim()]);
-  }
+  if (supersetMatch) renderInputFields('superset', supersetMatch[1].split(',').map(e => e.trim()));
+  else if (setMatch) renderInputFields('single', [setMatch[1].trim()]);
 }
 
 function sendMsg() {
@@ -1309,6 +1272,7 @@ async function aiSend(text, isFirst) {
 
 async function saveSessionLog(log) { await sb.from('sessions').insert({ user_id: currentUser.id, workout_name: sessionWorkout, log_text: log }); }
 
+// ── TIMER ─────────────────────────────────────────────────────────────────────
 let sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft = 0, sessionTimerTotal = 0;
 
 function sessionTimerSet(seconds) {
@@ -1351,6 +1315,7 @@ function sessionTimerReset() {
 
 function fmtTime(s) { return String(Math.floor(Math.max(s,0)/60)).padStart(2,'0')+':'+String(Math.max(s,0)%60).padStart(2,'0'); }
 
+// ── CHAT UI ───────────────────────────────────────────────────────────────────
 function updateSetInfo(text) {
   const box = document.getElementById('setInfoBox'), cueBox = document.getElementById('cueBox');
   if (!box) return;
@@ -1388,8 +1353,7 @@ function extractOptions(text) {
 
 function setInputLocked(locked) {
   waitingForProgression = locked;
-  const container = document.getElementById('inputContainer');
-  const sendBtn = document.getElementById('sendBtn');
+  const container = document.getElementById('inputContainer'), sendBtn = document.getElementById('sendBtn');
   if (container) { container.style.opacity = locked ? '0.3' : '1'; container.style.pointerEvents = locked ? 'none' : ''; }
   if (sendBtn) { sendBtn.style.opacity = locked ? '0.3' : '1'; sendBtn.style.pointerEvents = locked ? 'none' : ''; }
 }
@@ -1444,7 +1408,7 @@ function fmtText(t) {
     return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">' + esc(t) + '</pre>';
   return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
 }
-function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(t) { if (!t) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function addTyping() {
   const msgs = document.getElementById('messages'), id = 't_' + Date.now();
@@ -1454,6 +1418,7 @@ function addTyping() {
 }
 function removeTyping(id) { document.getElementById(id)?.remove(); }
 
+// ── ADMIN ──────────────────────────────────────────────────────────────────────
 async function showAdmin() { showScreen('adminScreen'); await renderUserTable(); await renderLogTable(); }
 
 function switchTab(tab, btn) {
@@ -1467,15 +1432,14 @@ function switchTab(tab, btn) {
 async function renderUserTable() {
   const tbody = document.getElementById('userTableBody');
   const { data: athletes } = await sb.from('profiles').select('*').eq('role','athlete').order('created_at',{ascending:false});
-  if (!athletes?.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Nessun atleta ancora.</td></tr>'; return; }
+  if (!athletes?.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Nessun atleta ancora.</td></tr>'; return; }
   tbody.innerHTML = athletes.map(u => `<tr>
     <td>${u.name||'—'}</td>
     <td style="color:var(--muted)">${u.email}</td>
     <td><span class="badge badge-${u.status||'pending'}">${u.status||'pending'}</span></td>
     <td>
-      <button class="action-btn" onclick="openAthleteProfileModal('${u.id}','${u.name||u.email}')">Profilo</button>
-      <button class="action-btn primary" onclick="openAthleteProgramsModal('${u.id}','${u.name||u.email}')">Programmi</button>
-      <button class="action-btn" onclick="openProgramModal('${u.id}','${u.name||u.email}')">+Programma</button>
+      <button class="action-btn" onclick="openAthleteProfileModal('${u.id}','${esc(u.name||u.email)}')">Profilo</button>
+      <button class="action-btn primary" onclick="openAthleteProgramsModal('${u.id}','${esc(u.name||u.email)}')">Programmi</button>
       <button class="action-btn ${u.status==='active'?'danger':''}" onclick="toggleStatus('${u.id}','${u.status}')">${u.status==='active'?'Disattiva':'Attiva'}</button>
     </td>
   </tr>`).join('');
@@ -1491,32 +1455,11 @@ async function renderLogTable() {
   }).join('');
 }
 
-let editingUserId = null;
-function openProgramModal(userId, userName) {
-  editingUserId = userId;
-  document.getElementById('programModalSub').textContent = 'Atleta: ' + userName;
-  document.getElementById('programModal').classList.add('open');
-}
-
-async function saveProgram() {
-  const name = document.getElementById('modalProgramName').value.trim();
-  const wRaw = document.getElementById('modalWorkouts').value.trim();
-  const prompt = document.getElementById('modalPrompt').value.trim();
-  if (!name||!wRaw||!prompt) { alert('Compila tutti i campi.'); return; }
-  const workouts = wRaw.split(',').map(w=>w.trim()).filter(Boolean);
-  try {
-    const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateProgram',userId:editingUserId,program_name:name,workouts:JSON.stringify(workouts),ai_prompt:prompt,status:'active'})});
-    const data = await res.json();
-    if (data.error) { alert('Errore: '+data.error); return; }
-    closeModal('programModal'); await renderUserTable();
-  } catch(e) { alert('Errore di connessione.'); }
-}
-
 async function toggleStatus(userId, currentStatus) {
   if (currentStatus==='active') {
-    if (!confirm('Rimuovere il programma da questo atleta?')) return;
+    if (!confirm('Disattivare questo atleta?')) return;
     try {
-      const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'resetProgram',userId})});
+      const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateStatus',userId,status:'inactive'})});
       const data = await res.json();
       if (data.error) { alert('Errore: '+data.error); return; }
       await renderUserTable();
@@ -1552,6 +1495,7 @@ async function createUser() {
   } catch(e) { alert('Errore di connessione.'); }
 }
 
+// ── PROFILO ATLETA (admin) ────────────────────────────────────────────────────
 let athleteProgramsUserId = null;
 
 async function openAthleteProfileModal(userId, userName) {
@@ -1559,6 +1503,8 @@ async function openAthleteProfileModal(userId, userName) {
   document.getElementById('athleteProfileName').textContent = userName;
   const { data } = await sb.from('profiles').select('*').eq('id',userId).single();
   if (data) {
+    // Campo nome aggiunto
+    document.getElementById('apName').value = data.name || '';
     const map = {
       apEta:data.eta,apSesso:data.sesso,apPeso:data.peso,apAltezza:data.altezza,
       apLivello:data.livello,apFrequenza:data.frequenza,apObiettivo:data.obiettivo,
@@ -1576,6 +1522,8 @@ async function saveAthleteProfile() {
   try {
     const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       action:'updateProfile',userId:athleteProgramsUserId,
+      // Nome incluso
+      name:document.getElementById('apName').value||null,
       eta:document.getElementById('apEta').value||null,sesso:document.getElementById('apSesso').value||null,
       peso:document.getElementById('apPeso').value||null,altezza:document.getElementById('apAltezza').value||null,
       livello:document.getElementById('apLivello').value||null,frequenza:document.getElementById('apFrequenza').value||null,
@@ -1589,7 +1537,7 @@ async function saveAthleteProfile() {
     })});
     const data = await res.json();
     if (data.error) { alert('Errore: '+data.error); return; }
-    closeModal('athleteProfileModal'); alert('Profilo salvato.');
+    closeModal('athleteProfileModal'); await renderUserTable(); alert('Profilo salvato.');
   } catch(e) { alert('Errore di connessione.'); }
 }
 
@@ -1598,7 +1546,7 @@ async function resetAthleteProfile() {
   try {
     const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       action:'updateProfile',userId:athleteProgramsUserId,
-      eta:null,sesso:null,peso:null,altezza:null,livello:null,frequenza:null,
+      name:null,eta:null,sesso:null,peso:null,altezza:null,livello:null,frequenza:null,
       obiettivo:null,obiettivo3m:null,luogo:null,disponibilita:null,
       discipline:null,skill:null,attrezzatura:null,infortuni:null,
       limitazioni:null,stile:null,sonno:null,motivazione:null,note_libere:null
@@ -1621,11 +1569,12 @@ async function deleteAthlete() {
   } catch(e) { alert('Errore di connessione.'); }
 }
 
+// ── PROGRAMMI ATLETA (admin) ──────────────────────────────────────────────────
 async function openAthleteProgramsModal(userId, userName) {
   athleteProgramsUserId = userId;
   document.getElementById('athleteProgramsName').textContent = userName;
   document.getElementById('newProgName').value='';
-  document.getElementById('newProgWorkouts').value='';
+  document.getElementById('composerDesc').value='';
   document.getElementById('newProgPrompt').value='';
   await renderAthletePrograms();
   document.getElementById('athleteProgramsModal').classList.add('open');
@@ -1635,12 +1584,14 @@ async function renderAthletePrograms() {
   const list = document.getElementById('athleteProgramsList');
   const { data: programs } = await sb.from('programs').select('*').eq('user_id',athleteProgramsUserId).order('created_at',{ascending:true});
   if (!programs?.length) { list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Nessun programma assegnato.</div>'; return; }
-  list.innerHTML = programs.map(p=>`
+  list.innerHTML = programs.map(p=>{
+    const workouts = (() => { try { return JSON.parse(p.workouts||'[]'); } catch(e) { return []; } })();
+    return `
     <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <div>
-          <div style="font-family:var(--display);font-size:13px;font-weight:700;">${p.program_name}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:3px;">${JSON.parse(p.workouts||'[]').join(', ')}</div>
+          <div style="font-family:var(--display);font-size:13px;font-weight:700;">${esc(p.program_name)}</div>
+          ${workouts.length ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;">${workouts.map(w=>esc(w)).join(' · ')}</div>` : ''}
         </div>
         <div style="display:flex;gap:6px;">
           <button class="action-btn primary" onclick="editProgram('${p.id}')">Modifica</button>
@@ -1648,16 +1599,15 @@ async function renderAthletePrograms() {
         </div>
       </div>
       <div id="edit_${p.id}" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">
-        <div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_${p.id}" value="${p.program_name}"></div>
-        <div class="modal-field"><div class="modal-label">Workout</div><input class="modal-input" id="editWorkouts_${p.id}" value="${JSON.parse(p.workouts||'[]').join(', ')}"></div>
-        <div class="modal-field"><div class="modal-label">System prompt</div><textarea class="modal-textarea" id="editPrompt_${p.id}" style="min-height:100px;">${p.ai_prompt||''}</textarea></div>
+        <div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_${p.id}" value="${esc(p.program_name)}"></div>
+        <div class="modal-field"><div class="modal-label">System prompt</div><textarea class="modal-textarea" id="editPrompt_${p.id}" style="min-height:120px;">${esc(p.ai_prompt||'')}</textarea></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
           <button class="modal-cancel" onclick="document.getElementById('edit_${p.id}').style.display='none'">Annulla</button>
           <button class="modal-save" onclick="saveEditProgram('${p.id}')">Salva</button>
         </div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function editProgram(id) {
@@ -1667,30 +1617,128 @@ function editProgram(id) {
 
 async function saveEditProgram(programId) {
   const name=document.getElementById('editName_'+programId).value.trim();
-  const wRaw=document.getElementById('editWorkouts_'+programId).value.trim();
   const prompt=document.getElementById('editPrompt_'+programId).value.trim();
-  if (!name||!wRaw||!prompt) { alert('Compila tutti i campi.'); return; }
-  const workouts=wRaw.split(',').map(w=>w.trim()).filter(Boolean);
+  if (!name||!prompt) { alert('Compila tutti i campi.'); return; }
   try {
-    const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId,program_name:name,workouts:JSON.stringify(workouts),ai_prompt:prompt})});
+    const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId,program_name:name,workouts:'[]',ai_prompt:prompt})});
     const data=await res.json();
     if (data.error) { alert('Errore: '+data.error); return; }
     await renderAthletePrograms();
   } catch(e) { alert('Errore di connessione.'); }
 }
 
+// ── COMPOSITORE AI ────────────────────────────────────────────────────────────
+async function generateProgram() {
+  const desc = document.getElementById('composerDesc').value.trim();
+  const progName = document.getElementById('newProgName').value.trim();
+  if (!desc) { document.getElementById('composerDesc').style.borderColor='var(--accent)'; setTimeout(()=>document.getElementById('composerDesc').style.borderColor='',800); return; }
+
+  // Mostra spinner
+  const btn = document.getElementById('generateBtn');
+  const spinner = document.getElementById('generateSpinner');
+  const label = document.getElementById('generateBtnLabel');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  label.textContent = 'Generazione in corso...';
+
+  try {
+    // 1. Carica profilo atleta
+    const { data: athleteProfile } = await sb.from('profiles').select('*').eq('id', athleteProgramsUserId).single();
+
+    // 2. Carica libreria esercizi
+    const { data: exercises } = await sb.from('exercises').select('name,category,muscles,equipment,level,progressions,cue,default_rest').order('category').order('name');
+
+    // 3. Costruisci contesto atleta
+    const athleteCtx = buildAthleteContext(athleteProfile);
+
+    // 4. Costruisci lista esercizi
+    const exList = (exercises||[]).map(e =>
+      `- ${e.name} [${e.category||'—'}] | ${e.muscles||'—'} | ${e.equipment||'—'} | ${e.level||'—'}${e.cue ? ' | cue: '+e.cue : ''}${e.progressions ? ' | progressioni: '+e.progressions : ''}`
+    ).join('\n');
+
+    // 5. Prompt per il compositore
+    const composerSystemPrompt = `Sei un esperto programmatore di allenamenti calisthenics. Il tuo compito è generare un system prompt completo per un AI coach che guiderà un atleta durante le sue sessioni di allenamento.
+
+Il system prompt che generi deve:
+1. Usare SOLO gli esercizi presenti nella libreria fornita (rispetta i nomi esatti)
+2. Adattarsi al profilo dell'atleta (infortuni, livello, attrezzatura disponibile)
+3. Quando l'atleta avvia la sessione, chiedergli PRIMA quale workout vuole fare oggi (elenca i workout disponibili come opzioni cliccabili con "-")
+4. Seguire questo formato per ogni esercizio:
+   [SET:NomeEsercizio]
+   NomeEsercizio — Set N/TOT | X-Y reps | Recupero: mm:ss
+   [CUE:cue tecnico max 5 parole]
+5. Per superset:
+   [SUPERSET:Nome1,Nome2]
+   SUPERSET X — Set N/TOT
+   Nome1: X-Y reps
+   Nome2: X-Y reps
+   [CUE:cue breve]
+   → VAI SUBITO su Nome2 — nessun recupero
+   Recupero: mm:ss
+6. Regole comportamentali:
+   - Niente "Perfetto!", "Ottimo!", incoraggiamenti
+   - Feedback dopo set: max una riga
+   - Niente "Quando sei pronto" o "Dimmi quante reps"
+   - Quando l'utente dice "fine" genera WORKOUT LOG
+7. Generare il WORKOUT LOG finale con questo formato:
+   WORKOUT LOG
+   ================
+   Data: [data]
+   Programma: [nome programma]
+   Workout: [nome workout]
+   [Esercizio]: [sets x reps]
+
+Genera SOLO il system prompt, senza spiegazioni o preamboli.`;
+
+    const userMsg = `NOME PROGRAMMA: ${progName || 'Programma personalizzato'}
+
+DESCRIZIONE DEL COACH:
+${desc}
+
+PROFILO ATLETA:
+${athleteCtx || 'Nessun profilo disponibile'}
+
+LIBRERIA ESERCIZI DISPONIBILI:
+${exList}
+
+Genera il system prompt completo per questo programma. Includi tutti i workout descritti, con esercizi scelti dalla libreria adatti al profilo atleta.`;
+
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: composerSystemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+    const data = await res.json();
+    const generatedPrompt = data.content?.[0]?.text || '';
+    if (generatedPrompt) {
+      document.getElementById('newProgPrompt').value = generatedPrompt;
+      document.getElementById('newProgPrompt').style.borderColor = 'var(--accent)';
+      setTimeout(() => document.getElementById('newProgPrompt').style.borderColor = '', 2000);
+    } else {
+      alert('Errore nella generazione. Riprova.');
+    }
+  } catch(e) {
+    alert('Errore di connessione: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    label.textContent = '✦ Genera con AI';
+  }
+}
+
 async function addProgram() {
   const name=document.getElementById('newProgName').value.trim();
-  const wRaw=document.getElementById('newProgWorkouts').value.trim();
   const prompt=document.getElementById('newProgPrompt').value.trim();
-  if (!name||!wRaw||!prompt) { alert('Compila tutti i campi.'); return; }
-  const workouts=wRaw.split(',').map(w=>w.trim()).filter(Boolean);
+  if (!name||!prompt) { alert('Inserisci nome e prompt (o genera con AI).'); return; }
   try {
-    const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify(workouts),ai_prompt:prompt})});
+    const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:'[]',ai_prompt:prompt})});
     const data=await res.json();
     if (data.error) { alert('Errore: '+data.error); return; }
     document.getElementById('newProgName').value='';
-    document.getElementById('newProgWorkouts').value='';
+    document.getElementById('composerDesc').value='';
     document.getElementById('newProgPrompt').value='';
     await renderAthletePrograms(); await renderUserTable();
   } catch(e) { alert('Errore di connessione.'); }
@@ -1706,6 +1754,7 @@ async function removeProgram(programId) {
   } catch(e) { alert('Errore di connessione.'); }
 }
 
+// ── LOG ───────────────────────────────────────────────────────────────────────
 function openLogModal(s) {
   document.getElementById('logModalTitle').textContent=(s.workout_name||'Sessione')+' — '+new Date(s.created_at).toLocaleDateString('it-IT');
   document.getElementById('logModalContent').textContent=s.log_text||'Nessun log.';
@@ -1714,6 +1763,7 @@ function openLogModal(s) {
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
+// ── ONBOARD ───────────────────────────────────────────────────────────────────
 let infortuniVal = null;
 function setInfortuni(val) {
   infortuniVal=val;
@@ -1786,24 +1836,33 @@ async function submitOnboard() {
   } catch(e){btn.disabled=false;btn.textContent='Invia richiesta coaching →';errEl.textContent='Errore. Riprova.';}
 }
 
+// ── CONTEXT BUILDER ───────────────────────────────────────────────────────────
 function buildAthleteContext(profile) {
   if(!profile) return '';
   const fields=[
-    profile.eta?`Età: ${profile.eta}`:null,profile.sesso?`Sesso: ${profile.sesso}`:null,
-    profile.peso?`Peso: ${profile.peso} kg`:null,profile.altezza?`Altezza: ${profile.altezza} cm`:null,
-    profile.livello?`Livello: ${profile.livello}`:null,profile.frequenza?`Frequenza: ${profile.frequenza}`:null,
-    profile.discipline?`Discipline: ${profile.discipline}`:null,profile.skill?`Skill: ${profile.skill}`:null,
-    profile.obiettivo?`Obiettivo: ${profile.obiettivo}`:null,profile.obiettivo3m?`Obiettivo 3 mesi: ${profile.obiettivo3m}`:null,
-    profile.disponibilita?`Disponibilità: ${profile.disponibilita}`:null,profile.luogo?`Luogo allenamento: ${profile.luogo}`:null,
-    profile.attrezzatura?`Attrezzatura: ${profile.attrezzatura}`:null,profile.infortuni?`Infortuni: ${profile.infortuni}`:null,
-    profile.limitazioni?`Limitazioni: ${profile.limitazioni}`:null,profile.stile?`Stile di vita: ${profile.stile}`:null,
+    profile.eta?`Età: ${profile.eta}`:null,
+    profile.sesso?`Sesso: ${profile.sesso}`:null,
+    profile.peso?`Peso: ${profile.peso} kg`:null,
+    profile.altezza?`Altezza: ${profile.altezza} cm`:null,
+    profile.livello?`Livello: ${profile.livello}`:null,
+    profile.frequenza?`Frequenza: ${profile.frequenza}`:null,
+    profile.discipline?`Discipline: ${profile.discipline}`:null,
+    profile.skill?`Skill: ${profile.skill}`:null,
+    profile.obiettivo?`Obiettivo: ${profile.obiettivo}`:null,
+    profile.obiettivo3m?`Obiettivo 3 mesi: ${profile.obiettivo3m}`:null,
+    profile.disponibilita?`Disponibilità: ${profile.disponibilita}`:null,
+    profile.luogo?`Luogo allenamento: ${profile.luogo}`:null,
+    profile.attrezzatura?`Attrezzatura: ${profile.attrezzatura}`:null,
+    profile.infortuni?`Infortuni: ${profile.infortuni}`:null,
+    profile.limitazioni?`Limitazioni: ${profile.limitazioni}`:null,
+    profile.stile?`Stile di vita: ${profile.stile}`:null,
     profile.sonno?`Sonno: ${profile.sonno}`:null,
   ].filter(Boolean);
   if(!fields.length) return '';
   return `\n\nPROFILO ATLETA:\n${fields.join('\n')}`;
 }
 
-// ── LIBRERIA ESERCIZI ─────────────────────────────────────
+// ── LIBRERIA ESERCIZI ─────────────────────────────────────────────────────────
 let allExercises = [];
 
 async function loadLibrary() {
@@ -1818,7 +1877,6 @@ function filterLibrary() {
   const cat = document.getElementById('libCat')?.value || '';
   const equip = document.getElementById('libEquip')?.value || '';
   const level = document.getElementById('libLevel')?.value || '';
-
   const filtered = allExercises.filter(e => {
     const matchSearch = !search || e.name.toLowerCase().includes(search) || (e.muscles||'').toLowerCase().includes(search);
     const matchCat = !cat || e.category === cat;
@@ -1826,20 +1884,13 @@ function filterLibrary() {
     const matchLevel = !level || e.level === level;
     return matchSearch && matchCat && matchEquip && matchLevel;
   });
-
   const levelBadge = { beginner:'badge-active', intermediate:'badge-pending', advanced:'badge-inactive' };
   const levelLabel = { beginner:'Base', intermediate:'Interm.', advanced:'Avanzato' };
   const catColor = { push:'#f06060', pull:'#60a0f0', legs:'#a060f0', core:'#f0c060', handstand:'#60f0c0' };
-
   const tbody = document.getElementById('libTableBody');
   const countEl = document.getElementById('libCount');
   if (countEl) countEl.textContent = filtered.length + ' esercizi' + (allExercises.length !== filtered.length ? ' (filtrati su ' + allExercises.length + ')' : '');
-
-  if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Nessun esercizio trovato.</td></tr>';
-    return;
-  }
-
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Nessun esercizio trovato.</td></tr>'; return; }
   tbody.innerHTML = filtered.map(e => {
     const cc = catColor[e.category] || '#888';
     const r = parseInt(cc.slice(1,3),16), g = parseInt(cc.slice(3,5),16), b = parseInt(cc.slice(5,7),16);
@@ -1904,11 +1955,8 @@ async function saveExercise() {
     owner_id: null
   };
   let error;
-  if (id) {
-    ({ error } = await sb.from('exercises').update(payload).eq('id', id));
-  } else {
-    ({ error } = await sb.from('exercises').insert(payload));
-  }
+  if (id) { ({ error } = await sb.from('exercises').update(payload).eq('id', id)); }
+  else { ({ error } = await sb.from('exercises').insert(payload)); }
   if (error) { errEl.textContent = 'Errore: ' + error.message; return; }
   closeModal('exerciseModal');
   await loadLibrary();
