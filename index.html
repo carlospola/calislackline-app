@@ -1048,8 +1048,7 @@ function updateSetInfo(text) {
 
   const lines = text.split('\n').map(l => l.replace(/\*\*/g, '').trim()).filter(l => l);
 
-  let header = '', exercises = [], recupero = '', cue = '';
-  let inBlock = false;
+  let header = '', exercises = [], cue = '';
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -1058,26 +1057,27 @@ function updateSetInfo(text) {
     const cueMatch = line.match(/\[CUE:([^\]]+)\]/);
     if (cueMatch) { cue = cueMatch[1].trim(); continue; }
 
-    // Header superset o set
-    if (line.match(/SUPERSET\s+[A-Z]\s*[–—-]\s*Set\s+\d+\/\d+/i) || line.match(/^[A-Z]\d[:.].*Set\s+\d+\/\d+/i)) {
-      header = line;
-      inBlock = true;
+    // Formato nuovo: "NomeEsercizio — Set N/3 | X-Y reps | Recupero: mm:ss"
+    if (line.match(/—\s*Set\s+\d+\/\d+/i) && !line.match(/SUPERSET/i)) {
+      header = line.replace(/\s*\|.*$/, '').trim(); // prendi solo "Nome — Set N/3"
       exercises = [];
       continue;
     }
-    if (inBlock) {
-      if (line.match(/^[A-Za-z].+:\s*[\d5-]/) && !line.match(/recupero/i) && !line.match(/^→/) && !line.match(/^\[/)) {
-        exercises.push(line);
-      }
-      if (line.match(/recupero/i) && line.match(/\d+:\d+/)) {
-        recupero = line;
-        break;
-      }
-      if (line.match(/^→/) || line.match(/^✓/)) break;
+
+    // Formato superset: "SUPERSET X — Set N/3"
+    if (line.match(/SUPERSET\s+[A-Z]\s*[–—-]\s*Set\s+\d+\/\d+/i)) {
+      header = line;
+      exercises = [];
+      continue;
+    }
+
+    // Righe esercizi superset: "Nome: X-Y reps"
+    if (header.match(/SUPERSET/i) && line.match(/^[A-Za-z].+:\s*[\d]/) && !line.match(/recupero/i) && !line.match(/^\[/)) {
+      exercises.push(line.replace(/\s*\|.*$/, '').trim());
     }
   }
 
-  // Update header + exercises
+  // Build HTML
   let html = '';
   if (header) html += `<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">${esc(header)}</div>`;
   exercises.forEach(ex => {
