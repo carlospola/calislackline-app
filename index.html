@@ -1011,7 +1011,25 @@ async function aiSend(text, isFirst) {
   try {
     // Aggiungi profilo atleta al system prompt
     const athleteContext = buildAthleteContext(currentProfile);
-    const systemPrompt = (currentProfile.ai_prompt || '') + athleteContext;
+
+    // Aggiungi ultime 5 sessioni come contesto
+    let sessionContext = '';
+    if (currentUser && isFirst) {
+      const { data: recentSessions } = await sb.from('sessions')
+        .select('workout_name, log_text, created_at')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (recentSessions?.length) {
+        const logs = recentSessions.map(s => {
+          const date = new Date(s.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+          return `[${date}] ${s.workout_name}:\n${s.log_text || 'Nessun log'}`;
+        }).join('\n\n');
+        sessionContext = `\n\nSTORICO SESSIONI RECENTI (ultime ${recentSessions.length}):\n${logs}`;
+      }
+    }
+
+    const systemPrompt = (currentProfile.ai_prompt || '') + athleteContext + sessionContext;
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
