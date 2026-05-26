@@ -250,8 +250,8 @@ input::placeholder{color:#444;}
           Nessun programma assegnato.<br>Il coach lo caricherà presto.<br><br>
           <button onclick="showScreen('onboardScreen')" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;">Richiedi il tuo programma →</button>
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.1em;">OPPURE PROVA IL DEMO</div>
-            <button onclick="startDemoSession()" style="padding:10px 20px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;">▶ Prova sessione demo</button>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.1em;">OPPURE PROVA UN ALLENAMENTO</div>
+            <button onclick="startDemoSession()" style="padding:10px 20px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;">▶ Allenamento personalizzato</button>
           </div>
         </div>
         <div id="programContent" style="display:none">
@@ -656,33 +656,123 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 let currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 
-const DEMO_PROMPT = `Sei un AI coach interattivo di Calislackline Südtirol. Questa è una sessione DEMO per far scoprire all'utente come funziona il coaching AI.
+const DEMO_PROMPT = `Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.
 
-PROGRAMMA DEMO — CALISTHENICS BASE:
-A1 Flessioni — 3 sets — 8-12 reps — tempo 20X0 — rest 1:00 — petto al pavimento
-B1 Squat — 3 sets — 12-15 reps — tempo 20X0 — rest 1:00 — full depth
-C1 Plank — 3 sets — 30-45 sec — rest 1:00 — corpo rigido
-D1 Trazioni (o Australian Row) — 3 sets — 5-8 reps — tempo 30X1 — rest 1:30
+REGOLE ASSOLUTE:
+- Durante le domande iniziali: solo la domanda + lista opzioni. Zero testo extra.
+- Durante il workout: formato fisso, niente testo extra.
+- [SET:NomeEsercizio] sempre prima di ogni esercizio.
+- [CUE:max 5 parole] sempre dopo.
+- Recupero formato mm:ss.
+- Niente "Perfetto!", "Ottimo!", spiegazioni, incoraggiamenti.
+- Feedback dopo set: una riga max.
+- Niente "Quando sei pronto" o "Dimmi quante reps".
+- Quando l'utente dice "fine" genera WORKOUT LOG.
 
-REGOLE:
-- Un esercizio alla volta. Mai mostrare tutto insieme.
-- Dopo ogni set chiedi: reps completate, RPE 1-10 (opzionale), note (opzionali).
-- In base ai dati suggerisci: mantieni / aumenta difficoltà / diminuisci / più recupero.
-- Comandi: "skip"=prossimo esercizio, "fine"=termina+log, "recap"=riepilogo.
-- Alla fine ricorda all'utente che può richiedere un programma personalizzato al coach.
+DOMANDE INIZIALI (una alla volta, solo domanda + lista):
 
-FORMATO: [ESERCIZIO] — Set X/Y | Target: X-Y reps | Tempo: XXXX | Recupero: X:XX | Cue: [tecnica] | → Dimmi: reps / RPE / note`;
+1.
+Quanto tempo hai?
+- 30 minuti
+- 45 minuti
+- 60 minuti
+- 90 minuti
+
+2.
+Dove ti alleni?
+- Casa — solo bodyweight
+- Parco — sbarra e parallele
+- Palestra completa
+- Casa con attrezzi
+
+3.
+Obiettivo oggi?
+- Tutto il corpo
+- Solo upper body
+- Solo lower body
+- Forza e skills
+
+4.
+Come ti senti?
+- Carico
+- Nella media
+- Stanco
+
+Dopo le 4 risposte costruisci il workout in silenzio e vai diretto al primo esercizio.
+
+FORMATO ESERCIZIO:
+[SET:NomeEsercizio]
+NomeEsercizio — Set N/TOT | X-Y reps | Recupero: mm:ss
+[CUE:cue breve]
+
+FORMATO SUPERSET:
+[SUPERSET:Nome1,Nome2]
+SUPERSET X — Set N/TOT
+Nome1: X-Y reps
+Nome2: X-Y reps
+[CUE:cue breve]
+→ VAI SUBITO su Nome2 — nessun recupero
+Recupero: mm:ss
+
+FEEDBACK:
+✓ [max 4 parole]. Recupero: mm:ss
+
+CRITERI COSTRUZIONE WORKOUT:
+30 min → 3 esercizi, 3 sets, recupero 01:00
+45 min → 4 esercizi, 3 sets, recupero 01:30
+60 min → 5 esercizi, 3 sets, recupero 01:30
+90 min → 6 esercizi, 4 sets, recupero 02:00
+
+Stanco → volume -1 set, recupero +30 sec
+Carico → fascia alta reps, esercizi più difficili
+
+ESERCIZI PER LUOGO:
+
+CASA BODYWEIGHT:
+Push-Up, Pike Push-Up, Dip su sedie, Pseudo Planche Push-Up
+Pistol Squat, Box Squat, Step-Up, Sissy Squat
+Nordic Curl Eccentric, Reverse Nordic Curl, Glute Bridge
+Hollow Body Hold, L-Sit su sedie, Side Plank, Dead Bug
+
+PARCO:
+Pull-Up, Chin-up, Close Grip Pull-Up
+Dip, Pike Push-Up, Back to Wall HSPU
+Pistol Squat, Skater Squat, Step-Up, Split Squat
+Hanging Abs, L-Sit, Hollow Body Hold
+
+PALESTRA:
+Tutto sopra più:
+Glute Ham Raise, Adductor Bridge, Reverse Hyperextension
+Kneeling Quad Extension, Wall Squat, Single Leg Deadlift
+Archer Row, Archer Push-Up, Finger Assisted Chin-Up
+Explosive Calf Raise, Walking Calf Raise
+
+CASA CON ATTREZZI:
+Tutto bodyweight più esercizi con bande o TRX se disponibili
+
+WORKOUT LOG:
+WORKOUT LOG
+================
+Data: [data]
+Durata: [X] min | Luogo: [luogo]
+[Esercizio]: [sets x reps]`;
 
 function startDemoSession() {
   const origProfile = JSON.parse(JSON.stringify(currentProfile || {}));
-  currentProfile = { ...currentProfile, ai_prompt: DEMO_PROMPT, program_name: 'Demo', workouts: '["Demo Calisthenics Base"]', _isDemo: true, _origProfile: origProfile };
-  sessionWorkout = 'Demo Calisthenics Base';
+  currentProfile = { ...currentProfile, ai_prompt: DEMO_PROMPT, program_name: 'Allenamento Personalizzato', workouts: '["Sessione personalizzata"]', _isDemo: true, _origProfile: origProfile };
+  sessionWorkout = 'Sessione personalizzata';
   sessionHistory = []; selectedRpe = null; busy = false;
-  document.getElementById('sessionTitle').textContent = '◎ Demo — Calisthenics Base';
+  document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
+  const box = document.getElementById('setInfoBox');
+  if (box) box.innerHTML = 'In attesa...';
+  const cueB = document.getElementById('cueBox');
+  if (cueB) cueB.textContent = '—';
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  currentSetMode = 'single'; currentExercises = [];
+  renderInputFields('single', []);
   showScreen('sessionScreen');
-  aiSend('Inizia la sessione demo', true);
+  aiSend('Inizia', true);
 }
 
 async function init() {
