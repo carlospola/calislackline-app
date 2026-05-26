@@ -1134,19 +1134,24 @@ function addBubble(role, text) {
   const row = document.createElement('div'); row.className = 'msg-row ' + role;
   const av = document.createElement('div'); av.className = 'avatar ' + role; av.textContent = role === 'ai' ? 'AI' : 'TU';
   const bub = document.createElement('div'); bub.className = 'bubble';
-  bub.innerHTML = fmtText(text);
-  row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
 
-  // Se è un messaggio AI con lista opzioni, mostra bottoni
   if (role === 'ai') {
-    detectAndRenderInput(text);
     const options = extractOptions(text);
     const asksProgression = text.match(/quale progressione/i) || text.match(/progressione usi/i);
-    
+
     if (options.length >= 2 && options.length <= 6) {
-      // Lock input if asking for progression
+      // Mostra testo SENZA le righe con opzioni (- ...)
+      const textWithoutOptions = text.split('\n')
+        .filter(l => !l.trim().match(/^[-•]\s+.+/))
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      bub.innerHTML = fmtText(textWithoutOptions);
+      row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
+
+      // Lock input se chiede progressione
       if (asksProgression) setInputLocked(true);
-      
+
       const optRow = document.createElement('div');
       optRow.id = 'quickOptions';
       optRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 8px 44px;';
@@ -1158,7 +1163,7 @@ function addBubble(role, text) {
         btn.onmouseout = () => { btn.style.borderColor = 'var(--border2)'; btn.style.color = 'var(--text2)'; };
         btn.onclick = () => {
           optRow.remove();
-          setInputLocked(false); // Unlock input after progression chosen
+          setInputLocked(false);
           addBubble('user', opt);
           aiSend(opt, false);
         };
@@ -1167,8 +1172,13 @@ function addBubble(role, text) {
       msgs.appendChild(optRow);
     } else {
       setInputLocked(false);
+      bub.innerHTML = fmtText(text);
+      row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
     }
     updateSetInfo(text);
+    detectAndRenderInput(text);
+    bub.innerHTML = fmtText(text);
+    row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
   }
 
   msgs.scrollTop = msgs.scrollHeight;
