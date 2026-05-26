@@ -24,6 +24,21 @@ export default async function handler(req, res) {
 
   try {
     // Mantieni compatibilità con vecchio sistema
+    if (action === 'updateProfile') {
+      const { userId, eta, sesso, peso, altezza, livello, frequenza, obiettivo, obiettivo3m,
+              luogo, disponibilita, discipline, skill, attrezzatura, infortuni, limitazioni,
+              stile, sonno, motivazione, note_libere } = req.body;
+      await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
+        eta: eta ? parseInt(eta) : null,
+        sesso, peso: peso ? parseFloat(peso) : null,
+        altezza: altezza ? parseFloat(altezza) : null,
+        livello, frequenza, obiettivo, obiettivo3m, luogo, disponibilita,
+        discipline, skill, attrezzatura, infortuni, limitazioni, stile, sonno,
+        motivazione, note_libere
+      });
+      return res.status(200).json({ success: true });
+    }
+
     if (action === 'updateProgram') {
       const { program_name, workouts, ai_prompt, status } = req.body;
       await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
