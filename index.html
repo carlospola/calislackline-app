@@ -8,29 +8,24 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --bg:#080808;--bg2:#0d0d0d;--surface:#141414;--surface2:#1a1a1a;
-  --border:#222;--border2:#2e2e2e;--text:#f0f0f0;--text2:#ccc;--muted:#888;
-  --accent:#c8f060;--accent-dim:rgba(200,240,96,0.07);--accent-dark:#9ab840;
-  --red:#ff5f5f;--mono:'DM Mono',monospace;--display:'Syne',sans-serif;
-}
+:root{--bg:#080808;--bg2:#0d0d0d;--surface:#141414;--surface2:#1a1a1a;--border:#222;--border2:#2e2e2e;--text:#f0f0f0;--text2:#ccc;--muted:#888;--accent:#c8f060;--accent-dim:rgba(200,240,96,0.07);--accent-dark:#9ab840;--red:#ff5f5f;--mono:'DM Mono',monospace;--display:'Syne',sans-serif;}
 html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden;}
 .screen{display:none;height:100svh;flex-direction:column;}
 .screen.active{display:flex;}
 #loginScreen{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,#1a2200 0%,var(--bg) 70%);}
 .login-box{width:100%;max-width:380px;padding:0 24px;display:flex;flex-direction:column;align-items:center;gap:28px;}
-.login-name{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:.06em;text-align:center;line-height:1.3;}
+.login-name{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:.06em;text-align:center;}
 .login-tagline{font-size:9px;letter-spacing:.25em;color:var(--muted);text-transform:uppercase;text-align:center;}
 .login-form{width:100%;display:flex;flex-direction:column;gap:12px;}
 .login-field{display:flex;flex-direction:column;gap:5px;}
 .login-label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;}
-.login-input{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s;}
+.login-input{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s;width:100%;}
 .login-input:focus{border-color:#444;}
 .login-input::placeholder{color:#333;}
-.login-btn{padding:13px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:all .15s;margin-top:4px;}
+.login-btn{padding:13px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:4px;}
 .login-btn:hover{background:var(--accent-dark);}
 .login-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;}
-.google-btn{padding:13px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.google-btn{padding:13px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
 .google-btn:hover{border-color:#444;background:var(--surface2);}
 .google-icon{width:18px;height:18px;}
 .login-divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:10px;}
@@ -54,16 +49,11 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .section-label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
 .program-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
 .program-empty{font-size:12px;color:var(--muted);text-align:center;padding:20px 0;line-height:1.8;}
-
-/* ── NUOVA card programma atleta ── */
-.prog-item{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
-.prog-item:last-child{margin-bottom:0;}
-.prog-item-info{display:flex;flex-direction:column;gap:4px;}
-.prog-item-name{font-family:var(--display);font-size:14px;font-weight:700;}
-.prog-item-meta{font-size:10px;color:var(--muted);}
-.prog-item-btn{padding:10px 20px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
-.prog-item-btn:hover{background:var(--accent-dark);}
-
+.program-list{display:flex;flex-direction:column;gap:10px;}
+.program-item{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.program-item-name{font-family:var(--display);font-size:14px;font-weight:700;}
+.program-start-btn{padding:9px 18px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+.program-start-btn:hover{background:var(--accent-dark);}
 .stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
 .stat-num{font-family:var(--display);font-size:22px;font-weight:800;color:var(--accent);}
@@ -75,9 +65,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .log-item-date{font-size:10px;color:var(--muted);}
 .log-item-right{font-size:10px;color:var(--muted);}
 #sessionScreen{overflow:hidden;}
-.messages{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;}
-.messages::-webkit-scrollbar{width:3px;}
-.messages::-webkit-scrollbar-thumb{background:var(--border2);}
 .msg-row{display:flex;gap:10px;animation:fadeUp .2s ease both;}
 .msg-row.user{flex-direction:row-reverse;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
@@ -92,6 +79,9 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .typing-dots span:nth-child(2){animation-delay:.15s;}
 .typing-dots span:nth-child(3){animation-delay:.3s;}
 @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-5px);opacity:1;}}
+.rpe-btn{padding:5px 4px;background:transparent;border:1px solid var(--border2);border-radius:5px;color:#888;font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .12s;min-width:22px;text-align:center;flex:1;}
+.rpe-btn:hover{color:var(--text);border-color:#444;}
+.rpe-btn.sel{background:var(--accent);color:#000;border-color:var(--accent);}
 #adminScreen{overflow:hidden;}
 .admin-body{flex:1;overflow-y:auto;padding:20px;}
 .admin-body::-webkit-scrollbar{width:3px;}
@@ -126,24 +116,11 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .modal-input:focus{border-color:#444;}
 .modal-textarea{background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:10px 13px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;width:100%;resize:vertical;min-height:160px;line-height:1.6;transition:border-color .15s;}
 .modal-textarea::placeholder{color:#333;}
-.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
 .modal-cancel{padding:9px 18px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;}
 .modal-save{padding:9px 18px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;}
 .modal-save:hover{background:var(--accent-dark);}
 .log-entry{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;line-height:1.7;color:var(--text2);white-space:pre-wrap;max-height:300px;overflow-y:auto;}
-
-/* ── AI COMPOSER ── */
-.composer-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;}
-.composer-label{font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;}
-.composer-desc{background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:10px 13px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;width:100%;resize:vertical;min-height:70px;line-height:1.6;transition:border-color .15s;}
-.composer-desc:focus{border-color:#444;}
-.composer-desc::placeholder{color:#333;}
-.generate-btn{padding:10px 16px;background:transparent;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;width:fit-content;}
-.generate-btn:hover{background:var(--accent-dim);}
-.generate-btn:disabled{opacity:.4;cursor:not-allowed;}
-.generate-spinner{width:10px;height:10px;border:1.5px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;display:none;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
 #onboardScreen{overflow-y:auto;background:radial-gradient(ellipse at 50% 0%,#1a2200 0%,var(--bg) 60%);}
 #onboardScreen::-webkit-scrollbar{width:3px;}
 #onboardScreen::-webkit-scrollbar-thumb{background:var(--border2);}
@@ -156,7 +133,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .form-row.cols-2{grid-template-columns:1fr 1fr;}
 .form-group{display:flex;flex-direction:column;gap:5px;}
 .form-label{font-size:10px;letter-spacing:.12em;color:#999;text-transform:uppercase;}
-.form-label .req{color:var(--accent);margin-left:2px;}
+.req{color:var(--accent);margin-left:2px;}
 .form-input,.form-select,.form-textarea{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;color:var(--text);font-family:var(--mono);font-size:12.5px;outline:none;width:100%;transition:border-color .15s;}
 .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:#444;}
 .form-input::placeholder,.form-textarea::placeholder{color:#444;}
@@ -179,27 +156,29 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .onboard-submit:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;}
 .form-note{font-size:10px;color:var(--muted);text-align:center;line-height:1.8;}
 .onboard-success{display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:60px 24px;min-height:60vh;}
-.success-glyph{font-size:40px;color:var(--accent);}
 .success-title{font-family:var(--display);font-size:20px;font-weight:800;}
 .success-sub{font-size:12px;color:var(--muted);line-height:1.8;max-width:320px;}
 .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;}
 .loading-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:ldot 1.2s infinite ease-in-out;}
 @keyframes ldot{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
-
-/* ── PROFILO ATLETA (schermata utente) ── */
-#profileScreen{overflow:hidden;}
+.generate-btn{padding:10px 16px;background:transparent;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;}
+.generate-btn:hover{background:var(--accent-dim);}
+.generate-btn:disabled{opacity:.4;cursor:not-allowed;}
+.generate-spinner{width:12px;height:12px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+.generate-btn.loading .generate-spinner{display:inline-block;}
+.generate-btn.loading .generate-label{opacity:.5;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 </style>
 </head>
 <body>
-
 <div class="loading-screen" id="loadingScreen"><div class="loading-dot"></div></div>
-
 <!-- LOGIN -->
 <div class="screen" id="loginScreen">
   <div class="login-box">
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
       <div class="login-name">AILISTENICS</div>
-      <div class="login-tagline">AI Coaching · Personalized · Adaptive</div>
+      <div class="login-tagline">AI Coaching &middot; Personalized &middot; Adaptive</div>
     </div>
     <div class="login-form">
       <button class="google-btn" onclick="loginGoogle()">
@@ -208,14 +187,14 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       </button>
       <div class="login-divider">oppure</div>
       <div class="login-field"><div class="login-label">Email</div><input class="login-input" id="loginEmail" type="email" placeholder="la tua email"></div>
-      <div class="login-field"><div class="login-label">Password</div><input class="login-input" id="loginPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="login-field"><div class="login-label">Password</div><input class="login-input" id="loginPass" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div class="login-error" id="loginError"></div>
       <div class="login-success" id="loginSuccess"></div>
       <button class="login-btn" onclick="doLogin()" id="loginBtn">Accedi</button>
     </div>
     <div class="login-links">
       <button class="login-register" onclick="doResetPassword()">Password dimenticata?</button>
-      <button class="login-register" onclick="showScreen('onboardScreen')">Richiedi il coaching →</button>
+      <button class="login-register" onclick="showScreen('onboardScreen')">Richiedi il coaching &rarr;</button>
     </div>
   </div>
 </div>
@@ -233,13 +212,13 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div class="program-card">
         <div class="program-empty" id="programEmpty">
           Nessun programma assegnato.<br>Il coach lo caricherà presto.<br><br>
-          <button id="requestProgramBtn" onclick="showScreen('onboardScreen')" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;">Completa il tuo profilo per cominciare →</button>
+          <button id="requestProgramBtn" onclick="showScreen('onboardScreen')" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;">Completa il tuo profilo &rarr;</button>
           <div id="personalizedSessionBtn" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:none;">
-            <button onclick="startDemoSession()" style="padding:10px 20px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;">▶ Prova un allenamento personalizzato</button>
+            <button onclick="startDemoSession()" style="padding:10px 20px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;">&#9654; Prova un allenamento personalizzato</button>
           </div>
         </div>
         <div id="programContent" style="display:none">
-          <div id="programList"></div>
+          <div class="program-list" id="programList"></div>
         </div>
       </div>
     </div>
@@ -258,11 +237,11 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
   </div>
 </div>
 
-<!-- PROFILO ATLETA (schermata utente) -->
+<!-- PROFILO ATLETA -->
 <div class="screen" id="profileScreen">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="topbar-btn" onclick="showDash()">← Torna</button>
+      <button class="topbar-btn" onclick="showDash()">&larr; Torna</button>
       <div class="topbar-brand">Il mio profilo</div>
     </div>
   </div>
@@ -272,8 +251,8 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div class="form-section">
         <div class="form-section-title">Dati personali</div>
         <div class="form-row cols-2">
-          <div class="form-group"><div class="form-label">Età</div><input class="form-input" id="p_eta" type="number" placeholder="25"></div>
-          <div class="form-group"><div class="form-label">Sesso</div><select class="form-select" id="p_sesso"><option value="">—</option><option>Maschile</option><option>Femminile</option><option>Altro</option></select></div>
+          <div class="form-group"><div class="form-label">Et&agrave;</div><input class="form-input" id="p_eta" type="number" placeholder="25"></div>
+          <div class="form-group"><div class="form-label">Sesso</div><select class="form-select" id="p_sesso"><option value="">-</option><option>Maschile</option><option>Femminile</option><option>Altro</option></select></div>
         </div>
         <div class="form-row cols-2">
           <div class="form-group"><div class="form-label">Peso (kg)</div><input class="form-input" id="p_peso" type="number" placeholder="75"></div>
@@ -282,42 +261,28 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       </div>
       <div class="form-section">
         <div class="form-section-title">Allenamento</div>
-        <div class="form-group"><div class="form-label">Livello</div>
-          <select class="form-select" id="p_livello"><option value="">—</option><option>Principiante — meno di 6 mesi</option><option>Intermedio — 6 mesi / 2 anni</option><option>Avanzato — più di 2 anni</option></select>
-        </div>
-        <div class="form-group"><div class="form-label">Frequenza</div>
-          <select class="form-select" id="p_frequenza"><option value="">—</option><option>1-2 volte a settimana</option><option>3-4 volte a settimana</option><option>5+ volte a settimana</option><option>Non mi alleno regolarmente</option></select>
-        </div>
+        <div class="form-group"><div class="form-label">Livello</div><select class="form-select" id="p_livello"><option value="">-</option><option>Principiante - meno di 6 mesi</option><option>Intermedio - 6 mesi / 2 anni</option><option>Avanzato - piu di 2 anni</option></select></div>
+        <div class="form-group"><div class="form-label">Frequenza</div><select class="form-select" id="p_frequenza"><option value="">-</option><option>1-2 volte a settimana</option><option>3-4 volte a settimana</option><option>5+ volte a settimana</option><option>Non mi alleno regolarmente</option></select></div>
         <div class="form-group"><div class="form-label">Discipline praticate</div><input class="form-input" id="p_discipline" placeholder="es. Calisthenics, BJJ, Running"></div>
         <div class="form-group"><div class="form-label">Skill attuali</div><input class="form-input" id="p_skill" placeholder="es. Trazioni, Dip, L-sit"></div>
       </div>
       <div class="form-section">
         <div class="form-section-title">Obiettivi</div>
-        <div class="form-group"><div class="form-label">Obiettivo principale</div>
-          <select class="form-select" id="p_obiettivo"><option value="">—</option><option>Forza massimale</option><option>Ipertrofia — massa muscolare</option><option>Skills avanzate (muscle up, planche...)</option><option>Perdita peso + composizione corporea</option><option>Mobilità e movimento</option><option>Performance sport specifico</option><option>Forma fisica generale</option></select>
-        </div>
+        <div class="form-group"><div class="form-label">Obiettivo principale</div><select class="form-select" id="p_obiettivo"><option value="">-</option><option>Forza massimale</option><option>Ipertrofia - massa muscolare</option><option>Skills avanzate</option><option>Perdita peso + composizione corporea</option><option>Mobilita e movimento</option><option>Performance sport specifico</option><option>Forma fisica generale</option></select></div>
         <div class="form-group"><div class="form-label">Obiettivo a 3 mesi</div><input class="form-input" id="p_obiettivo3m" placeholder="es. primo muscle up, 10 trazioni..."></div>
-        <div class="form-group"><div class="form-label">Disponibilità settimanale</div>
-          <select class="form-select" id="p_disponibilita"><option value="">—</option><option>1-2 ore</option><option>3-4 ore</option><option>5-6 ore</option><option>7+ ore</option></select>
-        </div>
+        <div class="form-group"><div class="form-label">Disponibilita settimanale</div><select class="form-select" id="p_disponibilita"><option value="">-</option><option>1-2 ore</option><option>3-4 ore</option><option>5-6 ore</option><option>7+ ore</option></select></div>
       </div>
       <div class="form-section">
         <div class="form-section-title">Attrezzatura e luogo</div>
-        <div class="form-group"><div class="form-label">Dove ti alleni</div>
-          <select class="form-select" id="p_luogo"><option value="">—</option><option>Parco pubblico / outdoor</option><option>Palestra</option><option>Casa</option><option>Misto outdoor / palestra</option><option>Misto outdoor / casa</option></select>
-        </div>
+        <div class="form-group"><div class="form-label">Dove ti alleni</div><select class="form-select" id="p_luogo"><option value="">-</option><option>Parco pubblico / outdoor</option><option>Palestra</option><option>Casa</option><option>Misto outdoor / palestra</option><option>Misto outdoor / casa</option></select></div>
         <div class="form-group"><div class="form-label">Attrezzatura disponibile</div><input class="form-input" id="p_attrezzatura" placeholder="es. Sbarra, Anelli, Bande elastiche"></div>
       </div>
       <div class="form-section">
         <div class="form-section-title">Salute</div>
-        <div class="form-group"><div class="form-label">Infortuni</div><textarea class="form-textarea" id="p_infortuni" placeholder="es. tendinite spalla, lombalgia... oppure Nessuno"></textarea></div>
+        <div class="form-group"><div class="form-label">Infortuni</div><textarea class="form-textarea" id="p_infortuni" placeholder="es. tendinite spalla... oppure Nessuno"></textarea></div>
         <div class="form-group"><div class="form-label">Limitazioni fisiche</div><textarea class="form-textarea" id="p_limitazioni" placeholder="es. problemi al ginocchio..."></textarea></div>
-        <div class="form-group"><div class="form-label">Stile di vita</div>
-          <select class="form-select" id="p_stile"><option value="">—</option><option>Sedentario — lavoro d'ufficio</option><option>Moderatamente attivo</option><option>Molto attivo — lavoro fisico / outdoor</option></select>
-        </div>
-        <div class="form-group"><div class="form-label">Ore di sonno medie</div>
-          <select class="form-select" id="p_sonno"><option value="">—</option><option>Meno di 6h</option><option>6-7h</option><option>7-8h</option><option>8h+</option></select>
-        </div>
+        <div class="form-group"><div class="form-label">Stile di vita</div><select class="form-select" id="p_stile"><option value="">-</option><option>Sedentario - lavoro d'ufficio</option><option>Moderatamente attivo</option><option>Molto attivo - lavoro fisico / outdoor</option></select></div>
+        <div class="form-group"><div class="form-label">Ore di sonno medie</div><select class="form-select" id="p_sonno"><option value="">-</option><option>Meno di 6h</option><option>6-7h</option><option>7-8h</option><option>8h+</option></select></div>
       </div>
       <div class="form-section">
         <div class="form-section-title">Note</div>
@@ -329,12 +294,11 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     </div>
   </div>
 </div>
-
-<!-- SESSION -->
+<!-- SESSION SCREEN -->
 <div class="screen" id="sessionScreen">
   <div class="topbar" style="padding:10px 16px;">
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="topbar-btn" onclick="showDash()">← Torna</button>
+      <button class="topbar-btn" onclick="showDash()">&larr; Torna</button>
       <div style="font-family:var(--display);font-size:12px;font-weight:700;" id="sessionTitle"></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
@@ -348,8 +312,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       </div>
     </div>
   </div>
-  <style>@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}</style>
-
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
     <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px;" id="messages"></div>
     <div style="flex:0 0 auto;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
@@ -360,14 +322,14 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div style="display:flex;align-items:center;border-top:1px solid var(--border);padding:6px 16px;gap:10px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:8px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:2px;">Cue tecnico</div>
-          <div id="cueBox" style="font-size:12px;color:var(--text2);font-style:italic;">—</div>
+          <div id="cueBox" style="font-size:12px;color:var(--text2);font-style:italic;">-</div>
         </div>
         <div style="width:1px;background:var(--border2);height:32px;flex-shrink:0;"></div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;">
           <div id="sessionTimerNum" style="font-family:var(--display);font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
           <div style="display:flex;gap:4px;">
-            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:3px 12px;background:var(--accent);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">▶</button>
-            <button onclick="sessionTimerReset()" style="padding:3px 8px;background:var(--border);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">↺</button>
+            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:3px 12px;background:var(--accent);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">&#9654;</button>
+            <button onclick="sessionTimerReset()" style="padding:3px 8px;background:var(--border);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">&#8635;</button>
           </div>
         </div>
       </div>
@@ -377,8 +339,8 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div style="display:flex;flex-direction:column;gap:5px;">
         <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Fatica percepita <span style="color:#444;font-size:8px;">(opz)</span></div>
         <div style="display:flex;gap:3px;align-items:center;">
-          <span style="font-size:9px;color:var(--muted);width:28px;text-align:center;">😴</span>
-          <div class="rpe-btns" id="rpeBtns" style="flex:1;display:flex;gap:2px;">
+          <span style="font-size:9px;color:var(--muted);width:28px;text-align:center;">&#128564;</span>
+          <div id="rpeBtns" style="flex:1;display:flex;gap:2px;">
             <button class="rpe-btn" onclick="selRpe(this,1)">1</button>
             <button class="rpe-btn" onclick="selRpe(this,2)">2</button>
             <button class="rpe-btn" onclick="selRpe(this,3)">3</button>
@@ -390,16 +352,12 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
             <button class="rpe-btn" onclick="selRpe(this,9)">9</button>
             <button class="rpe-btn" onclick="selRpe(this,10)">10</button>
           </div>
-          <span style="font-size:9px;color:var(--muted);width:28px;text-align:center;">🔥</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:0 28px;">
-          <span style="font-size:8px;color:#444;">Facile</span>
-          <span style="font-size:8px;color:#444;">Al limite</span>
+          <span style="font-size:9px;color:var(--muted);width:28px;text-align:center;">&#128293;</span>
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <input type="text" id="inpNote" placeholder="Note (opzionale)..." style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px 13px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;">
-        <button id="sendBtn" onclick="sendMsg()" style="width:48px;height:48px;background:var(--accent);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;">
+        <button id="sendBtn" onclick="sendMsg()" style="width:48px;height:48px;background:var(--accent);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg viewBox="0 0 24 24" fill="none" width="17" height="17"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
@@ -407,7 +365,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
   </div>
 </div>
 
-<!-- ADMIN -->
+<!-- ADMIN SCREEN -->
 <div class="screen" id="adminScreen">
   <div class="topbar">
     <div class="topbar-brand">AILISTENICS <span style="color:var(--accent);font-size:9px;letter-spacing:.15em;margin-left:6px;">ADMIN</span></div>
@@ -422,76 +380,45 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       </div>
       <button onclick="openCreateUserModal()" style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-bottom:1px;">+ Nuovo atleta</button>
     </div>
-
     <div class="admin-section active" id="tab-users">
       <table class="user-table">
         <thead><tr><th>Atleta</th><th>Email</th><th>Stato</th><th>Azioni</th></tr></thead>
-        <tbody id="userTableBody"><tr><td colspan="5" class="empty-table">Caricamento...</td></tr></tbody>
+        <tbody id="userTableBody"><tr><td colspan="4" class="empty-table">Caricamento...</td></tr></tbody>
       </table>
     </div>
-
     <div class="admin-section" id="tab-logs">
       <table class="user-table">
         <thead><tr><th>Atleta</th><th>Workout</th><th>Data</th><th>Azioni</th></tr></thead>
         <tbody id="logTableBody"><tr><td colspan="4" class="empty-table">Caricamento...</td></tr></tbody>
       </table>
     </div>
-
     <div class="admin-section" id="tab-library">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
-        <input type="text" id="libSearch" placeholder="Cerca esercizio..." oninput="filterLibrary()"
-          style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;flex:1;min-width:140px;">
-        <select id="libCat" onchange="filterLibrary()" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
-          <option value="">Tutte le categorie</option>
-          <option value="push">Push</option>
-          <option value="pull">Pull</option>
-          <option value="legs">Gambe</option>
-          <option value="core">Core</option>
-          <option value="handstand">Handstand</option>
-        </select>
-        <select id="libEquip" onchange="filterLibrary()" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
-          <option value="">Tutta l'attrezzatura</option>
-          <option value="bodyweight">Bodyweight</option>
-          <option value="anelli">Anelli</option>
-          <option value="sbarra">Sbarra</option>
-          <option value="parallele">Parallele</option>
-          <option value="banda">Banda</option>
-        </select>
-        <select id="libLevel" onchange="filterLibrary()" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
-          <option value="">Tutti i livelli</option>
-          <option value="beginner">Principiante</option>
-          <option value="intermediate">Intermedio</option>
-          <option value="advanced">Avanzato</option>
-        </select>
+        <input type="text" id="libSearch" placeholder="Cerca esercizio..." oninput="filterLibrary()" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;flex:1;min-width:140px;">
+        <select id="libCat" onchange="filterLibrary()" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;"><option value="">Tutte le categorie</option><option value="push">Push</option><option value="pull">Pull</option><option value="legs">Gambe</option><option value="core">Core</option><option value="handstand">Handstand</option></select>
+        <select id="libEquip" onchange="filterLibrary()" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;"><option value="">Tutta l'attrezzatura</option><option value="bodyweight">Bodyweight</option><option value="anelli">Anelli</option><option value="sbarra">Sbarra</option><option value="parallele">Parallele</option></select>
+        <select id="libLevel" onchange="filterLibrary()" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;"><option value="">Tutti i livelli</option><option value="beginner">Principiante</option><option value="intermediate">Intermedio</option><option value="advanced">Avanzato</option></select>
         <button onclick="openExerciseModal(null)" style="padding:8px 16px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Esercizio</button>
       </div>
       <div id="libCount" style="font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.05em;"></div>
       <table class="user-table">
-        <thead>
-          <tr>
-            <th>Nome</th><th>Categoria</th><th>Muscoli</th><th>Attrezzi</th>
-            <th>Livello</th><th>Progressioni</th><th>Tipo</th><th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody id="libTableBody">
-          <tr><td colspan="8" class="empty-table">Caricamento...</td></tr>
-        </tbody>
+        <thead><tr><th>Nome</th><th>Categoria</th><th>Muscoli</th><th>Attrezzi</th><th>Livello</th><th>Progressioni</th><th>Tipo</th><th>Azioni</th></tr></thead>
+        <tbody id="libTableBody"><tr><td colspan="8" class="empty-table">Caricamento...</td></tr></tbody>
       </table>
     </div>
   </div>
 </div>
-
-<!-- ONBOARD -->
+<!-- ONBOARD SCREEN -->
 <div class="screen" id="onboardScreen">
   <div class="onboard-wrap">
-    <button onclick="showScreen('loginScreen')" style="background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;text-align:left;padding:0;">← Torna al login</button>
+    <button onclick="showScreen('loginScreen')" style="background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;text-align:left;padding:0;">&larr; Torna al login</button>
     <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;">
       <div class="onboard-title">Inizia il tuo percorso</div>
-      <div class="onboard-sub">Compila il form — riceverai una mail di conferma<br>e verrai contattato dal coach entro 24h.</div>
+      <div class="onboard-sub">Compila il form - riceverai una mail di conferma<br>e verrai contattato dal coach entro 24h.</div>
     </div>
     <div id="onboardForm" style="display:flex;flex-direction:column;gap:24px;">
       <div class="form-section">
-        <div class="form-section-title">01 — Dati personali</div>
+        <div class="form-section-title">01 - Dati personali</div>
         <div class="form-row cols-2">
           <div class="form-group"><div class="form-label">Nome<span class="req">*</span></div><input class="form-input" id="f_nome" type="text" placeholder="Mario"></div>
           <div class="form-group"><div class="form-label">Cognome<span class="req">*</span></div><input class="form-input" id="f_cognome" type="text" placeholder="Rossi"></div>
@@ -501,8 +428,8 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
           <div class="form-group"><div class="form-label">Telefono</div><input class="form-input" id="f_telefono" type="tel" placeholder="+39 333 000 0000"></div>
         </div>
         <div class="form-row cols-2">
-          <div class="form-group"><div class="form-label">Età<span class="req">*</span></div><input class="form-input" id="f_eta" type="number" placeholder="25" min="14" max="80"></div>
-          <div class="form-group"><div class="form-label">Sesso</div><select class="form-select" id="f_sesso"><option value="">—</option><option>Maschile</option><option>Femminile</option><option>Altro</option></select></div>
+          <div class="form-group"><div class="form-label">Et&agrave;<span class="req">*</span></div><input class="form-input" id="f_eta" type="number" placeholder="25" min="14" max="80"></div>
+          <div class="form-group"><div class="form-label">Sesso</div><select class="form-select" id="f_sesso"><option value="">-</option><option>Maschile</option><option>Femminile</option><option>Altro</option></select></div>
         </div>
         <div class="form-row cols-2">
           <div class="form-group"><div class="form-label">Peso (kg)</div><input class="form-input" id="f_peso" type="number" placeholder="75"></div>
@@ -510,13 +437,9 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </div>
       </div>
       <div class="form-section">
-        <div class="form-section-title">02 — Allenamento attuale</div>
-        <div class="form-group"><div class="form-label">Livello<span class="req">*</span></div>
-          <select class="form-select" id="f_livello"><option value="">Seleziona</option><option>Principiante — meno di 6 mesi</option><option>Intermedio — 6 mesi / 2 anni</option><option>Avanzato — più di 2 anni</option></select>
-        </div>
-        <div class="form-group"><div class="form-label">Frequenza attuale<span class="req">*</span></div>
-          <select class="form-select" id="f_frequenza"><option value="">—</option><option>1-2 volte a settimana</option><option>3-4 volte a settimana</option><option>5+ volte a settimana</option><option>Non mi alleno regolarmente</option></select>
-        </div>
+        <div class="form-section-title">02 - Allenamento attuale</div>
+        <div class="form-group"><div class="form-label">Livello<span class="req">*</span></div><select class="form-select" id="f_livello"><option value="">Seleziona</option><option>Principiante - meno di 6 mesi</option><option>Intermedio - 6 mesi / 2 anni</option><option>Avanzato - piu di 2 anni</option></select></div>
+        <div class="form-group"><div class="form-label">Frequenza attuale<span class="req">*</span></div><select class="form-select" id="f_frequenza"><option value="">-</option><option>1-2 volte a settimana</option><option>3-4 volte a settimana</option><option>5+ volte a settimana</option><option>Non mi alleno regolarmente</option></select></div>
         <div class="form-group">
           <div class="form-label">Discipline praticate</div>
           <div class="check-group" id="checkDiscipline">
@@ -553,20 +476,14 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </div>
       </div>
       <div class="form-section">
-        <div class="form-section-title">03 — Obiettivi</div>
-        <div class="form-group"><div class="form-label">Obiettivo principale<span class="req">*</span></div>
-          <select class="form-select" id="f_obiettivo"><option value="">Seleziona</option><option>Forza massimale</option><option>Ipertrofia — massa muscolare</option><option>Skills avanzate (muscle up, planche...)</option><option>Perdita peso + composizione corporea</option><option>Mobilità e movimento</option><option>Performance sport specifico</option><option>Forma fisica generale</option></select>
-        </div>
+        <div class="form-section-title">03 - Obiettivi</div>
+        <div class="form-group"><div class="form-label">Obiettivo principale<span class="req">*</span></div><select class="form-select" id="f_obiettivo"><option value="">Seleziona</option><option>Forza massimale</option><option>Ipertrofia - massa muscolare</option><option>Skills avanzate (muscle up, planche...)</option><option>Perdita peso + composizione corporea</option><option>Mobilita e movimento</option><option>Performance sport specifico</option><option>Forma fisica generale</option></select></div>
         <div class="form-group"><div class="form-label">Obiettivo specifico a 3 mesi</div><input class="form-input" id="f_obiettivo3m" type="text" placeholder="es. primo muscle up, 10 trazioni..."></div>
-        <div class="form-group"><div class="form-label">Disponibilità oraria settimanale<span class="req">*</span></div>
-          <select class="form-select" id="f_disponibilita"><option value="">—</option><option>1-2 ore</option><option>3-4 ore</option><option>5-6 ore</option><option>7+ ore</option></select>
-        </div>
+        <div class="form-group"><div class="form-label">Disponibilita oraria settimanale<span class="req">*</span></div><select class="form-select" id="f_disponibilita"><option value="">-</option><option>1-2 ore</option><option>3-4 ore</option><option>5-6 ore</option><option>7+ ore</option></select></div>
       </div>
       <div class="form-section">
-        <div class="form-section-title">04 — Attrezzatura e luogo</div>
-        <div class="form-group"><div class="form-label">Dove ti alleni principalmente<span class="req">*</span></div>
-          <select class="form-select" id="f_luogo"><option value="">—</option><option>Parco pubblico / outdoor</option><option>Palestra</option><option>Casa</option><option>Misto outdoor / palestra</option><option>Misto outdoor / casa</option></select>
-        </div>
+        <div class="form-section-title">04 - Attrezzatura e luogo</div>
+        <div class="form-group"><div class="form-label">Dove ti alleni principalmente<span class="req">*</span></div><select class="form-select" id="f_luogo"><option value="">-</option><option>Parco pubblico / outdoor</option><option>Palestra</option><option>Casa</option><option>Misto outdoor / palestra</option><option>Misto outdoor / casa</option></select></div>
         <div class="form-group">
           <div class="form-label">Attrezzatura disponibile</div>
           <div class="check-group" id="checkAttr">
@@ -581,121 +498,65 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </div>
       </div>
       <div class="form-section">
-        <div class="form-section-title">05 — Salute e limitazioni</div>
+        <div class="form-section-title">05 - Salute e limitazioni</div>
         <div class="form-group">
           <div class="form-label">Hai infortuni attuali o pregressi?<span class="req">*</span></div>
           <div class="toggle-row">
-            <button type="button" class="toggle-btn" id="togSi" onclick="setInfortuni('si')">Sì</button>
+            <button type="button" class="toggle-btn" id="togSi" onclick="setInfortuni('si')">Si</button>
             <button type="button" class="toggle-btn" id="togNo" onclick="setInfortuni('no')">No</button>
           </div>
         </div>
-        <div class="form-group" id="infortuniWrap" style="display:none;">
-          <div class="form-label">Descrivi brevemente</div>
-          <textarea class="form-textarea" id="f_infortuni" placeholder="es. tendinite spalla, lombalgia..."></textarea>
-        </div>
+        <div class="form-group" id="infortuniWrap" style="display:none;"><div class="form-label">Descrivi brevemente</div><textarea class="form-textarea" id="f_infortuni" placeholder="es. tendinite spalla, lombalgia..."></textarea></div>
         <div class="form-group"><div class="form-label">Altre limitazioni fisiche</div><textarea class="form-textarea" id="f_limitazioni" placeholder="es. problemi al ginocchio, interventi..."></textarea></div>
-        <div class="form-group"><div class="form-label">Stile di vita</div>
-          <select class="form-select" id="f_stile"><option value="">—</option><option>Sedentario — lavoro d'ufficio</option><option>Moderatamente attivo</option><option>Molto attivo — lavoro fisico / outdoor</option></select>
-        </div>
-        <div class="form-group"><div class="form-label">Ore di sonno medie</div>
-          <select class="form-select" id="f_sonno"><option value="">—</option><option>Meno di 6h</option><option>6-7h</option><option>7-8h</option><option>8h+</option></select>
-        </div>
+        <div class="form-group"><div class="form-label">Stile di vita</div><select class="form-select" id="f_stile"><option value="">-</option><option>Sedentario - lavoro d'ufficio</option><option>Moderatamente attivo</option><option>Molto attivo - lavoro fisico / outdoor</option></select></div>
+        <div class="form-group"><div class="form-label">Ore di sonno medie</div><select class="form-select" id="f_sonno"><option value="">-</option><option>Meno di 6h</option><option>6-7h</option><option>7-8h</option><option>8h+</option></select></div>
       </div>
       <div class="form-section">
-        <div class="form-section-title">06 — Motivazione e note</div>
-        <div class="form-group"><div class="form-label">Perché vuoi iniziare il coaching?<span class="req">*</span></div><textarea class="form-textarea" id="f_motivazione" placeholder="Raccontami cosa ti aspetti dal percorso..."></textarea></div>
+        <div class="form-section-title">06 - Motivazione e note</div>
+        <div class="form-group"><div class="form-label">Perche vuoi iniziare il coaching?<span class="req">*</span></div><textarea class="form-textarea" id="f_motivazione" placeholder="Raccontami cosa ti aspetti dal percorso..."></textarea></div>
         <div class="form-group"><div class="form-label">Note libere</div><textarea class="form-textarea" id="f_note" placeholder="Qualsiasi cosa vuoi che io sappia..."></textarea></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;">
-        <button class="onboard-submit" id="onboardBtn" onclick="submitOnboard()">Invia richiesta coaching →</button>
-        <div class="form-note">Riceverai una mail di conferma immediata.<br>Il coach ti contatterà entro 24 ore.</div>
+        <button class="onboard-submit" id="onboardBtn" onclick="submitOnboard()">Invia richiesta coaching</button>
+        <div class="form-note">Riceverai una mail di conferma immediata.<br>Il coach ti contatter&agrave; entro 24 ore.</div>
         <div style="font-size:10px;color:var(--red);text-align:center;min-height:16px;" id="onboardErr"></div>
       </div>
     </div>
     <div class="onboard-success" id="onboardSuccess">
-      <div class="success-glyph">✓</div>
+      <div style="font-size:40px;color:var(--accent);">&#10003;</div>
       <div class="success-title">Richiesta inviata!</div>
-      <div class="success-sub">Hai ricevuto una mail di conferma.<br>Carlo ti contatterà entro 24 ore.</div>
-      <button onclick="showDash()" style="padding:11px 24px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;margin-top:8px;">← Torna alla dashboard</button>
-      <div id="onboardSuccessDemo" style="display:none;margin-top:8px;flex-direction:column;align-items:center;gap:8px;">
-        <div style="font-size:11px;color:var(--muted);">Nel frattempo prova una sessione personalizzata.</div>
-        <button onclick="startDemoSession()" style="padding:11px 24px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;">▶ Inizia sessione personalizzata</button>
+      <div class="success-sub">Hai ricevuto una mail di conferma.<br>Carlo ti contatter&agrave; entro 24 ore.</div>
+      <button onclick="showDash()" style="padding:11px 24px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;margin-top:8px;">&larr; Torna alla dashboard</button>
+      <div id="onboardSuccessDemo" style="display:none;margin-top:8px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Nel frattempo prova una sessione personalizzata.</div>
+        <button onclick="startDemoSession()" style="padding:11px 24px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;">Inizia sessione personalizzata</button>
       </div>
     </div>
   </div>
 </div>
-
 <!-- MODALS -->
-
-<!-- MODAL ESERCIZIO -->
 <div class="modal-overlay" id="exerciseModal">
   <div class="modal" style="max-width:600px;">
     <div class="modal-title" id="exModalTitle">Nuovo esercizio</div>
     <input type="hidden" id="exId">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="modal-field" style="grid-column:1/-1;">
-        <div class="modal-label">Nome <span style="color:var(--accent)">*</span></div>
-        <input class="modal-input" id="exName" placeholder="es. Ring Dip">
-      </div>
-      <div class="modal-field">
-        <div class="modal-label">Categoria</div>
-        <select class="modal-input" id="exCategory" style="cursor:pointer;">
-          <option value="">—</option>
-          <option value="push">Push</option>
-          <option value="pull">Pull</option>
-          <option value="legs">Legs</option>
-          <option value="core">Core</option>
-          <option value="handstand">Handstand</option>
-        </select>
-      </div>
-      <div class="modal-field">
-        <div class="modal-label">Livello</div>
-        <select class="modal-input" id="exLevel" style="cursor:pointer;">
-          <option value="">—</option>
-          <option value="beginner">Principiante</option>
-          <option value="intermediate">Intermedio</option>
-          <option value="advanced">Avanzato</option>
-        </select>
-      </div>
-      <div class="modal-field">
-        <div class="modal-label">Muscoli</div>
-        <input class="modal-input" id="exMuscles" placeholder="es. petto, tricipiti">
-      </div>
-      <div class="modal-field">
-        <div class="modal-label">Attrezzatura</div>
-        <input class="modal-input" id="exEquipment" placeholder="es. anelli, sbarra">
-      </div>
-      <div class="modal-field">
-        <div class="modal-label">Recupero default (secondi)</div>
-        <input class="modal-input" id="exRest" type="number" placeholder="90">
-      </div>
-      <div class="modal-field">
-        <div class="modal-label">Cue tecnico</div>
-        <input class="modal-input" id="exCue" placeholder="max 5 parole">
-      </div>
-      <div class="modal-field" style="grid-column:1/-1;">
-        <div class="modal-label">Progressioni</div>
-        <input class="modal-input" id="exProgressions" placeholder="es. Incline → Flat → Decline → Weighted">
-      </div>
-      <div class="modal-field" style="grid-column:1/-1;">
-        <div class="modal-label">Note</div>
-        <textarea class="modal-textarea" id="exNotes" style="min-height:60px;" placeholder="Note aggiuntive..."></textarea>
-      </div>
+      <div class="modal-field" style="grid-column:1/-1;"><div class="modal-label">Nome *</div><input class="modal-input" id="exName" placeholder="es. Ring Dip"></div>
+      <div class="modal-field"><div class="modal-label">Categoria</div><select class="modal-input" id="exCategory" style="cursor:pointer;"><option value="">-</option><option value="push">Push</option><option value="pull">Pull</option><option value="legs">Legs</option><option value="core">Core</option><option value="handstand">Handstand</option></select></div>
+      <div class="modal-field"><div class="modal-label">Livello</div><select class="modal-input" id="exLevel" style="cursor:pointer;"><option value="">-</option><option value="beginner">Principiante</option><option value="intermediate">Intermedio</option><option value="advanced">Avanzato</option></select></div>
+      <div class="modal-field"><div class="modal-label">Muscoli</div><input class="modal-input" id="exMuscles" placeholder="es. petto, tricipiti"></div>
+      <div class="modal-field"><div class="modal-label">Attrezzatura</div><input class="modal-input" id="exEquipment" placeholder="es. anelli, sbarra"></div>
+      <div class="modal-field"><div class="modal-label">Recupero default (sec)</div><input class="modal-input" id="exRest" type="number" placeholder="90"></div>
+      <div class="modal-field"><div class="modal-label">Cue tecnico</div><input class="modal-input" id="exCue" placeholder="max 5 parole"></div>
+      <div class="modal-field" style="grid-column:1/-1;"><div class="modal-label">Progressioni</div><input class="modal-input" id="exProgressions" placeholder="es. Incline - Flat - Decline - Weighted"></div>
+      <div class="modal-field" style="grid-column:1/-1;"><div class="modal-label">Note</div><textarea class="modal-textarea" id="exNotes" style="min-height:60px;" placeholder="Note aggiuntive..."></textarea></div>
     </div>
     <div style="font-size:11px;color:var(--red);min-height:16px;" id="exError"></div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeModal('exerciseModal')">Annulla</button>
-      <button class="modal-save" onclick="saveExercise()">Salva</button>
-    </div>
+    <div class="modal-btns"><button class="modal-cancel" onclick="closeModal('exerciseModal')">Annulla</button><button class="modal-save" onclick="saveExercise()">Salva</button></div>
   </div>
 </div>
 
 <div class="modal-overlay" id="logModal">
-  <div class="modal">
-    <div class="modal-title" id="logModalTitle">Workout Log</div>
-    <div class="log-entry" id="logModalContent"></div>
-    <div class="modal-btns"><button class="modal-cancel" onclick="closeModal('logModal')">Chiudi</button></div>
-  </div>
+  <div class="modal"><div class="modal-title" id="logModalTitle">Workout Log</div><div class="log-entry" id="logModalContent"></div><div class="modal-btns"><button class="modal-cancel" onclick="closeModal('logModal')">Chiudi</button></div></div>
 </div>
 
 <div class="modal-overlay" id="newPasswordModal">
@@ -705,83 +566,34 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     <div class="modal-field"><div class="modal-label">Nuova password</div><input class="modal-input" id="newPwdInput" type="password" placeholder="Minimo 6 caratteri"></div>
     <div class="modal-field"><div class="modal-label">Conferma password</div><input class="modal-input" id="newPwdConfirm" type="password" placeholder="Ripeti la password"></div>
     <div style="font-size:11px;color:var(--red);min-height:16px;" id="newPwdError"></div>
-    <div class="modal-btns">
-      <button class="modal-save" onclick="submitNewPassword()">Salva password</button>
-    </div>
+    <div class="modal-btns"><button class="modal-save" onclick="submitNewPassword()">Salva password</button></div>
   </div>
 </div>
 
-<!-- ── MODAL PROGRAMMI ATLETA (con compositore AI) ── -->
-<div class="modal-overlay" id="athleteProgramsModal">
-  <div class="modal" style="max-width:700px;">
-    <div class="modal-title">Programmi di <span id="athleteProgramsName"></span></div>
-    <div id="athleteProgramsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
-
-    <!-- COMPOSITORE AI -->
-    <div style="border-top:1px solid var(--border);padding-top:18px;display:flex;flex-direction:column;gap:14px;">
-      <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;">+ Aggiungi nuovo programma</div>
-
-      <div class="modal-field">
-        <div class="modal-label">Nome programma</div>
-        <input class="modal-input" id="newProgName" placeholder="es. Body By Rings — Fase 1">
-      </div>
-
-      <!-- Compositore AI -->
-      <div class="composer-box">
-        <div class="composer-label">✦ Compositore AI</div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Descrivi il programma in linguaggio naturale. L'AI genererà il system prompt usando il profilo atleta e la libreria esercizi.</div>
-        <textarea class="composer-desc" id="composerDesc" placeholder="es. Push/pull split 4 giorni, focus forza upper body, niente overhead per la spalla, recuperi lunghi..."></textarea>
-        <button class="generate-btn" id="generateBtn" onclick="generateProgram()">
-          <div class="generate-spinner" id="generateSpinner"></div>
-          <span id="generateBtnLabel">✦ Genera con AI</span>
-        </button>
-      </div>
-
-      <div class="modal-field">
-        <div class="modal-label">System prompt AI Coach <span style="color:#444;font-size:9px;">(generato o scrivi tu)</span></div>
-        <textarea class="modal-textarea" id="newProgPrompt" placeholder="Il prompt verrà generato dall'AI, oppure scrivi il tuo..." style="min-height:200px;"></textarea>
-      </div>
-    </div>
-
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
-      <button class="modal-save" onclick="addProgram()">Aggiungi programma</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PROFILO ATLETA (admin) — con campo Nome -->
 <div class="modal-overlay" id="athleteProfileModal">
   <div class="modal" style="max-width:680px;">
     <div class="modal-title">Profilo di <span id="athleteProfileName"></span></div>
-
-    <!-- CAMPO NOME -->
-    <div class="modal-field">
-      <div class="modal-label">Nome completo</div>
-      <input class="modal-input" id="apName" placeholder="Mario Rossi">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+      <div class="modal-field"><div class="modal-label">Et&agrave;</div><input class="modal-input" id="apEta" type="number" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Sesso</div><input class="modal-input" id="apSesso" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Peso (kg)</div><input class="modal-input" id="apPeso" type="number" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Altezza (cm)</div><input class="modal-input" id="apAltezza" type="number" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Livello</div><input class="modal-input" id="apLivello" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Frequenza</div><input class="modal-input" id="apFrequenza" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Obiettivo</div><input class="modal-input" id="apObiettivo" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Obiettivo 3 mesi</div><input class="modal-input" id="apObiettivo3m" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Luogo</div><input class="modal-input" id="apLuogo" placeholder="-"></div>
+      <div class="modal-field"><div class="modal-label">Disponibilita</div><input class="modal-input" id="apDisponibilita" placeholder="-"></div>
     </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0px;">
-      <div class="modal-field"><div class="modal-label">Età</div><input class="modal-input" id="apEta" type="number" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Sesso</div><input class="modal-input" id="apSesso" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Peso (kg)</div><input class="modal-input" id="apPeso" type="number" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Altezza (cm)</div><input class="modal-input" id="apAltezza" type="number" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Livello</div><input class="modal-input" id="apLivello" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Frequenza</div><input class="modal-input" id="apFrequenza" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Obiettivo</div><input class="modal-input" id="apObiettivo" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Obiettivo 3 mesi</div><input class="modal-input" id="apObiettivo3m" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Luogo</div><input class="modal-input" id="apLuogo" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Disponibilità</div><input class="modal-input" id="apDisponibilita" placeholder="—"></div>
-    </div>
-    <div class="modal-field"><div class="modal-label">Discipline</div><input class="modal-input" id="apDiscipline" placeholder="—"></div>
-    <div class="modal-field"><div class="modal-label">Skill</div><input class="modal-input" id="apSkill" placeholder="—"></div>
-    <div class="modal-field"><div class="modal-label">Attrezzatura</div><input class="modal-input" id="apAttrezzatura" placeholder="—"></div>
-    <div class="modal-field"><div class="modal-label">Infortuni</div><input class="modal-input" id="apInfortuni" placeholder="—"></div>
-    <div class="modal-field"><div class="modal-label">Limitazioni</div><input class="modal-input" id="apLimitazioni" placeholder="—"></div>
-    <div class="modal-field"><div class="modal-label">Stile di vita</div><input class="modal-input" id="apStile" placeholder="—"></div>
-    <div class="modal-field"><div class="modal-label">Sonno</div><input class="modal-input" id="apSonno" placeholder="—"></div>
-    <div class="modal-field"><div class="modal-label">Motivazione</div><textarea class="modal-textarea" id="apMotivazione" style="min-height:60px;" placeholder="—"></textarea></div>
-    <div class="modal-field"><div class="modal-label">Note libere</div><textarea class="modal-textarea" id="apNote" style="min-height:60px;" placeholder="—"></textarea></div>
+    <div class="modal-field"><div class="modal-label">Discipline</div><input class="modal-input" id="apDiscipline" placeholder="-"></div>
+    <div class="modal-field"><div class="modal-label">Skill</div><input class="modal-input" id="apSkill" placeholder="-"></div>
+    <div class="modal-field"><div class="modal-label">Attrezzatura</div><input class="modal-input" id="apAttrezzatura" placeholder="-"></div>
+    <div class="modal-field"><div class="modal-label">Infortuni</div><input class="modal-input" id="apInfortuni" placeholder="-"></div>
+    <div class="modal-field"><div class="modal-label">Limitazioni</div><input class="modal-input" id="apLimitazioni" placeholder="-"></div>
+    <div class="modal-field"><div class="modal-label">Stile di vita</div><input class="modal-input" id="apStile" placeholder="-"></div>
+    <div class="modal-field"><div class="modal-label">Sonno</div><input class="modal-input" id="apSonno" placeholder="-"></div>
+    <div class="modal-field"><div class="modal-label">Motivazione</div><textarea class="modal-textarea" id="apMotivazione" style="min-height:60px;" placeholder="-"></textarea></div>
+    <div class="modal-field"><div class="modal-label">Note libere</div><textarea class="modal-textarea" id="apNote" style="min-height:60px;" placeholder="-"></textarea></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('athleteProfileModal')">Chiudi</button>
       <button style="padding:9px 18px;background:transparent;border:1px solid rgba(255,95,95,.4);border-radius:7px;color:var(--red);font-family:var(--mono);font-size:11px;cursor:pointer;" onclick="resetAthleteProfile()">Reset</button>
@@ -791,1181 +603,822 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
   </div>
 </div>
 
-<div class="modal-overlay" id="createUserModal">
-  <div class="modal">
-    <div class="modal-title">Crea Nuovo Atleta</div>
-    <div class="modal-sub">L'atleta potrà accedere con email e password, oppure cambiarla via "Password dimenticata?"</div>
-    <div class="modal-field"><div class="modal-label">Nome completo</div><input class="modal-input" id="newUserName" placeholder="Mario Rossi"></div>
-    <div class="modal-field"><div class="modal-label">Email</div><input class="modal-input" id="newUserEmail" type="email" placeholder="mario@email.com"></div>
-    <div class="modal-field"><div class="modal-label">Password temporanea</div><input class="modal-input" id="newUserPass" type="text" placeholder="es. Calis2024!"></div>
-    <div style="font-size:10px;color:var(--muted);">Comunica la password all'atleta. Potrà cambiarla in autonomia via email.</div>
+<div class="modal-overlay" id="athleteProgramsModal">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-title">Programmi di <span id="athleteProgramsName"></span></div>
+    <div id="athleteProgramsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:14px;">+ Aggiungi nuovo programma</div>
+      <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="newProgName" placeholder="es. Body By Rings - Fase 1"></div>
+      <div class="modal-field">
+        <div class="modal-label">Descrivi il programma <span style="color:var(--muted);font-size:9px;">(per la generazione AI)</span></div>
+        <textarea class="modal-textarea" id="newProgDesc" style="min-height:80px;" placeholder="es. Push/Pull split 4 giorni, obiettivo forza upper body, niente overhead per tendinite spalla..."></textarea>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <button class="generate-btn" id="generateBtn" onclick="generatePromptWithAI()">
+          <div class="generate-spinner" id="generateSpinner"></div>
+          <span class="generate-label">Genera prompt con AI</span>
+        </button>
+        <div style="font-size:10px;color:var(--muted);" id="generateStatus"></div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">System prompt AI Coach <span style="color:var(--muted);font-size:9px;">(generato o scritto a mano)</span></div>
+        <textarea class="modal-textarea" id="newProgPrompt" style="min-height:200px;" placeholder="Clicca 'Genera con AI' oppure incolla il prompt manualmente..."></textarea>
+      </div>
+    </div>
     <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeModal('createUserModal')">Annulla</button>
-      <button class="modal-save" onclick="createUser()">Crea account</button>
+      <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
+      <button class="modal-save" onclick="addProgram()">Aggiungi programma</button>
     </div>
   </div>
 </div>
 
-<style>
-.rpe-btn{padding:5px 4px;background:transparent;border:1px solid var(--border2);border-radius:5px;color:#888;font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .12s;min-width:22px;text-align:center;flex:1;}
-.rpe-btn:hover{color:var(--text);border-color:#444;}
-.rpe-btn.sel{background:var(--accent);color:#000;border-color:var(--accent);}
-</style>
-
+<div class="modal-overlay" id="createUserModal">
+  <div class="modal">
+    <div class="modal-title">Crea Nuovo Atleta</div>
+    <div class="modal-sub">L'atleta potr&agrave; accedere con email e password, oppure cambiarla via "Password dimenticata?"</div>
+    <div class="modal-field"><div class="modal-label">Nome completo</div><input class="modal-input" id="newUserName" placeholder="Mario Rossi"></div>
+    <div class="modal-field"><div class="modal-label">Email</div><input class="modal-input" id="newUserEmail" type="email" placeholder="mario@email.com"></div>
+    <div class="modal-field"><div class="modal-label">Password temporanea</div><input class="modal-input" id="newUserPass" type="text" placeholder="es. Calis2024!"></div>
+    <div style="font-size:10px;color:var(--muted);">Comunica la password all'atleta. Potr&agrave; cambiarla in autonomia via email.</div>
+    <div class="modal-btns"><button class="modal-cancel" onclick="closeModal('createUserModal')">Annulla</button><button class="modal-save" onclick="createUser()">Crea account</button></div>
+  </div>
+</div>
 <script>
-const SUPABASE_URL = 'https://efziohgwsvplqandzawz.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_R-LAgce572sW0gzDAWyJlA_eXr6H0s7';
-const ADMIN_EMAIL = 'calislackline@gmail.com';
-const APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec';
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { flowType: 'pkce', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
-});
-let currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
+var SUPABASE_URL = 'https://efziohgwsvplqandzawz.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_R-LAgce572sW0gzDAWyJlA_eXr6H0s7';
+var ADMIN_EMAIL = 'calislackline@gmail.com';
+var APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{flowType:'pkce',autoRefreshToken:true,detectSessionInUrl:true,persistSession:true}});
+var currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
+var currentSetMode = 'single', currentExercises = [];
+var sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft = 0, sessionTimerTotal = 0;
+var allExercises = [];
+var athleteProgramsUserId = null;
+var infortuniVal = null;
 
-// ── DEMO PROMPT ──────────────────────────────────────────────────────────────
-const DEMO_PROMPT = `Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.
+var DEMO_PROMPT = 'Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.\n\nREGOLE ASSOLUTE:\n- Durante le domande iniziali: solo la domanda + lista opzioni.\n- Durante il workout: formato fisso.\n- [SET:NomeEsercizio] sempre prima di ogni esercizio.\n- [CUE:max 5 parole] sempre dopo.\n- Recupero formato mm:ss.\n- Niente incoraggiamenti.\n- Quando l utente dice fine genera WORKOUT LOG.\n\nDOMANDE INIZIALI:\n1.\nQuanto tempo hai?\n- 30 minuti\n- 45 minuti\n- 60 minuti\n- 90 minuti\n\n2.\nDove ti alleni?\n- Casa - solo bodyweight\n- Parco - sbarra e parallele\n- Palestra completa\n- Casa con attrezzi\n\n3.\nObiettivo oggi?\n- Tutto il corpo\n- Solo upper body\n- Solo lower body\n- Forza e skills\n\n4.\nCome ti senti?\n- Carico\n- Nella media\n- Stanco\n\nDopo le 4 risposte vai al primo esercizio.\n\nFORMATO ESERCIZIO:\n[SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n[CUE:cue breve]\n\nFORMATO SUPERSET:\n[SUPERSET:Nome1,Nome2]\nSUPERSET X - Set N/TOT\nNome1: X-Y reps\nNome2: X-Y reps\n[CUE:cue breve]\n-> VAI SUBITO su Nome2\nRecupero: mm:ss\n\nFEEDBACK: ok max 4 parole. Recupero: mm:ss\n\nWORKOUT LOG:\nWORKOUT LOG\n================\nData: [data]\nDurata: [X] min\n[Esercizio]: [sets x reps]';
 
-REGOLE ASSOLUTE:
-- Durante le domande iniziali: solo la domanda + lista opzioni. Zero testo extra.
-- Durante il workout: formato fisso, niente testo extra.
-- [SET:NomeEsercizio] sempre prima di ogni esercizio.
-- [CUE:max 5 parole] sempre dopo.
-- Recupero formato mm:ss.
-- Niente "Perfetto!", "Ottimo!", spiegazioni, incoraggiamenti.
-- Feedback dopo set: una riga max.
-- Niente "Quando sei pronto" o "Dimmi quante reps".
-- Quando l'utente dice "fine" genera WORKOUT LOG.
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtTime(s){return String(Math.floor(Math.max(s,0)/60)).padStart(2,'0')+':'+String(Math.max(s,0)%60).padStart(2,'0');}
+function hideLoading(){document.getElementById('loadingScreen').style.display='none';}
+function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-DOMANDE INIZIALI (una alla volta, solo domanda + lista):
-
-1.
-Quanto tempo hai?
-- 30 minuti
-- 45 minuti
-- 60 minuti
-- 90 minuti
-
-2.
-Dove ti alleni?
-- Casa — solo bodyweight
-- Parco — sbarra e parallele
-- Palestra completa
-- Casa con attrezzi
-
-3.
-Obiettivo oggi?
-- Tutto il corpo
-- Solo upper body
-- Solo lower body
-- Forza e skills
-
-4.
-Come ti senti?
-- Carico
-- Nella media
-- Stanco
-
-Dopo le 4 risposte costruisci il workout in silenzio e vai diretto al primo esercizio.
-
-FORMATO ESERCIZIO:
-[SET:NomeEsercizio]
-NomeEsercizio — Set N/TOT | X-Y reps | Recupero: mm:ss
-[CUE:cue breve]
-
-FORMATO SUPERSET:
-[SUPERSET:Nome1,Nome2]
-SUPERSET X — Set N/TOT
-Nome1: X-Y reps
-Nome2: X-Y reps
-[CUE:cue breve]
-→ VAI SUBITO su Nome2 — nessun recupero
-Recupero: mm:ss
-
-FEEDBACK:
-✓ [max 4 parole]. Recupero: mm:ss
-
-CRITERI:
-30 min → 3 esercizi, 3 sets, recupero 01:00
-45 min → 4 esercizi, 3 sets, recupero 01:30
-60 min → 5 esercizi, 3 sets, recupero 01:30
-90 min → 6 esercizi, 4 sets, recupero 02:00
-Stanco → volume -1 set, recupero +30 sec
-Carico → fascia alta reps, esercizi più difficili
-
-WORKOUT LOG:
-WORKOUT LOG
-================
-Data: [data]
-Durata: [X] min | Luogo: [luogo]
-[Esercizio]: [sets x reps]`;
-
-// ── INIT ─────────────────────────────────────────────────────────────────────
-function startDemoSession() {
-  const origProfile = JSON.parse(JSON.stringify(currentProfile || {}));
-  currentProfile = { ...currentProfile, ai_prompt: DEMO_PROMPT, program_name: 'Allenamento Personalizzato', _isDemo: true, _origProfile: origProfile };
+function startDemoSession(){
+  var orig = JSON.parse(JSON.stringify(currentProfile||{}));
+  currentProfile = Object.assign({}, currentProfile, {ai_prompt:DEMO_PROMPT, _isDemo:true, _orig:orig});
   sessionWorkout = 'Sessione personalizzata';
   sessionHistory = []; selectedRpe = null; busy = false;
   document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
-  const box = document.getElementById('setInfoBox'); if (box) box.innerHTML = 'In attesa...';
-  const cueB = document.getElementById('cueBox'); if (cueB) cueB.textContent = '—';
-  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  var box = document.getElementById('setInfoBox'); if(box) box.innerHTML = 'In attesa...';
+  var cueB = document.getElementById('cueBox'); if(cueB) cueB.textContent = '-';
+  document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode = 'single'; currentExercises = [];
   renderInputFields('single', []);
   showScreen('sessionScreen');
   aiSend('Inizia', true);
 }
 
-async function init() {
-  const timeout = setTimeout(() => { hideLoading(); showScreen('loginScreen'); }, 10000);
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code'), error = params.get('error');
-  if (code || error) window.history.replaceState({}, document.title, window.location.pathname);
-  if (error) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Errore login. Riprova.'; return; }
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'PASSWORD_RECOVERY') { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('newPasswordModal').classList.add('open'); }
-    else if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; showScreen('loginScreen'); }
+async function init(){
+  var timeout = setTimeout(function(){hideLoading(); showScreen('loginScreen');}, 10000);
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('code'), error = params.get('error');
+  if(code||error) window.history.replaceState({}, document.title, window.location.pathname);
+  if(error){clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent='Errore login. Riprova.'; return;}
+  sb.auth.onAuthStateChange(async function(event, session){
+    if(event==='PASSWORD_RECOVERY'){clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('newPasswordModal').classList.add('open');}
+    else if(event==='SIGNED_OUT'){currentUser=null; currentProfile=null; showScreen('loginScreen');}
   });
-  try {
-    if (code) {
-      const { data, error: exchErr } = await sb.auth.exchangeCodeForSession(code);
-      if (exchErr || !data.session) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Errore autenticazione. Riprova.'; return; }
-      clearTimeout(timeout); await handleSession(data.session); return;
+  try{
+    if(code){
+      var r = await sb.auth.exchangeCodeForSession(code);
+      if(r.error||!r.data.session){clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent='Errore autenticazione. Riprova.'; return;}
+      clearTimeout(timeout); await handleSession(r.data.session); return;
     }
-    const { data: { session } } = await sb.auth.getSession();
+    var s = await sb.auth.getSession();
     clearTimeout(timeout);
-    if (session) { await handleSession(session); } else { hideLoading(); showScreen('loginScreen'); }
-  } catch(e) { clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); }
+    if(s.data.session){await handleSession(s.data.session);}else{hideLoading(); showScreen('loginScreen');}
+  }catch(e){clearTimeout(timeout); hideLoading(); showScreen('loginScreen');}
 }
 
-async function submitNewPassword() {
-  const pwd = document.getElementById('newPwdInput').value, pwd2 = document.getElementById('newPwdConfirm').value;
-  const errEl = document.getElementById('newPwdError');
-  errEl.textContent = '';
-  if (pwd.length < 6) { errEl.textContent = 'La password deve essere di almeno 6 caratteri.'; return; }
-  if (pwd !== pwd2) { errEl.textContent = 'Le password non coincidono.'; return; }
-  const { error } = await sb.auth.updateUser({ password: pwd });
-  if (error) { errEl.textContent = 'Errore: ' + error.message; return; }
-  document.getElementById('newPasswordModal').classList.remove('open');
-  document.getElementById('loginSuccess').textContent = 'Password aggiornata! Accedi con la nuova password.';
-  await sb.auth.signOut();
-}
-
-async function handleSession(session) {
+async function handleSession(session){
   currentUser = session.user;
   await loadProfile();
   hideLoading();
-  if (currentUser.email === ADMIN_EMAIL) { showAdmin(); }
-  else if (currentProfile?.status === 'inactive') {
-    await sb.auth.signOut(); currentUser = null; currentProfile = null;
-    showScreen('loginScreen'); document.getElementById('loginError').textContent = 'Account disattivato. Contatta il coach.';
-  } else { showDash(); }
+  if(currentUser.email===ADMIN_EMAIL){showAdmin();}
+  else if(currentProfile&&currentProfile.status==='inactive'){
+    await sb.auth.signOut(); currentUser=null; currentProfile=null;
+    showScreen('loginScreen'); document.getElementById('loginError').textContent='Account disattivato. Contatta il coach.';
+  }else{showDash();}
 }
 
-async function loadProfile() {
-  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  currentProfile = data;
-  if (!currentProfile) {
-    const { data: newProfile } = await sb.from('profiles').insert({
-      id: currentUser.id, email: currentUser.email,
-      name: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
-      role: currentUser.email === ADMIN_EMAIL ? 'admin' : 'athlete', status: 'pending'
-    }).select().single();
-    currentProfile = newProfile;
+async function loadProfile(){
+  var r = await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+  currentProfile = r.data;
+  if(!currentProfile){
+    var r2 = await sb.from('profiles').insert({id:currentUser.id,email:currentUser.email,name:(currentUser.user_metadata&&currentUser.user_metadata.full_name)||currentUser.email.split('@')[0],role:currentUser.email===ADMIN_EMAIL?'admin':'athlete',status:'pending'}).select().single();
+    currentProfile = r2.data;
   }
 }
 
-function hideLoading() { document.getElementById('loadingScreen').style.display = 'none'; }
-function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+async function loginGoogle(){await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://ailistenics.com/api/callback'}});}
 
-async function loginGoogle() {
-  await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://ailistenics.com/api/callback' } });
-}
-
-async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
-  const err = document.getElementById('loginError'), btn = document.getElementById('loginBtn');
+async function doLogin(){
+  var email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
+  var err = document.getElementById('loginError'), btn = document.getElementById('loginBtn');
   document.getElementById('loginSuccess').textContent = '';
-  if (!email || !pass) { err.textContent = 'Compila email e password.'; return; }
-  btn.disabled = true; btn.textContent = 'Accesso...';
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { err.textContent = 'Email o password non corretti.'; btn.disabled = false; btn.textContent = 'Accedi'; }
+  if(!email||!pass){err.textContent='Compila email e password.'; return;}
+  btn.disabled=true; btn.textContent='Accesso...';
+  var r = await sb.auth.signInWithPassword({email:email, password:pass});
+  if(r.error){err.textContent='Email o password non corretti.'; btn.disabled=false; btn.textContent='Accedi';}
 }
 
-async function doResetPassword() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const err = document.getElementById('loginError'), succ = document.getElementById('loginSuccess');
-  err.textContent = ''; succ.textContent = '';
-  if (!email) { err.textContent = 'Inserisci la tua email nel campo sopra.'; return; }
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://ailistenics.com/reset' });
-  if (error) { err.textContent = 'Errore: ' + error.message; }
-  else { succ.textContent = 'Email inviata! Controlla la tua casella di posta.'; }
+async function doResetPassword(){
+  var email = document.getElementById('loginEmail').value.trim();
+  var err = document.getElementById('loginError'), succ = document.getElementById('loginSuccess');
+  err.textContent=''; succ.textContent='';
+  if(!email){err.textContent='Inserisci la tua email nel campo sopra.'; return;}
+  var r = await sb.auth.resetPasswordForEmail(email, {redirectTo:'https://ailistenics.com/reset'});
+  if(r.error){err.textContent='Errore: '+r.error.message;}else{succ.textContent='Email inviata! Controlla la tua casella.';}
 }
 
-function showProfile() {
+async function submitNewPassword(){
+  var pwd = document.getElementById('newPwdInput').value, pwd2 = document.getElementById('newPwdConfirm').value;
+  var errEl = document.getElementById('newPwdError'); errEl.textContent='';
+  if(pwd.length<6){errEl.textContent='La password deve essere di almeno 6 caratteri.'; return;}
+  if(pwd!==pwd2){errEl.textContent='Le password non coincidono.'; return;}
+  var r = await sb.auth.updateUser({password:pwd});
+  if(r.error){errEl.textContent='Errore: '+r.error.message; return;}
+  document.getElementById('newPasswordModal').classList.remove('open');
+  document.getElementById('loginSuccess').textContent='Password aggiornata! Accedi con la nuova password.';
+  await sb.auth.signOut();
+}
+
+function showProfile(){
   showScreen('profileScreen');
-  if (!currentProfile) return;
-  const map = {
-    p_eta: currentProfile.eta, p_sesso: currentProfile.sesso, p_peso: currentProfile.peso,
-    p_altezza: currentProfile.altezza, p_livello: currentProfile.livello, p_frequenza: currentProfile.frequenza,
-    p_discipline: currentProfile.discipline, p_skill: currentProfile.skill, p_obiettivo: currentProfile.obiettivo,
-    p_obiettivo3m: currentProfile.obiettivo3m, p_disponibilita: currentProfile.disponibilita,
-    p_luogo: currentProfile.luogo, p_attrezzatura: currentProfile.attrezzatura, p_infortuni: currentProfile.infortuni,
-    p_limitazioni: currentProfile.limitazioni, p_stile: currentProfile.stile, p_sonno: currentProfile.sonno,
-    p_motivazione: currentProfile.motivazione
-  };
-  Object.entries(map).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
-  document.getElementById('profileErr').textContent = '';
-  document.getElementById('profileSuccess').textContent = '';
+  if(!currentProfile) return;
+  var map = {p_eta:currentProfile.eta,p_sesso:currentProfile.sesso,p_peso:currentProfile.peso,p_altezza:currentProfile.altezza,p_livello:currentProfile.livello,p_frequenza:currentProfile.frequenza,p_discipline:currentProfile.discipline,p_skill:currentProfile.skill,p_obiettivo:currentProfile.obiettivo,p_obiettivo3m:currentProfile.obiettivo3m,p_disponibilita:currentProfile.disponibilita,p_luogo:currentProfile.luogo,p_attrezzatura:currentProfile.attrezzatura,p_infortuni:currentProfile.infortuni,p_limitazioni:currentProfile.limitazioni,p_stile:currentProfile.stile,p_sonno:currentProfile.sonno,p_motivazione:currentProfile.motivazione};
+  Object.entries(map).forEach(function(e){var el=document.getElementById(e[0]); if(el) el.value=e[1]||'';});
+  document.getElementById('profileErr').textContent='';
+  document.getElementById('profileSuccess').textContent='';
 }
 
-async function saveProfile() {
-  const errEl = document.getElementById('profileErr'), succEl = document.getElementById('profileSuccess');
-  errEl.textContent = ''; succEl.textContent = '';
-  try {
-    const updates = {
-      eta: document.getElementById('p_eta').value ? parseInt(document.getElementById('p_eta').value) : null,
-      sesso: document.getElementById('p_sesso').value || null,
-      peso: document.getElementById('p_peso').value ? parseFloat(document.getElementById('p_peso').value) : null,
-      altezza: document.getElementById('p_altezza').value ? parseFloat(document.getElementById('p_altezza').value) : null,
-      livello: document.getElementById('p_livello').value || null,
-      frequenza: document.getElementById('p_frequenza').value || null,
-      discipline: document.getElementById('p_discipline').value || null,
-      skill: document.getElementById('p_skill').value || null,
-      obiettivo: document.getElementById('p_obiettivo').value || null,
-      obiettivo3m: document.getElementById('p_obiettivo3m').value || null,
-      disponibilita: document.getElementById('p_disponibilita').value || null,
-      luogo: document.getElementById('p_luogo').value || null,
-      attrezzatura: document.getElementById('p_attrezzatura').value || null,
-      infortuni: document.getElementById('p_infortuni').value || null,
-      limitazioni: document.getElementById('p_limitazioni').value || null,
-      stile: document.getElementById('p_stile').value || null,
-      sonno: document.getElementById('p_sonno').value || null,
-      motivazione: document.getElementById('p_motivazione').value || null,
-    };
-    const { error } = await sb.from('profiles').update(updates).eq('id', currentUser.id);
-    if (error) { errEl.textContent = 'Errore salvataggio.'; return; }
+async function saveProfile(){
+  var errEl=document.getElementById('profileErr'), succEl=document.getElementById('profileSuccess');
+  errEl.textContent=''; succEl.textContent='';
+  try{
+    var updates={eta:document.getElementById('p_eta').value?parseInt(document.getElementById('p_eta').value):null,sesso:document.getElementById('p_sesso').value||null,peso:document.getElementById('p_peso').value?parseFloat(document.getElementById('p_peso').value):null,altezza:document.getElementById('p_altezza').value?parseFloat(document.getElementById('p_altezza').value):null,livello:document.getElementById('p_livello').value||null,frequenza:document.getElementById('p_frequenza').value||null,discipline:document.getElementById('p_discipline').value||null,skill:document.getElementById('p_skill').value||null,obiettivo:document.getElementById('p_obiettivo').value||null,obiettivo3m:document.getElementById('p_obiettivo3m').value||null,disponibilita:document.getElementById('p_disponibilita').value||null,luogo:document.getElementById('p_luogo').value||null,attrezzatura:document.getElementById('p_attrezzatura').value||null,infortuni:document.getElementById('p_infortuni').value||null,limitazioni:document.getElementById('p_limitazioni').value||null,stile:document.getElementById('p_stile').value||null,sonno:document.getElementById('p_sonno').value||null,motivazione:document.getElementById('p_motivazione').value||null};
+    var r = await sb.from('profiles').update(updates).eq('id', currentUser.id);
+    if(r.error){errEl.textContent='Errore salvataggio.'; return;}
     Object.assign(currentProfile, updates);
-    succEl.textContent = 'Profilo salvato!';
-    setTimeout(() => succEl.textContent = '', 3000);
-  } catch(e) { errEl.textContent = 'Errore di connessione.'; }
+    succEl.textContent='Profilo salvato!';
+    setTimeout(function(){succEl.textContent='';}, 3000);
+  }catch(e){errEl.textContent='Errore di connessione.';}
 }
 
-async function doLogout() {
-  await sb.auth.signOut(); currentUser = null; currentProfile = null; sessionHistory = [];
-  document.getElementById('loadingScreen').style.display = 'none';
+async function doLogout(){
+  await sb.auth.signOut(); currentUser=null; currentProfile=null; sessionHistory=[];
+  document.getElementById('loadingScreen').style.display='none';
   showScreen('loginScreen'); window.history.replaceState({}, document.title, window.location.pathname);
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────────────────────────
-async function showDash() {
-  if (currentProfile?._isDemo && currentProfile?._origProfile) currentProfile = currentProfile._origProfile;
+async function showDash(){
+  if(currentProfile&&currentProfile._isDemo&&currentProfile._orig) currentProfile=currentProfile._orig;
   showScreen('dashScreen');
-  const name = currentProfile?.name || currentUser.email.split('@')[0];
+  var name = (currentProfile&&currentProfile.name)||currentUser.email.split('@')[0];
   document.getElementById('dashUserLabel').textContent = name;
-  document.getElementById('dashWelcome').textContent = 'Ciao, ' + name.split(' ')[0] + '!';
-  const hasProfile = currentProfile?.obiettivo || currentProfile?.livello || currentProfile?.eta;
-  const requestBtn = document.getElementById('requestProgramBtn');
-  const sessionBtn = document.getElementById('personalizedSessionBtn');
-  if (requestBtn) requestBtn.style.display = hasProfile ? 'none' : 'inline-block';
-  if (sessionBtn) sessionBtn.style.display = hasProfile ? 'block' : 'none';
+  document.getElementById('dashWelcome').textContent = 'Ciao, '+name.split(' ')[0]+'!';
+  var requestBtn = document.getElementById('requestProgramBtn');
+  var sessionBtn = document.getElementById('personalizedSessionBtn');
+  var hasProfile = currentProfile&&(currentProfile.obiettivo||currentProfile.livello||currentProfile.eta);
+  if(requestBtn) requestBtn.style.display = hasProfile ? 'none' : 'inline-block';
+  if(sessionBtn) sessionBtn.style.display = hasProfile ? 'block' : 'none';
 
-  // Carica programmi dalla tabella programs
-  const { data: programs } = await sb.from('programs').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
-
-  if (programs?.length) {
-    document.getElementById('programEmpty').style.display = 'none';
-    document.getElementById('programContent').style.display = 'block';
-    const list = document.getElementById('programList');
-    list.innerHTML = '';
-    programs.forEach(prog => {
-      const item = document.createElement('div');
-      item.className = 'prog-item';
-      // Conta i workout dal campo workouts (JSON array) — solo per mostrare info
-      let workoutCount = 0;
-      try { workoutCount = JSON.parse(prog.workouts || '[]').length; } catch(e) {}
-      item.innerHTML = `
-        <div class="prog-item-info">
-          <div class="prog-item-name">${esc(prog.program_name)}</div>
-          ${workoutCount ? `<div class="prog-item-meta">${workoutCount} workout</div>` : ''}
-        </div>
-        <button class="prog-item-btn" onclick="startSessionWithPrompt('${esc(prog.program_name)}','${escAttr(prog.ai_prompt)}')">Inizia →</button>
-      `;
+  var pr = await sb.from('programs').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:true});
+  var programs = pr.data;
+  if(programs&&programs.length){
+    document.getElementById('programEmpty').style.display='none';
+    document.getElementById('programContent').style.display='block';
+    var list = document.getElementById('programList');
+    list.innerHTML='';
+    programs.forEach(function(prog){
+      var item = document.createElement('div');
+      item.className = 'program-item';
+      item.innerHTML = '<div class="program-item-name">'+esc(prog.program_name)+'</div><button class="program-start-btn">Inizia &#8594;</button>';
+      item.querySelector('.program-start-btn').onclick = function(){startSessionWithPrompt(prog.program_name, prog.ai_prompt);};
       list.appendChild(item);
     });
-  } else {
-    document.getElementById('programEmpty').style.display = 'block';
-    document.getElementById('programContent').style.display = 'none';
+  }else{
+    document.getElementById('programEmpty').style.display='block';
+    document.getElementById('programContent').style.display='none';
   }
 
-  // Stats
-  const { data: sessions } = await sb.from('sessions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  const sess = sessions || [];
+  var sr = await sb.from('sessions').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false});
+  var sess = sr.data||[];
   document.getElementById('statSessions').textContent = sess.length;
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  document.getElementById('statWeek').textContent = sess.filter(s => new Date(s.created_at) > weekAgo).length;
-  document.getElementById('statStreak').textContent = sess.length > 0 ? '🔥' + Math.min(sess.length, 7) : '0';
-
-  // Log recenti
-  const ll = document.getElementById('logList');
-  if (!sess.length) { ll.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:16px 0;">Nessuna sessione ancora.</div>'; return; }
-  ll.innerHTML = '';
-  sess.slice(0, 5).forEach(s => {
-    const i = document.createElement('div'); i.className = 'log-item';
-    const date = new Date(s.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
-    i.innerHTML = `<div><div class="log-item-name">${s.workout_name}</div><div class="log-item-date">${date}</div></div><div class="log-item-right">Vedi →</div>`;
-    i.onclick = () => openLogModal(s); ll.appendChild(i);
+  var weekAgo = new Date(Date.now()-7*24*60*60*1000);
+  document.getElementById('statWeek').textContent = sess.filter(function(s){return new Date(s.created_at)>weekAgo;}).length;
+  document.getElementById('statStreak').textContent = sess.length>0 ? sess.length : '0';
+  var ll = document.getElementById('logList');
+  if(!sess.length){ll.innerHTML='<div style="font-size:12px;color:var(--muted);padding:16px 0;">Nessuna sessione ancora.</div>'; return;}
+  ll.innerHTML='';
+  sess.slice(0,5).forEach(function(s){
+    var i = document.createElement('div'); i.className='log-item';
+    var date = new Date(s.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
+    i.innerHTML = '<div><div class="log-item-name">'+esc(s.workout_name)+'</div><div class="log-item-date">'+date+'</div></div><div class="log-item-right">Vedi</div>';
+    i.onclick = function(){openLogModal(s);}; ll.appendChild(i);
   });
 }
 
-// escAttr: escape per attributo HTML onclick
-function escAttr(s) {
-  if (!s) return '';
-  return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'');
-}
-
-// ── SESSIONE ──────────────────────────────────────────────────────────────────
-function startSessionWithPrompt(workout, prompt) {
-  if (!prompt) { alert('Nessun programma AI configurato. Contatta il coach.'); return; }
-  currentProfile = { ...currentProfile, ai_prompt: prompt };
-  sessionWorkout = workout; sessionHistory = []; selectedRpe = null; busy = false;
+function startSessionWithPrompt(programName, prompt){
+  if(!prompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
+  currentProfile = Object.assign({}, currentProfile, {ai_prompt:prompt});
+  sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false;
   showScreen('sessionScreen');
-  document.getElementById('sessionTitle').textContent = workout;
-  document.getElementById('messages').innerHTML = '';
-  const box = document.getElementById('setInfoBox'); if (box) box.innerHTML = 'In attesa...';
-  const cueB = document.getElementById('cueBox'); if (cueB) cueB.textContent = '—';
-  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
-  currentSetMode = 'single'; currentExercises = [];
-  renderInputFields('single', []);
-  // Avvia la sessione chiedendo all'AI quale workout fare oggi
-  aiSend(workout, true);
+  document.getElementById('sessionTitle').textContent = programName;
+  document.getElementById('messages').innerHTML='';
+  var box=document.getElementById('setInfoBox'); if(box) box.innerHTML='In attesa...';
+  var cueB=document.getElementById('cueBox'); if(cueB) cueB.textContent='-';
+  document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
+  currentSetMode='single'; currentExercises=[];
+  renderInputFields('single',[]);
+  aiSend('Inizia sessione: '+programName, true);
 }
 
-function qSend(t) { addBubble('user', t); aiSend(t, false); }
+function qSend(t){addBubble('user',t); aiSend(t,false);}
 
-function selRpe(btn, val) {
-  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
-  if (selectedRpe === val) { selectedRpe = null; return; }
-  btn.classList.add('sel'); selectedRpe = val;
+function selRpe(btn, val){
+  document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
+  if(selectedRpe===val){selectedRpe=null; return;}
+  btn.classList.add('sel'); selectedRpe=val;
 }
 
-let currentSetMode = 'single', currentExercises = [];
-
-function inputField(id, label) {
-  return `<div style="display:flex;flex-direction:column;gap:3px;flex:1;">
-    <div style="font-size:8px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;font-weight:600;">${label}</div>
-    <div style="display:flex;gap:5px;">
-      <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
-        <div style="font-size:8px;color:var(--muted);">Reps</div>
-        <input type="number" id="reps_${id}" placeholder="—" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
-      </div>
-      <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
-        <div style="font-size:8px;color:var(--muted);">RIR</div>
-        <input type="number" id="rir_${id}" placeholder="—" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
-      </div>
-    </div>
-  </div>`;
+function inputFieldHTML(id, label){
+  return '<div style="display:flex;flex-direction:column;gap:3px;flex:1;"><div style="font-size:8px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;font-weight:600;">'+label+'</div><div style="display:flex;gap:5px;"><div style="flex:1;"><div style="font-size:8px;color:var(--muted);">Reps</div><input type="number" id="reps_'+id+'" placeholder="-" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;"></div><div style="flex:1;"><div style="font-size:8px;color:var(--muted);">RIR</div><input type="number" id="rir_'+id+'" placeholder="-" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;"></div></div></div>';
 }
 
-function renderInputFields(mode, exercises) {
-  currentSetMode = mode; currentExercises = exercises;
-  const container = document.getElementById('inputContainer');
-  if (!container) return;
-  if (mode === 'superset' && exercises.length >= 2) {
-    const [ex1, ex2] = exercises;
-    container.innerHTML = `<div style="display:flex;gap:8px;align-items:stretch;">${inputField('a', ex1)}<div style="width:1px;background:var(--border2);flex-shrink:0;margin:4px 0;"></div>${inputField('b', ex2)}</div>`;
-  } else {
-    container.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div style="display:flex;flex-direction:column;gap:3px;">
-        <div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Ripetizioni <span style="color:#444;font-size:8px;">(opz)</span></div>
-        <input type="number" id="reps_a" placeholder="es. 8" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:3px;">
-        <div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Rip. riserva <span style="color:#444;font-size:8px;">(opz)</span></div>
-        <input type="number" id="rir_a" placeholder="es. 2" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;-moz-appearance:textfield;">
-      </div>
-    </div>`;
+function renderInputFields(mode, exercises){
+  currentSetMode=mode; currentExercises=exercises;
+  var container=document.getElementById('inputContainer'); if(!container) return;
+  if(mode==='superset'&&exercises.length>=2){
+    container.innerHTML='<div style="display:flex;gap:8px;align-items:stretch;">'+inputFieldHTML('a',exercises[0])+'<div style="width:1px;background:var(--border2);flex-shrink:0;margin:4px 0;"></div>'+inputFieldHTML('b',exercises[1])+'</div>';
+  }else{
+    container.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div style="display:flex;flex-direction:column;gap:3px;"><div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Ripetizioni <span style="color:#444;font-size:8px;">(opz)</span></div><input type="number" id="reps_a" placeholder="es. 8" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;"></div><div style="display:flex;flex-direction:column;gap:3px;"><div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Rip. riserva <span style="color:#444;font-size:8px;">(opz)</span></div><input type="number" id="rir_a" placeholder="es. 2" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;"></div></div>';
   }
 }
 
-function detectAndRenderInput(text) {
-  const supersetMatch = text.match(/\[SUPERSET:([^\]]+)\]/);
-  const setMatch = text.match(/\[SET:([^\]]+)\]/);
-  if (supersetMatch) renderInputFields('superset', supersetMatch[1].split(',').map(e => e.trim()));
-  else if (setMatch) renderInputFields('single', [setMatch[1].trim()]);
+function detectAndRenderInput(text){
+  var supersetMatch = text.match(/\[SUPERSET:([^\]]+)\]/);
+  var setMatch = text.match(/\[SET:([^\]]+)\]/);
+  if(supersetMatch){renderInputFields('superset', supersetMatch[1].split(',').map(function(e){return e.trim();}));}
+  else if(setMatch){renderInputFields('single', [setMatch[1].trim()]);}
 }
 
-function sendMsg() {
-  const n = document.getElementById('inpNote');
-  const note = n ? n.value.trim() : '';
-  let parts = [];
-  if (currentSetMode === 'superset' && currentExercises.length >= 2) {
-    const repsA = document.getElementById('reps_a')?.value.trim();
-    const rirA = document.getElementById('rir_a')?.value.trim();
-    const repsB = document.getElementById('reps_b')?.value.trim();
-    const rirB = document.getElementById('rir_b')?.value.trim();
-    if (!repsA && !repsB && !note) { if (n) { n.style.borderColor = 'var(--accent)'; setTimeout(() => n.style.borderColor = '', 800); } return; }
-    if (repsA) parts.push(currentExercises[0] + ': ' + repsA + ' reps' + (rirA ? ' / RIR ' + rirA : ''));
-    if (repsB) parts.push(currentExercises[1] + ': ' + repsB + ' reps' + (rirB ? ' / RIR ' + rirB : ''));
-    if (document.getElementById('reps_a')) document.getElementById('reps_a').value = '';
-    if (document.getElementById('rir_a')) document.getElementById('rir_a').value = '';
-    if (document.getElementById('reps_b')) document.getElementById('reps_b').value = '';
-    if (document.getElementById('rir_b')) document.getElementById('rir_b').value = '';
-  } else {
-    const reps = document.getElementById('reps_a')?.value.trim();
-    const rir = document.getElementById('rir_a')?.value.trim();
-    if (!reps && !note) { if (n) { n.style.borderColor = 'var(--accent)'; setTimeout(() => n.style.borderColor = '', 800); } return; }
-    if (reps) parts.push('Reps: ' + reps);
-    if (rir) parts.push('RIR: ' + rir);
-    if (document.getElementById('reps_a')) document.getElementById('reps_a').value = '';
-    if (document.getElementById('rir_a')) document.getElementById('rir_a').value = '';
+function sendMsg(){
+  var n = document.getElementById('inpNote');
+  var note = n ? n.value.trim() : '';
+  var parts = [];
+  if(currentSetMode==='superset'&&currentExercises.length>=2){
+    var repsA=document.getElementById('reps_a'), rirA=document.getElementById('rir_a');
+    var repsB=document.getElementById('reps_b'), rirB=document.getElementById('rir_b');
+    var repsAv=repsA?repsA.value.trim():'', rirAv=rirA?rirA.value.trim():'';
+    var repsBv=repsB?repsB.value.trim():'', rirBv=rirB?rirB.value.trim():'';
+    if(!repsAv&&!repsBv&&!note){if(n){n.style.borderColor='var(--accent)';setTimeout(function(){n.style.borderColor='';},800);} return;}
+    if(repsAv) parts.push(currentExercises[0]+': '+repsAv+' reps'+(rirAv?' / RIR '+rirAv:''));
+    if(repsBv) parts.push(currentExercises[1]+': '+repsBv+' reps'+(rirBv?' / RIR '+rirBv:''));
+    if(repsA) repsA.value=''; if(rirA) rirA.value=''; if(repsB) repsB.value=''; if(rirB) rirB.value='';
+  }else{
+    var reps=document.getElementById('reps_a'), rir=document.getElementById('rir_a');
+    var repsv=reps?reps.value.trim():'', rirv=rir?rir.value.trim():'';
+    if(!repsv&&!note){if(n){n.style.borderColor='var(--accent)';setTimeout(function(){n.style.borderColor='';},800);} return;}
+    if(repsv) parts.push('Reps: '+repsv);
+    if(rirv) parts.push('RIR: '+rirv);
+    if(reps) reps.value=''; if(rir) rir.value='';
   }
-  if (selectedRpe !== null) parts.push('Fatica: ' + selectedRpe + '/10');
-  if (note) parts.push(note);
-  const txt = parts.join(' — ');
-  if (n) n.value = '';
-  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  if(selectedRpe!==null) parts.push('Fatica: '+selectedRpe+'/10');
+  if(note) parts.push(note);
+  var txt = parts.join(' - ');
+  if(n) n.value='';
+  document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   selectedRpe = null;
   addBubble('user', txt);
-  if (parts.some(p => p.includes('reps') || p.includes('Reps'))) sessionTimerToggle();
+  if(parts.some(function(p){return p.indexOf('reps')>-1||p.indexOf('Reps')>-1;})) sessionTimerToggle();
   aiSend(txt, false);
 }
 
-async function aiSend(text, isFirst) {
-  if (busy) return;
-  sessionHistory.push({ role: 'user', content: text }); busy = true;
-  document.getElementById('sendBtn').disabled = true;
-  const tid = addTyping();
-  try {
-    const athleteContext = buildAthleteContext(currentProfile);
-    let sessionContext = '';
-    if (currentUser && isFirst) {
-      const { data: recentSessions } = await sb.from('sessions')
-        .select('workout_name, log_text, created_at').eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false }).limit(5);
-      if (recentSessions?.length) {
-        const logs = recentSessions.map(s => {
-          const date = new Date(s.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
-          return `[${date}] ${s.workout_name}:\n${s.log_text || 'Nessun log'}`;
+async function aiSend(text, isFirst){
+  if(busy) return;
+  sessionHistory.push({role:'user', content:text}); busy=true;
+  document.getElementById('sendBtn').disabled=true;
+  var tid = addTyping();
+  try{
+    var athleteContext = buildAthleteContext(currentProfile);
+    var sessionContext = '';
+    if(currentUser&&isFirst){
+      var sr = await sb.from('sessions').select('workout_name,log_text,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(5);
+      if(sr.data&&sr.data.length){
+        var logs = sr.data.map(function(s){
+          var date = new Date(s.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'short'});
+          return '['+date+'] '+s.workout_name+':\n'+(s.log_text||'Nessun log');
         }).join('\n\n');
-        sessionContext = `\n\nSTORICO SESSIONI RECENTI (ultime ${recentSessions.length}):\n${logs}`;
+        sessionContext = '\n\nSTORICO SESSIONI RECENTI:\n'+logs;
       }
     }
-    const systemPrompt = (currentProfile.ai_prompt || '') + athleteContext + sessionContext;
-    const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system: systemPrompt, messages: sessionHistory }) });
-    const data = await res.json();
+    var systemPrompt = (currentProfile.ai_prompt||'')+athleteContext+sessionContext;
+    var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemPrompt,messages:sessionHistory})});
+    var data = await res.json();
     removeTyping(tid);
-    const reply = data.content?.[0]?.text || 'Errore risposta.';
-    sessionHistory.push({ role: 'assistant', content: reply });
+    var reply = (data.content&&data.content[0]&&data.content[0].text)||'Errore risposta.';
+    sessionHistory.push({role:'assistant', content:reply});
     addBubble('ai', reply);
-    if (text === 'fine' && reply.includes('WORKOUT LOG')) saveSessionLog(reply);
-  } catch (e) {
+    if(text==='fine'&&reply.indexOf('WORKOUT LOG')>-1) saveSessionLog(reply);
+  }catch(e){
     removeTyping(tid);
     addBubble('ai', 'Errore connessione. Riprova.');
-  } finally {
-    busy = false;
-    const btn = document.getElementById('sendBtn');
-    if (btn) btn.disabled = false;
+  }finally{
+    busy=false;
+    var btn=document.getElementById('sendBtn'); if(btn) btn.disabled=false;
   }
 }
 
-async function saveSessionLog(log) { await sb.from('sessions').insert({ user_id: currentUser.id, workout_name: sessionWorkout, log_text: log }); }
-
-// ── TIMER ─────────────────────────────────────────────────────────────────────
-let sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft = 0, sessionTimerTotal = 0;
-
-function sessionTimerSet(seconds) {
-  sessionTimerTotal = seconds; sessionTimerLeft = seconds; sessionTimerRunning = false;
-  if (sessionTimerInterval) { clearInterval(sessionTimerInterval); sessionTimerInterval = null; }
-  document.getElementById('sessionTimerNum').textContent = fmtTime(seconds);
-  document.getElementById('sessionTimerNum').style.color = 'var(--text)';
-  document.getElementById('sessionTimerGo').textContent = '▶ Start';
+async function saveSessionLog(log){
+  await sb.from('sessions').insert({user_id:currentUser.id, workout_name:sessionWorkout, log_text:log});
 }
 
-function sessionTimerToggle() {
-  if (sessionTimerRunning) {
-    clearInterval(sessionTimerInterval); sessionTimerRunning = false;
-    document.getElementById('sessionTimerGo').textContent = '▶ Resume';
-    document.getElementById('sessionTimerNum').style.color = 'var(--text)';
-  } else {
-    if (sessionTimerLeft <= 0) sessionTimerLeft = sessionTimerTotal || 90;
-    sessionTimerRunning = true;
-    document.getElementById('sessionTimerGo').textContent = '⏸ Pausa';
-    document.getElementById('sessionTimerNum').style.color = 'var(--accent)';
-    sessionTimerInterval = setInterval(() => {
+function sessionTimerSet(seconds){
+  sessionTimerTotal=seconds; sessionTimerLeft=seconds; sessionTimerRunning=false;
+  if(sessionTimerInterval){clearInterval(sessionTimerInterval); sessionTimerInterval=null;}
+  document.getElementById('sessionTimerNum').textContent=fmtTime(seconds);
+  document.getElementById('sessionTimerNum').style.color='var(--text)';
+  document.getElementById('sessionTimerGo').textContent='Start';
+}
+
+function sessionTimerToggle(){
+  if(sessionTimerRunning){
+    clearInterval(sessionTimerInterval); sessionTimerRunning=false;
+    document.getElementById('sessionTimerGo').textContent='Resume';
+    document.getElementById('sessionTimerNum').style.color='var(--text)';
+  }else{
+    if(sessionTimerLeft<=0) sessionTimerLeft=sessionTimerTotal||90;
+    sessionTimerRunning=true;
+    document.getElementById('sessionTimerGo').textContent='Pausa';
+    document.getElementById('sessionTimerNum').style.color='var(--accent)';
+    sessionTimerInterval=setInterval(function(){
       sessionTimerLeft--;
-      document.getElementById('sessionTimerNum').textContent = fmtTime(sessionTimerLeft);
-      if (sessionTimerLeft <= 0) {
-        clearInterval(sessionTimerInterval); sessionTimerRunning = false;
-        document.getElementById('sessionTimerGo').textContent = '✓ OK';
-        document.getElementById('sessionTimerNum').style.color = 'var(--accent)';
+      document.getElementById('sessionTimerNum').textContent=fmtTime(sessionTimerLeft);
+      if(sessionTimerLeft<=0){
+        clearInterval(sessionTimerInterval); sessionTimerRunning=false;
+        document.getElementById('sessionTimerGo').textContent='OK';
+        document.getElementById('sessionTimerNum').style.color='var(--accent)';
       }
-    }, 1000);
+    },1000);
   }
 }
 
-function sessionTimerReset() {
-  if (sessionTimerInterval) clearInterval(sessionTimerInterval);
-  sessionTimerRunning = false; sessionTimerLeft = sessionTimerTotal;
-  document.getElementById('sessionTimerNum').textContent = fmtTime(sessionTimerTotal);
-  document.getElementById('sessionTimerNum').style.color = 'var(--text)';
-  document.getElementById('sessionTimerGo').textContent = '▶ Start';
+function sessionTimerReset(){
+  if(sessionTimerInterval) clearInterval(sessionTimerInterval);
+  sessionTimerRunning=false; sessionTimerLeft=sessionTimerTotal;
+  document.getElementById('sessionTimerNum').textContent=fmtTime(sessionTimerTotal);
+  document.getElementById('sessionTimerNum').style.color='var(--text)';
+  document.getElementById('sessionTimerGo').textContent='Start';
 }
 
-function fmtTime(s) { return String(Math.floor(Math.max(s,0)/60)).padStart(2,'0')+':'+String(Math.max(s,0)%60).padStart(2,'0'); }
-
-// ── CHAT UI ───────────────────────────────────────────────────────────────────
-function updateSetInfo(text) {
-  const box = document.getElementById('setInfoBox'), cueBox = document.getElementById('cueBox');
-  if (!box) return;
-  const lines = text.split('\n').map(l => l.replace(/\*\*/g,'').trim()).filter(l => l);
-  let header = '', exercises = [], cue = '';
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const cueMatch = line.match(/\[CUE:([^\]]+)\]/);
-    if (cueMatch) { cue = cueMatch[1].trim(); continue; }
-    if (line.match(/—\s*(Set\s+\d+\/\d+|Warm-up)/i) && !line.match(/SUPERSET/i)) { header = line.replace(/\s*\|.*$/, '').trim(); exercises = []; continue; }
-    if (line.match(/SUPERSET\s+[A-Z]\s*[–—-]\s*Set\s+\d+\/\d+/i)) { header = line; exercises = []; continue; }
-    if (header.match(/SUPERSET/i) && line.match(/^[A-Za-z].+:\s*[\d]/) && !line.match(/recupero/i) && !line.match(/^\[/)) {
-      exercises.push(line.replace(/\s*\|.*$/, '').trim());
-    }
+function updateSetInfo(text){
+  var box=document.getElementById('setInfoBox'), cueBox=document.getElementById('cueBox');
+  if(!box) return;
+  var lines=text.split('\n').map(function(l){return l.replace(/\*\*/g,'').trim();}).filter(function(l){return l;});
+  var header='', exercises=[], cue='';
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+    var cm=line.match(/\[CUE:([^\]]+)\]/);
+    if(cm){cue=cm[1].trim(); continue;}
+    if(line.match(/[-]\s*(Set\s+\d+\/\d+|Warm-up)/i)&&!line.match(/SUPERSET/i)){header=line.replace(/\s*\|.*$/,'').trim(); exercises=[]; continue;}
+    if(line.match(/SUPERSET\s+[A-Z]\s*[-]\s*Set\s+\d+\/\d+/i)){header=line; exercises=[]; continue;}
+    if(header.match(/SUPERSET/i)&&line.match(/^[A-Za-z].+:\s*[\d]/)&&!line.match(/recupero/i)&&!line.match(/^\[/)){exercises.push(line.replace(/\s*\|.*$/,'').trim());}
   }
-  let html = '';
-  if (header) html += `<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">${esc(header)}</div>`;
-  exercises.forEach(ex => { html += `<div style="font-size:13px;color:var(--text);">${esc(ex)}</div>`; });
-  if (html) box.innerHTML = html;
-  if (cueBox && cue) cueBox.textContent = cue;
-  const m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
-  if (m) sessionTimerSet(parseInt(m[1])*60+parseInt(m[2]));
+  var html='';
+  if(header) html+='<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">'+esc(header)+'</div>';
+  exercises.forEach(function(ex){html+='<div style="font-size:13px;color:var(--text);">'+esc(ex)+'</div>';});
+  if(html) box.innerHTML=html;
+  if(cueBox&&cue) cueBox.textContent=cue;
+  var m=text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
+  if(m) sessionTimerSet(parseInt(m[1])*60+parseInt(m[2]));
 }
 
-let waitingForProgression = false;
-
-function extractOptions(text) {
-  const lines = text.split('\n'), options = [];
-  for (const line of lines) {
-    const m = line.match(/^[\s]*[-•]\s+(.+)$/);
-    if (m) { const opt = m[1].replace(/\*\*/g,'').trim(); if (opt.length > 0 && opt.length < 60) options.push(opt); }
+function extractOptions(text){
+  var lines=text.split('\n'), options=[];
+  for(var i=0;i<lines.length;i++){
+    var m=lines[i].match(/^[\s]*[-]\s+(.+)$/);
+    if(m){var opt=m[1].replace(/\*\*/g,'').trim(); if(opt.length>0&&opt.length<60) options.push(opt);}
   }
   return options;
 }
 
-function setInputLocked(locked) {
-  waitingForProgression = locked;
-  const container = document.getElementById('inputContainer'), sendBtn = document.getElementById('sendBtn');
-  if (container) { container.style.opacity = locked ? '0.3' : '1'; container.style.pointerEvents = locked ? 'none' : ''; }
-  if (sendBtn) { sendBtn.style.opacity = locked ? '0.3' : '1'; sendBtn.style.pointerEvents = locked ? 'none' : ''; }
+function setInputLocked(locked){
+  var container=document.getElementById('inputContainer'), sendBtn=document.getElementById('sendBtn');
+  if(container){container.style.opacity=locked?'0.3':'1'; container.style.pointerEvents=locked?'none':'';}
+  if(sendBtn){sendBtn.style.opacity=locked?'0.3':'1'; sendBtn.style.pointerEvents=locked?'none':'';}
 }
 
-function addBubble(role, text) {
-  const msgs = document.getElementById('messages');
-  const oldOpts = document.getElementById('quickOptions');
-  if (oldOpts) oldOpts.remove();
-  const row = document.createElement('div'); row.className = 'msg-row ' + role;
-  const av = document.createElement('div'); av.className = 'avatar ' + role; av.textContent = role === 'ai' ? 'AI' : 'TU';
-  const bub = document.createElement('div'); bub.className = 'bubble';
-  if (role === 'ai') {
-    const options = extractOptions(text);
-    const asksProgression = text.match(/quale progressione/i) || text.match(/progressione usi/i);
-    if (options.length >= 2 && options.length <= 6) {
-      const textWithoutOptions = text.split('\n').filter(l => !l.trim().match(/^[-•]\s+.+/)).join('\n').replace(/\n{3,}/g,'\n\n').trim();
-      bub.innerHTML = fmtText(textWithoutOptions);
+function addBubble(role, text){
+  var msgs=document.getElementById('messages');
+  var oldOpts=document.getElementById('quickOptions'); if(oldOpts) oldOpts.remove();
+  var row=document.createElement('div'); row.className='msg-row '+role;
+  var av=document.createElement('div'); av.className='avatar '+role; av.textContent=role==='ai'?'AI':'TU';
+  var bub=document.createElement('div'); bub.className='bubble';
+  if(role==='ai'){
+    var options=extractOptions(text);
+    var asksProgression=text.match(/quale progressione/i)||text.match(/progressione usi/i);
+    if(options.length>=2&&options.length<=6){
+      var textWithoutOptions=text.split('\n').filter(function(l){return !l.trim().match(/^[-]\s+.+/);}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+      bub.innerHTML=fmtText(textWithoutOptions);
       row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
-      if (asksProgression) setInputLocked(true);
-      const optRow = document.createElement('div');
-      optRow.id = 'quickOptions';
-      optRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 8px 44px;';
-      options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.textContent = opt;
-        btn.style.cssText = 'padding:8px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;color:var(--text2);font-family:var(--mono);font-size:13px;cursor:pointer;transition:all .15s;text-align:left;';
-        btn.onmouseover = () => { btn.style.borderColor='var(--accent)'; btn.style.color='var(--accent)'; };
-        btn.onmouseout = () => { btn.style.borderColor='var(--border2)'; btn.style.color='var(--text2)'; };
-        btn.onclick = () => { optRow.remove(); setInputLocked(false); addBubble('user', opt); aiSend(opt, false); };
+      if(asksProgression) setInputLocked(true);
+      var optRow=document.createElement('div'); optRow.id='quickOptions';
+      optRow.style.cssText='display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 8px 44px;';
+      options.forEach(function(opt){
+        var btn=document.createElement('button');
+        btn.textContent=opt;
+        btn.style.cssText='padding:8px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;color:var(--text2);font-family:var(--mono);font-size:13px;cursor:pointer;transition:all .15s;text-align:left;';
+        btn.onmouseover=function(){btn.style.borderColor='var(--accent)'; btn.style.color='var(--accent)';};
+        btn.onmouseout=function(){btn.style.borderColor='var(--border2)'; btn.style.color='var(--text2)';};
+        btn.onclick=function(){optRow.remove(); setInputLocked(false); addBubble('user',opt); aiSend(opt,false);};
         optRow.appendChild(btn);
       });
       msgs.appendChild(optRow);
-    } else {
+    }else{
       setInputLocked(false);
-      bub.innerHTML = fmtText(text);
+      bub.innerHTML=fmtText(text);
       row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
     }
     updateSetInfo(text);
     detectAndRenderInput(text);
-  } else {
-    bub.innerHTML = fmtText(text);
+  }else{
+    bub.innerHTML=fmtText(text);
     row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
   }
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.scrollTop=msgs.scrollHeight;
 }
 
-function fmtText(t) {
-  t = t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
-  t = t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'').replace(/Quante reps[^.\n]*[.\n]/gi,'').replace(/dimmi quante[^.\n]*[.\n]/gi,'');
-  t = t.replace(/\n{3,}/g,'\n\n').trim();
-  if (t.includes('WORKOUT LOG') || t.includes('====='))
-    return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">' + esc(t) + '</pre>';
+function fmtText(t){
+  t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
+  t=t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'');
+  t=t.replace(/\n{3,}/g,'\n\n').trim();
+  if(t.indexOf('WORKOUT LOG')>-1||t.indexOf('=====')>-1)
+    return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">'+esc(t)+'</pre>';
   return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
 }
-function esc(t) { if (!t) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function addTyping() {
-  const msgs = document.getElementById('messages'), id = 't_' + Date.now();
-  const row = document.createElement('div'); row.className = 'msg-row ai'; row.id = id;
-  row.innerHTML = '<div class="avatar ai">AI</div><div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
-  msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight; return id;
+function addTyping(){
+  var msgs=document.getElementById('messages'), id='t_'+Date.now();
+  var row=document.createElement('div'); row.className='msg-row ai'; row.id=id;
+  row.innerHTML='<div class="avatar ai">AI</div><div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight; return id;
 }
-function removeTyping(id) { document.getElementById(id)?.remove(); }
+function removeTyping(id){var el=document.getElementById(id); if(el) el.remove();}
 
-// ── ADMIN ──────────────────────────────────────────────────────────────────────
-async function showAdmin() { showScreen('adminScreen'); await renderUserTable(); await renderLogTable(); }
+async function showAdmin(){showScreen('adminScreen'); await renderUserTable(); await renderLogTable();}
 
-function switchTab(tab, btn) {
-  document.querySelectorAll('.atab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+function switchTab(tab, btn){
+  document.querySelectorAll('.atab').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.admin-section').forEach(function(s){s.classList.remove('active');});
   btn.classList.add('active');
-  document.getElementById('tab-' + tab).classList.add('active');
-  if (tab === 'library' && !allExercises.length) loadLibrary();
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='library'&&!allExercises.length) loadLibrary();
 }
 
-async function renderUserTable() {
-  const tbody = document.getElementById('userTableBody');
-  const { data: athletes } = await sb.from('profiles').select('*').eq('role','athlete').order('created_at',{ascending:false});
-  if (!athletes?.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Nessun atleta ancora.</td></tr>'; return; }
-  tbody.innerHTML = athletes.map(u => `<tr>
-    <td>${u.name||'—'}</td>
-    <td style="color:var(--muted)">${u.email}</td>
-    <td><span class="badge badge-${u.status||'pending'}">${u.status||'pending'}</span></td>
-    <td>
-      <button class="action-btn" onclick="openAthleteProfileModal('${u.id}','${esc(u.name||u.email)}')">Profilo</button>
-      <button class="action-btn primary" onclick="openAthleteProgramsModal('${u.id}','${esc(u.name||u.email)}')">Programmi</button>
-      <button class="action-btn ${u.status==='active'?'danger':''}" onclick="toggleStatus('${u.id}','${u.status}')">${u.status==='active'?'Disattiva':'Attiva'}</button>
-    </td>
-  </tr>`).join('');
-}
-
-async function renderLogTable() {
-  const tbody = document.getElementById('logTableBody');
-  const { data: logs } = await sb.from('sessions').select('*, profiles(name,email)').order('created_at',{ascending:false}).limit(50);
-  if (!logs?.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Nessuna sessione.</td></tr>'; return; }
-  tbody.innerHTML = logs.map(s => {
-    const date = new Date(s.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
-    return `<tr><td>${s.profiles?.name||s.profiles?.email||'—'}</td><td>${s.workout_name}</td><td style="color:var(--muted)">${date}</td><td><button class="action-btn" onclick='openLogModal(${JSON.stringify(s)})'>Vedi log</button></td></tr>`;
+async function renderUserTable(){
+  var tbody=document.getElementById('userTableBody');
+  var r=await sb.from('profiles').select('*').eq('role','athlete').order('created_at',{ascending:false});
+  var athletes=r.data;
+  if(!athletes||!athletes.length){tbody.innerHTML='<tr><td colspan="4" class="empty-table">Nessun atleta ancora.</td></tr>'; return;}
+  tbody.innerHTML=athletes.map(function(u){
+    return '<tr><td>'+(u.name||'-')+'</td><td style="color:var(--muted)">'+u.email+'</td><td><span class="badge badge-'+(u.status||'pending')+'">'+(u.status||'pending')+'</span></td><td><button class="action-btn" onclick="openAthleteProfileModal(\''+u.id+'\',\''+esc(u.name||u.email)+'\')">Profilo</button><button class="action-btn primary" onclick="openAthleteProgramsModal(\''+u.id+'\',\''+esc(u.name||u.email)+'\')">Programmi</button><button class="action-btn '+(u.status==='active'?'danger':'')+'" onclick="toggleStatus(\''+u.id+'\',\''+u.status+'\')">'+(u.status==='active'?'Disattiva':'Attiva')+'</button></td></tr>';
   }).join('');
 }
 
-async function toggleStatus(userId, currentStatus) {
-  if (currentStatus==='active') {
-    if (!confirm('Disattivare questo atleta?')) return;
-    try {
-      const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateStatus',userId,status:'inactive'})});
-      const data = await res.json();
-      if (data.error) { alert('Errore: '+data.error); return; }
-      await renderUserTable();
-    } catch(e) { alert('Errore di connessione.'); }
-  } else {
-    try {
-      const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateStatus',userId,status:'active'})});
-      const data = await res.json();
-      if (data.error) { alert('Errore: '+data.error); return; }
-      await renderUserTable();
-    } catch(e) { alert('Errore di connessione.'); }
-  }
+async function renderLogTable(){
+  var tbody=document.getElementById('logTableBody');
+  var r=await sb.from('sessions').select('*, profiles(name,email)').order('created_at',{ascending:false}).limit(50);
+  var logs=r.data;
+  if(!logs||!logs.length){tbody.innerHTML='<tr><td colspan="4" class="empty-table">Nessuna sessione.</td></tr>'; return;}
+  tbody.innerHTML=logs.map(function(s){
+    var date=new Date(s.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
+    var name=(s.profiles&&(s.profiles.name||s.profiles.email))||'-';
+    return '<tr><td>'+esc(name)+'</td><td>'+esc(s.workout_name)+'</td><td style="color:var(--muted)">'+date+'</td><td><button class="action-btn" onclick="openLogModalById(\''+s.id+'\')">Vedi log</button></td></tr>';
+  }).join('');
+  window._sessionLogs=logs;
 }
 
-function openCreateUserModal() {
+function openLogModalById(id){
+  var s=window._sessionLogs&&window._sessionLogs.find(function(x){return x.id===id;});
+  if(s) openLogModal(s);
+}
+
+async function toggleStatus(userId, currentStatus){
+  var newStatus=currentStatus==='active'?'inactive':'active';
+  if(currentStatus==='active'&&!confirm('Disattivare questo atleta?')) return;
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateStatus',userId:userId,status:newStatus})});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  await renderUserTable();
+}
+
+function openCreateUserModal(){
   document.getElementById('newUserName').value='';
   document.getElementById('newUserEmail').value='';
   document.getElementById('newUserPass').value='';
   document.getElementById('createUserModal').classList.add('open');
 }
 
-async function createUser() {
-  const name=document.getElementById('newUserName').value.trim();
-  const email=document.getElementById('newUserEmail').value.trim();
-  const pass=document.getElementById('newUserPass').value.trim();
-  if (!name||!email||!pass) { alert('Compila tutti i campi.'); return; }
-  try {
-    const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'createUser',name,email,password:pass})});
-    const data = await res.json();
-    if (data.error) { alert('Errore: '+data.error); return; }
-    closeModal('createUserModal'); await renderUserTable();
-    alert('Atleta creato. Può accedere con email e password temporanea.');
-  } catch(e) { alert('Errore di connessione.'); }
+async function createUser(){
+  var name=document.getElementById('newUserName').value.trim();
+  var email=document.getElementById('newUserEmail').value.trim();
+  var pass=document.getElementById('newUserPass').value.trim();
+  if(!name||!email||!pass){alert('Compila tutti i campi.'); return;}
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'createUser',name:name,email:email,password:pass})});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  closeModal('createUserModal'); await renderUserTable();
+  alert('Atleta creato. Puo accedere con email e password temporanea.');
 }
 
-// ── PROFILO ATLETA (admin) ────────────────────────────────────────────────────
-let athleteProgramsUserId = null;
-
-async function openAthleteProfileModal(userId, userName) {
-  athleteProgramsUserId = userId;
-  document.getElementById('athleteProfileName').textContent = userName;
-  const { data } = await sb.from('profiles').select('*').eq('id',userId).single();
-  if (data) {
-    // Campo nome aggiunto
-    document.getElementById('apName').value = data.name || '';
-    const map = {
-      apEta:data.eta,apSesso:data.sesso,apPeso:data.peso,apAltezza:data.altezza,
-      apLivello:data.livello,apFrequenza:data.frequenza,apObiettivo:data.obiettivo,
-      apObiettivo3m:data.obiettivo3m,apLuogo:data.luogo,apDisponibilita:data.disponibilita,
-      apDiscipline:data.discipline,apSkill:data.skill,apAttrezzatura:data.attrezzatura,
-      apInfortuni:data.infortuni,apLimitazioni:data.limitazioni,apStile:data.stile,
-      apSonno:data.sonno,apMotivazione:data.motivazione,apNote:data.note_libere
-    };
-    Object.entries(map).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.value=val||''; });
+async function openAthleteProfileModal(userId, userName){
+  athleteProgramsUserId=userId;
+  document.getElementById('athleteProfileName').textContent=userName;
+  var r=await sb.from('profiles').select('*').eq('id',userId).single();
+  if(r.data){
+    var d=r.data;
+    var map={apEta:d.eta,apSesso:d.sesso,apPeso:d.peso,apAltezza:d.altezza,apLivello:d.livello,apFrequenza:d.frequenza,apObiettivo:d.obiettivo,apObiettivo3m:d.obiettivo3m,apLuogo:d.luogo,apDisponibilita:d.disponibilita,apDiscipline:d.discipline,apSkill:d.skill,apAttrezzatura:d.attrezzatura,apInfortuni:d.infortuni,apLimitazioni:d.limitazioni,apStile:d.stile,apSonno:d.sonno,apMotivazione:d.motivazione,apNote:d.note_libere};
+    Object.entries(map).forEach(function(e){var el=document.getElementById(e[0]); if(el) el.value=e[1]||'';});
   }
   document.getElementById('athleteProfileModal').classList.add('open');
 }
 
-async function saveAthleteProfile() {
-  try {
-    const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      action:'updateProfile',userId:athleteProgramsUserId,
-      // Nome incluso
-      name:document.getElementById('apName').value||null,
-      eta:document.getElementById('apEta').value||null,sesso:document.getElementById('apSesso').value||null,
-      peso:document.getElementById('apPeso').value||null,altezza:document.getElementById('apAltezza').value||null,
-      livello:document.getElementById('apLivello').value||null,frequenza:document.getElementById('apFrequenza').value||null,
-      obiettivo:document.getElementById('apObiettivo').value||null,obiettivo3m:document.getElementById('apObiettivo3m').value||null,
-      luogo:document.getElementById('apLuogo').value||null,disponibilita:document.getElementById('apDisponibilita').value||null,
-      discipline:document.getElementById('apDiscipline').value||null,skill:document.getElementById('apSkill').value||null,
-      attrezzatura:document.getElementById('apAttrezzatura').value||null,infortuni:document.getElementById('apInfortuni').value||null,
-      limitazioni:document.getElementById('apLimitazioni').value||null,stile:document.getElementById('apStile').value||null,
-      sonno:document.getElementById('apSonno').value||null,motivazione:document.getElementById('apMotivazione').value||null,
-      note_libere:document.getElementById('apNote').value||null,
-    })});
-    const data = await res.json();
-    if (data.error) { alert('Errore: '+data.error); return; }
-    closeModal('athleteProfileModal'); await renderUserTable(); alert('Profilo salvato.');
-  } catch(e) { alert('Errore di connessione.'); }
+async function saveAthleteProfile(){
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateProfile',userId:athleteProgramsUserId,eta:document.getElementById('apEta').value||null,sesso:document.getElementById('apSesso').value||null,peso:document.getElementById('apPeso').value||null,altezza:document.getElementById('apAltezza').value||null,livello:document.getElementById('apLivello').value||null,frequenza:document.getElementById('apFrequenza').value||null,obiettivo:document.getElementById('apObiettivo').value||null,obiettivo3m:document.getElementById('apObiettivo3m').value||null,luogo:document.getElementById('apLuogo').value||null,disponibilita:document.getElementById('apDisponibilita').value||null,discipline:document.getElementById('apDiscipline').value||null,skill:document.getElementById('apSkill').value||null,attrezzatura:document.getElementById('apAttrezzatura').value||null,infortuni:document.getElementById('apInfortuni').value||null,limitazioni:document.getElementById('apLimitazioni').value||null,stile:document.getElementById('apStile').value||null,sonno:document.getElementById('apSonno').value||null,motivazione:document.getElementById('apMotivazione').value||null,note_libere:document.getElementById('apNote').value||null})});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  closeModal('athleteProfileModal'); await renderUserTable(); alert('Profilo salvato.');
 }
 
-async function resetAthleteProfile() {
-  if (!confirm('Resettare tutti i dati del profilo?')) return;
-  try {
-    const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      action:'updateProfile',userId:athleteProgramsUserId,
-      name:null,eta:null,sesso:null,peso:null,altezza:null,livello:null,frequenza:null,
-      obiettivo:null,obiettivo3m:null,luogo:null,disponibilita:null,
-      discipline:null,skill:null,attrezzatura:null,infortuni:null,
-      limitazioni:null,stile:null,sonno:null,motivazione:null,note_libere:null
-    })});
-    const data = await res.json();
-    if (data.error) { alert('Errore: '+data.error); return; }
-    await openAthleteProfileModal(athleteProgramsUserId, document.getElementById('athleteProfileName').textContent);
-    alert('Profilo resettato.');
-  } catch(e) { alert('Errore di connessione.'); }
+async function resetAthleteProfile(){
+  if(!confirm('Resettare tutti i dati del profilo?')) return;
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateProfile',userId:athleteProgramsUserId,eta:null,sesso:null,peso:null,altezza:null,livello:null,frequenza:null,obiettivo:null,obiettivo3m:null,luogo:null,disponibilita:null,discipline:null,skill:null,attrezzatura:null,infortuni:null,limitazioni:null,stile:null,sonno:null,motivazione:null,note_libere:null})});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  await openAthleteProfileModal(athleteProgramsUserId, document.getElementById('athleteProfileName').textContent);
+  alert('Profilo resettato.');
 }
 
-async function deleteAthlete() {
-  if (!confirm('Eliminare definitivamente questo atleta?')) return;
-  if (!confirm('Sicuro? Verranno eliminati account, programmi e sessioni.')) return;
-  try {
-    const res = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deleteUser',userId:athleteProgramsUserId})});
-    const data = await res.json();
-    if (data.error) { alert('Errore: '+data.error); return; }
-    closeModal('athleteProfileModal'); await renderUserTable(); alert('Atleta eliminato.');
-  } catch(e) { alert('Errore di connessione.'); }
+async function deleteAthlete(){
+  if(!confirm('Eliminare definitivamente questo atleta?')) return;
+  if(!confirm('Sicuro? Verranno eliminati account, programmi e sessioni.')) return;
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deleteUser',userId:athleteProgramsUserId})});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  closeModal('athleteProfileModal'); await renderUserTable(); alert('Atleta eliminato.');
 }
 
-// ── PROGRAMMI ATLETA (admin) ──────────────────────────────────────────────────
-async function openAthleteProgramsModal(userId, userName) {
-  athleteProgramsUserId = userId;
-  document.getElementById('athleteProgramsName').textContent = userName;
+async function openAthleteProgramsModal(userId, userName){
+  athleteProgramsUserId=userId;
+  document.getElementById('athleteProgramsName').textContent=userName;
   document.getElementById('newProgName').value='';
-  document.getElementById('composerDesc').value='';
+  document.getElementById('newProgDesc').value='';
   document.getElementById('newProgPrompt').value='';
+  document.getElementById('generateStatus').textContent='';
   await renderAthletePrograms();
   document.getElementById('athleteProgramsModal').classList.add('open');
 }
 
-async function renderAthletePrograms() {
-  const list = document.getElementById('athleteProgramsList');
-  const { data: programs } = await sb.from('programs').select('*').eq('user_id',athleteProgramsUserId).order('created_at',{ascending:true});
-  if (!programs?.length) { list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Nessun programma assegnato.</div>'; return; }
-  list.innerHTML = programs.map(p=>{
-    const workouts = (() => { try { return JSON.parse(p.workouts||'[]'); } catch(e) { return []; } })();
-    return `
-    <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <div>
-          <div style="font-family:var(--display);font-size:13px;font-weight:700;">${esc(p.program_name)}</div>
-          ${workouts.length ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;">${workouts.map(w=>esc(w)).join(' · ')}</div>` : ''}
-        </div>
-        <div style="display:flex;gap:6px;">
-          <button class="action-btn primary" onclick="editProgram('${p.id}')">Modifica</button>
-          <button class="action-btn danger" onclick="removeProgram('${p.id}')">Rimuovi</button>
-        </div>
-      </div>
-      <div id="edit_${p.id}" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">
-        <div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_${p.id}" value="${esc(p.program_name)}"></div>
-        <div class="modal-field"><div class="modal-label">System prompt</div><textarea class="modal-textarea" id="editPrompt_${p.id}" style="min-height:120px;">${esc(p.ai_prompt||'')}</textarea></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-          <button class="modal-cancel" onclick="document.getElementById('edit_${p.id}').style.display='none'">Annulla</button>
-          <button class="modal-save" onclick="saveEditProgram('${p.id}')">Salva</button>
-        </div>
-      </div>
-    </div>
-  `}).join('');
+async function renderAthletePrograms(){
+  var list=document.getElementById('athleteProgramsList');
+  var r=await sb.from('programs').select('*').eq('user_id',athleteProgramsUserId).order('created_at',{ascending:true});
+  var programs=r.data;
+  if(!programs||!programs.length){list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Nessun programma assegnato.</div>'; return;}
+  list.innerHTML=programs.map(function(p){
+    return '<div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-family:var(--display);font-size:13px;font-weight:700;">'+esc(p.program_name)+'</div><div style="display:flex;gap:6px;"><button class="action-btn primary" onclick="editProgram(\''+p.id+'\')">Modifica</button><button class="action-btn danger" onclick="removeProgram(\''+p.id+'\')">Rimuovi</button></div></div><div id="edit_'+p.id+'" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;"><div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_'+p.id+'" value="'+esc(p.program_name)+'"></div><div class="modal-field"><div class="modal-label">System prompt</div><textarea class="modal-textarea" id="editPrompt_'+p.id+'" style="min-height:120px;">'+esc(p.ai_prompt||'')+'</textarea></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;"><button class="modal-cancel" onclick="document.getElementById(\'edit_\''+p.id+'\'\').style.display=\'none\'">Annulla</button><button class="modal-save" onclick="saveEditProgram(\''+p.id+'\')">Salva</button></div></div></div>';
+  }).join('');
 }
 
-function editProgram(id) {
-  const el = document.getElementById('edit_'+id);
-  el.style.display = el.style.display==='none' ? 'block' : 'none';
+function editProgram(id){
+  var el=document.getElementById('edit_'+id);
+  el.style.display=el.style.display==='none'?'block':'none';
 }
 
-async function saveEditProgram(programId) {
-  const name=document.getElementById('editName_'+programId).value.trim();
-  const prompt=document.getElementById('editPrompt_'+programId).value.trim();
-  if (!name||!prompt) { alert('Compila tutti i campi.'); return; }
-  try {
-    const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId,program_name:name,workouts:'[]',ai_prompt:prompt})});
-    const data=await res.json();
-    if (data.error) { alert('Errore: '+data.error); return; }
-    await renderAthletePrograms();
-  } catch(e) { alert('Errore di connessione.'); }
+async function saveEditProgram(programId){
+  var name=document.getElementById('editName_'+programId).value.trim();
+  var prompt=document.getElementById('editPrompt_'+programId).value.trim();
+  if(!name||!prompt){alert('Compila tutti i campi.'); return;}
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId:programId,program_name:name,workouts:JSON.stringify([]),ai_prompt:prompt})});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  await renderAthletePrograms();
 }
 
-// ── COMPOSITORE AI ────────────────────────────────────────────────────────────
-async function generateProgram() {
-  const desc = document.getElementById('composerDesc').value.trim();
-  const progName = document.getElementById('newProgName').value.trim();
-  if (!desc) { document.getElementById('composerDesc').style.borderColor='var(--accent)'; setTimeout(()=>document.getElementById('composerDesc').style.borderColor='',800); return; }
-
-  // Mostra spinner
-  const btn = document.getElementById('generateBtn');
-  const spinner = document.getElementById('generateSpinner');
-  const label = document.getElementById('generateBtnLabel');
-  btn.disabled = true;
-  spinner.style.display = 'block';
-  label.textContent = 'Generazione in corso...';
-
-  try {
-    // 1. Carica profilo atleta
-    const { data: athleteProfile } = await sb.from('profiles').select('*').eq('id', athleteProgramsUserId).single();
-
-    // 2. Carica libreria esercizi
-    const { data: exercises } = await sb.from('exercises').select('name,category,muscles,equipment,level,progressions,cue,default_rest').order('category').order('name');
-
-    // 3. Costruisci contesto atleta
-    const athleteCtx = buildAthleteContext(athleteProfile);
-
-    // 4. Costruisci lista esercizi
-    const exList = (exercises||[]).map(e =>
-      `- ${e.name} [${e.category||'—'}] | ${e.muscles||'—'} | ${e.equipment||'—'} | ${e.level||'—'}${e.cue ? ' | cue: '+e.cue : ''}${e.progressions ? ' | progressioni: '+e.progressions : ''}`
-    ).join('\n');
-
-    // 5. Prompt per il compositore
-    const composerSystemPrompt = `Sei un esperto programmatore di allenamenti calisthenics. Il tuo compito è generare un system prompt completo per un AI coach che guiderà un atleta durante le sue sessioni di allenamento.
-
-Il system prompt che generi deve:
-1. Usare SOLO gli esercizi presenti nella libreria fornita (rispetta i nomi esatti)
-2. Adattarsi al profilo dell'atleta (infortuni, livello, attrezzatura disponibile)
-3. Quando l'atleta avvia la sessione, chiedergli PRIMA quale workout vuole fare oggi (elenca i workout disponibili come opzioni cliccabili con "-")
-4. Seguire questo formato per ogni esercizio:
-   [SET:NomeEsercizio]
-   NomeEsercizio — Set N/TOT | X-Y reps | Recupero: mm:ss
-   [CUE:cue tecnico max 5 parole]
-5. Per superset:
-   [SUPERSET:Nome1,Nome2]
-   SUPERSET X — Set N/TOT
-   Nome1: X-Y reps
-   Nome2: X-Y reps
-   [CUE:cue breve]
-   → VAI SUBITO su Nome2 — nessun recupero
-   Recupero: mm:ss
-6. Regole comportamentali:
-   - Niente "Perfetto!", "Ottimo!", incoraggiamenti
-   - Feedback dopo set: max una riga
-   - Niente "Quando sei pronto" o "Dimmi quante reps"
-   - Quando l'utente dice "fine" genera WORKOUT LOG
-7. Generare il WORKOUT LOG finale con questo formato:
-   WORKOUT LOG
-   ================
-   Data: [data]
-   Programma: [nome programma]
-   Workout: [nome workout]
-   [Esercizio]: [sets x reps]
-
-Genera SOLO il system prompt, senza spiegazioni o preamboli.`;
-
-    const userMsg = `NOME PROGRAMMA: ${progName || 'Programma personalizzato'}
-
-DESCRIZIONE DEL COACH:
-${desc}
-
-PROFILO ATLETA:
-${athleteCtx || 'Nessun profilo disponibile'}
-
-LIBRERIA ESERCIZI DISPONIBILI:
-${exList}
-
-Genera il system prompt completo per questo programma. Includi tutti i workout descritti, con esercizi scelti dalla libreria adatti al profilo atleta.`;
-
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system: composerSystemPrompt,
-        messages: [{ role: 'user', content: userMsg }]
-      })
-    });
-    const data = await res.json();
-    const generatedPrompt = data.content?.[0]?.text || '';
-    if (generatedPrompt) {
-      document.getElementById('newProgPrompt').value = generatedPrompt;
-      document.getElementById('newProgPrompt').style.borderColor = 'var(--accent)';
-      setTimeout(() => document.getElementById('newProgPrompt').style.borderColor = '', 2000);
-    } else {
-      alert('Errore nella generazione. Riprova.');
+async function generatePromptWithAI(){
+  var desc=document.getElementById('newProgDesc').value.trim();
+  var progName=document.getElementById('newProgName').value.trim();
+  var statusEl=document.getElementById('generateStatus');
+  var btn=document.getElementById('generateBtn');
+  if(!desc){statusEl.textContent='Scrivi prima una descrizione del programma.'; statusEl.style.color='var(--red)'; return;}
+  var athleteR=await sb.from('profiles').select('*').eq('id',athleteProgramsUserId).single();
+  var ap=athleteR.data||{};
+  var exercisesText='';
+  try{
+    var exR=await sb.from('exercises').select('name,category,muscles,equipment,level,cue,progressions').order('category').order('name');
+    if(exR.data&&exR.data.length){
+      exercisesText=exR.data.map(function(e){return '- '+e.name+' ['+( e.category||'?')+'] | '+(e.muscles||'-')+' | '+(e.equipment||'bodyweight')+' | '+(e.level||'?')+(e.cue?' | cue: '+e.cue:'')+(e.progressions?' | prog: '+e.progressions:'');}).join('\n');
     }
-  } catch(e) {
-    alert('Errore di connessione: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    spinner.style.display = 'none';
-    label.textContent = '✦ Genera con AI';
+  }catch(ex){}
+  var profileText=[ap.name?'Nome: '+ap.name:null,ap.eta?'Eta: '+ap.eta:null,ap.livello?'Livello: '+ap.livello:null,ap.obiettivo?'Obiettivo: '+ap.obiettivo:null,ap.obiettivo3m?'Obiettivo 3 mesi: '+ap.obiettivo3m:null,ap.discipline?'Discipline: '+ap.discipline:null,ap.skill?'Skill attuali: '+ap.skill:null,ap.luogo?'Luogo: '+ap.luogo:null,ap.attrezzatura?'Attrezzatura: '+ap.attrezzatura:null,ap.infortuni?'Infortuni: '+ap.infortuni:null,ap.limitazioni?'Limitazioni: '+ap.limitazioni:null,ap.frequenza?'Frequenza: '+ap.frequenza:null,ap.disponibilita?'Disponibilita: '+ap.disponibilita:null].filter(Boolean).join('\n');
+  var systemForGenerator='Sei un esperto coach di calisthenics. Genera un system prompt completo per un AI coach.\n\nFORMATO WORKOUT:\n- [SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n[CUE:max 5 parole]\n- Per superset: [SUPERSET:Nome1,Nome2]\n- Niente incoraggiamenti\n- Quando utente dice fine genera WORKOUT LOG\n- Il prompt deve iniziare chiedendo quale workout fare oggi con lista opzioni\n\nGenera SOLO il system prompt in italiano.';
+  var userMessage='Genera il system prompt per questo programma:\n\nNOME: '+(progName||'Programma')+'\n\nDESCRIZIONE:\n'+desc+'\n\nPROFILO ATLETA:\n'+(profileText||'Non disponibile')+'\n\nLIBRERIA ESERCIZI:\n'+(exercisesText||'Usa esercizi standard calisthenics');
+  btn.classList.add('loading'); btn.disabled=true;
+  statusEl.textContent='Generazione in corso...'; statusEl.style.color='var(--muted)';
+  try{
+    var res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemForGenerator,messages:[{role:'user',content:userMessage}]})});
+    var data=await res.json();
+    var generated=data.content&&data.content[0]&&data.content[0].text;
+    if(generated){
+      document.getElementById('newProgPrompt').value=generated;
+      statusEl.textContent='Prompt generato - modifica se necessario';
+      statusEl.style.color='var(--accent)';
+    }else{
+      statusEl.textContent='Errore nella generazione. Riprova.';
+      statusEl.style.color='var(--red)';
+    }
+  }catch(e){
+    statusEl.textContent='Errore di connessione.';
+    statusEl.style.color='var(--red)';
+  }finally{
+    btn.classList.remove('loading'); btn.disabled=false;
   }
 }
 
-async function addProgram() {
-  const name=document.getElementById('newProgName').value.trim();
-  const prompt=document.getElementById('newProgPrompt').value.trim();
-  if (!name||!prompt) { alert('Inserisci nome e prompt (o genera con AI).'); return; }
-  try {
-    const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:'[]',ai_prompt:prompt})});
-    const data=await res.json();
-    if (data.error) { alert('Errore: '+data.error); return; }
-    document.getElementById('newProgName').value='';
-    document.getElementById('composerDesc').value='';
-    document.getElementById('newProgPrompt').value='';
-    await renderAthletePrograms(); await renderUserTable();
-  } catch(e) { alert('Errore di connessione.'); }
+async function addProgram(){
+  var name=document.getElementById('newProgName').value.trim();
+  var prompt=document.getElementById('newProgPrompt').value.trim();
+  if(!name||!prompt){alert('Inserisci nome e prompt del programma.'); return;}
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify([]),ai_prompt:prompt})});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  document.getElementById('newProgName').value='';
+  document.getElementById('newProgDesc').value='';
+  document.getElementById('newProgPrompt').value='';
+  document.getElementById('generateStatus').textContent='';
+  await renderAthletePrograms(); await renderUserTable();
 }
 
-async function removeProgram(programId) {
-  if (!confirm('Rimuovere questo programma?')) return;
-  try {
-    const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'removeProgram',programId})});
-    const data=await res.json();
-    if (data.error) { alert('Errore: '+data.error); return; }
-    await renderAthletePrograms(); await renderUserTable();
-  } catch(e) { alert('Errore di connessione.'); }
+async function removeProgram(programId){
+  if(!confirm('Rimuovere questo programma?')) return;
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'removeProgram',programId:programId})});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  await renderAthletePrograms(); await renderUserTable();
 }
 
-// ── LOG ───────────────────────────────────────────────────────────────────────
-function openLogModal(s) {
-  document.getElementById('logModalTitle').textContent=(s.workout_name||'Sessione')+' — '+new Date(s.created_at).toLocaleDateString('it-IT');
+function openLogModal(s){
+  document.getElementById('logModalTitle').textContent=(s.workout_name||'Sessione')+' - '+new Date(s.created_at).toLocaleDateString('it-IT');
   document.getElementById('logModalContent').textContent=s.log_text||'Nessun log.';
   document.getElementById('logModal').classList.add('open');
 }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
-// ── ONBOARD ───────────────────────────────────────────────────────────────────
-let infortuniVal = null;
-function setInfortuni(val) {
+document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o) o.classList.remove('open');});});
+
+function setInfortuni(val){
   infortuniVal=val;
   document.getElementById('togSi').className='toggle-btn'+(val==='si'?' yes':'');
   document.getElementById('togNo').className='toggle-btn'+(val==='no'?' no':'');
   document.getElementById('infortuniWrap').style.display=val==='si'?'block':'none';
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  document.querySelectorAll('.check-chip input[type=checkbox]').forEach(cb=>{
-    cb.addEventListener('change',function(){
-      const chip=this.closest('.check-chip'),box=chip.querySelector('.chip-box');
-      if(this.checked){chip.classList.add('is-checked');box.textContent='✓';}
-      else{chip.classList.remove('is-checked');box.textContent='';}
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.check-chip input[type=checkbox]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      var chip=this.closest('.check-chip'), box=chip.querySelector('.chip-box');
+      if(this.checked){chip.classList.add('is-checked'); box.textContent='v';}
+      else{chip.classList.remove('is-checked'); box.textContent='';}
       if(this.value==='Altro'&&chip.closest('#checkDiscipline')){
         document.getElementById('altroDiscWrap').style.display=this.checked?'block':'none';
-        if(!this.checked)document.getElementById('f_altro_disc').value='';
+        if(!this.checked) document.getElementById('f_altro_disc').value='';
       }
     });
   });
   init();
 });
 
-function getChecked(groupId) {
-  return Array.from(document.querySelectorAll('#'+groupId+' input[type=checkbox]:checked')).map(cb=>{
-    if(cb.value==='Altro'&&groupId==='checkDiscipline'){const spec=document.getElementById('f_altro_disc')?.value.trim();return spec?'Altro: '+spec:'Altro';}
+function getChecked(groupId){
+  return Array.from(document.querySelectorAll('#'+groupId+' input[type=checkbox]:checked')).map(function(cb){
+    if(cb.value==='Altro'&&groupId==='checkDiscipline'){var spec=document.getElementById('f_altro_disc'); return spec&&spec.value.trim()?'Altro: '+spec.value.trim():'Altro';}
     return cb.value;
   }).join(', ')||'N/D';
 }
-function gv(id){const el=document.getElementById(id);return el?(el.value.trim()||'N/D'):'N/D';}
+function gv(id){var el=document.getElementById(id); return el?(el.value.trim()||'N/D'):'N/D';}
 
-async function submitOnboard() {
-  const btn=document.getElementById('onboardBtn'),errEl=document.getElementById('onboardErr');
-  const req=['f_nome','f_cognome','f_email','f_eta','f_livello','f_frequenza','f_obiettivo','f_disponibilita','f_luogo','f_motivazione'];
-  let missing=false;
-  req.forEach(id=>{const el=document.getElementById(id);if(!el.value.trim()){el.style.borderColor='var(--accent)';missing=true;}else el.style.borderColor='';});
-  if(infortuniVal===null){errEl.textContent='Indica se hai infortuni.';return;}
-  if(missing){errEl.textContent='Compila i campi obbligatori evidenziati.';return;}
-  errEl.textContent='';btn.disabled=true;btn.textContent='Invio in corso...';
-  const dati={
-    nome:gv('f_nome')+' '+gv('f_cognome'),email:gv('f_email'),telefono:gv('f_telefono'),
-    eta:gv('f_eta'),sesso:gv('f_sesso'),peso:gv('f_peso'),altezza:gv('f_altezza'),
-    livello:gv('f_livello'),frequenza:gv('f_frequenza'),discipline:getChecked('checkDiscipline'),skill:getChecked('checkSkill'),
-    obiettivo:gv('f_obiettivo'),obiettivo3m:gv('f_obiettivo3m'),disponibilita:gv('f_disponibilita'),
-    luogo:gv('f_luogo'),attrezzatura:getChecked('checkAttr'),
-    infortuni:infortuniVal==='si'?gv('f_infortuni'):'No',
-    limitazioni:gv('f_limitazioni'),stile:gv('f_stile'),sonno:gv('f_sonno'),
-    motivazione:gv('f_motivazione'),note:gv('f_note'),timestamp:new Date().toLocaleString('it-IT')
-  };
-  try {
-    await fetch(APPS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(dati)});
+async function submitOnboard(){
+  var btn=document.getElementById('onboardBtn'), errEl=document.getElementById('onboardErr');
+  var req=['f_nome','f_cognome','f_email','f_eta','f_livello','f_frequenza','f_obiettivo','f_disponibilita','f_luogo','f_motivazione'];
+  var missing=false;
+  req.forEach(function(id){var el=document.getElementById(id); if(!el.value.trim()){el.style.borderColor='var(--accent)'; missing=true;}else el.style.borderColor='';});
+  if(infortuniVal===null){errEl.textContent='Indica se hai infortuni.'; return;}
+  if(missing){errEl.textContent='Compila i campi obbligatori evidenziati.'; return;}
+  errEl.textContent=''; btn.disabled=true; btn.textContent='Invio in corso...';
+  var dati={nome:gv('f_nome')+' '+gv('f_cognome'),email:gv('f_email'),telefono:gv('f_telefono'),eta:gv('f_eta'),sesso:gv('f_sesso'),peso:gv('f_peso'),altezza:gv('f_altezza'),livello:gv('f_livello'),frequenza:gv('f_frequenza'),discipline:getChecked('checkDiscipline'),skill:getChecked('checkSkill'),obiettivo:gv('f_obiettivo'),obiettivo3m:gv('f_obiettivo3m'),disponibilita:gv('f_disponibilita'),luogo:gv('f_luogo'),attrezzatura:getChecked('checkAttr'),infortuni:infortuniVal==='si'?gv('f_infortuni'):'No',limitazioni:gv('f_limitazioni'),stile:gv('f_stile'),sonno:gv('f_sonno'),motivazione:gv('f_motivazione'),note:gv('f_note'),timestamp:new Date().toLocaleString('it-IT')};
+  try{
+    await fetch(APPS_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(dati)});
     if(currentUser){
-      await sb.from('profiles').update({
-        eta:parseInt(dati.eta)||null,sesso:dati.sesso!=='N/D'?dati.sesso:null,
-        peso:parseFloat(dati.peso)||null,altezza:parseFloat(dati.altezza)||null,
-        livello:dati.livello!=='N/D'?dati.livello:null,frequenza:dati.frequenza!=='N/D'?dati.frequenza:null,
-        discipline:dati.discipline!=='N/D'?dati.discipline:null,skill:dati.skill!=='N/D'?dati.skill:null,
-        obiettivo:dati.obiettivo!=='N/D'?dati.obiettivo:null,obiettivo3m:dati.obiettivo3m!=='N/D'?dati.obiettivo3m:null,
-        disponibilita:dati.disponibilita!=='N/D'?dati.disponibilita:null,luogo:dati.luogo!=='N/D'?dati.luogo:null,
-        attrezzatura:dati.attrezzatura!=='N/D'?dati.attrezzatura:null,infortuni:dati.infortuni,
-        limitazioni:dati.limitazioni!=='N/D'?dati.limitazioni:null,stile:dati.stile!=='N/D'?dati.stile:null,
-        sonno:dati.sonno!=='N/D'?dati.sonno:null,motivazione:dati.motivazione!=='N/D'?dati.motivazione:null,
-        note_libere:dati.note!=='N/D'?dati.note:null,name:dati.nome
-      }).eq('id',currentUser.id);
+      await sb.from('profiles').update({eta:parseInt(dati.eta)||null,sesso:dati.sesso!=='N/D'?dati.sesso:null,peso:parseFloat(dati.peso)||null,altezza:parseFloat(dati.altezza)||null,livello:dati.livello!=='N/D'?dati.livello:null,frequenza:dati.frequenza!=='N/D'?dati.frequenza:null,discipline:dati.discipline!=='N/D'?dati.discipline:null,skill:dati.skill!=='N/D'?dati.skill:null,obiettivo:dati.obiettivo!=='N/D'?dati.obiettivo:null,obiettivo3m:dati.obiettivo3m!=='N/D'?dati.obiettivo3m:null,disponibilita:dati.disponibilita!=='N/D'?dati.disponibilita:null,luogo:dati.luogo!=='N/D'?dati.luogo:null,attrezzatura:dati.attrezzatura!=='N/D'?dati.attrezzatura:null,infortuni:dati.infortuni,limitazioni:dati.limitazioni!=='N/D'?dati.limitazioni:null,stile:dati.stile!=='N/D'?dati.stile:null,sonno:dati.sonno!=='N/D'?dati.sonno:null,motivazione:dati.motivazione!=='N/D'?dati.motivazione:null,note_libere:dati.note!=='N/D'?dati.note:null,name:dati.nome}).eq('id',currentUser.id);
       await loadProfile();
     }
     document.getElementById('onboardForm').style.display='none';
     document.getElementById('onboardSuccess').style.display='flex';
-    if(currentUser)document.getElementById('onboardSuccessDemo').style.display='flex';
-  } catch(e){btn.disabled=false;btn.textContent='Invia richiesta coaching →';errEl.textContent='Errore. Riprova.';}
+    if(currentUser) document.getElementById('onboardSuccessDemo').style.display='block';
+  }catch(e){btn.disabled=false; btn.textContent='Invia richiesta coaching'; errEl.textContent='Errore. Riprova.';}
 }
 
-// ── CONTEXT BUILDER ───────────────────────────────────────────────────────────
-function buildAthleteContext(profile) {
+function buildAthleteContext(profile){
   if(!profile) return '';
-  const fields=[
-    profile.eta?`Età: ${profile.eta}`:null,
-    profile.sesso?`Sesso: ${profile.sesso}`:null,
-    profile.peso?`Peso: ${profile.peso} kg`:null,
-    profile.altezza?`Altezza: ${profile.altezza} cm`:null,
-    profile.livello?`Livello: ${profile.livello}`:null,
-    profile.frequenza?`Frequenza: ${profile.frequenza}`:null,
-    profile.discipline?`Discipline: ${profile.discipline}`:null,
-    profile.skill?`Skill: ${profile.skill}`:null,
-    profile.obiettivo?`Obiettivo: ${profile.obiettivo}`:null,
-    profile.obiettivo3m?`Obiettivo 3 mesi: ${profile.obiettivo3m}`:null,
-    profile.disponibilita?`Disponibilità: ${profile.disponibilita}`:null,
-    profile.luogo?`Luogo allenamento: ${profile.luogo}`:null,
-    profile.attrezzatura?`Attrezzatura: ${profile.attrezzatura}`:null,
-    profile.infortuni?`Infortuni: ${profile.infortuni}`:null,
-    profile.limitazioni?`Limitazioni: ${profile.limitazioni}`:null,
-    profile.stile?`Stile di vita: ${profile.stile}`:null,
-    profile.sonno?`Sonno: ${profile.sonno}`:null,
-  ].filter(Boolean);
+  var fields=[profile.eta?'Eta: '+profile.eta:null,profile.sesso?'Sesso: '+profile.sesso:null,profile.peso?'Peso: '+profile.peso+' kg':null,profile.altezza?'Altezza: '+profile.altezza+' cm':null,profile.livello?'Livello: '+profile.livello:null,profile.frequenza?'Frequenza: '+profile.frequenza:null,profile.discipline?'Discipline: '+profile.discipline:null,profile.skill?'Skill: '+profile.skill:null,profile.obiettivo?'Obiettivo: '+profile.obiettivo:null,profile.obiettivo3m?'Obiettivo 3 mesi: '+profile.obiettivo3m:null,profile.disponibilita?'Disponibilita: '+profile.disponibilita:null,profile.luogo?'Luogo: '+profile.luogo:null,profile.attrezzatura?'Attrezzatura: '+profile.attrezzatura:null,profile.infortuni?'Infortuni: '+profile.infortuni:null,profile.limitazioni?'Limitazioni: '+profile.limitazioni:null,profile.stile?'Stile: '+profile.stile:null,profile.sonno?'Sonno: '+profile.sonno:null].filter(Boolean);
   if(!fields.length) return '';
-  return `\n\nPROFILO ATLETA:\n${fields.join('\n')}`;
+  return '\n\nPROFILO ATLETA:\n'+fields.join('\n');
 }
 
-// ── LIBRERIA ESERCIZI ─────────────────────────────────────────────────────────
-let allExercises = [];
-
-async function loadLibrary() {
-  const { data, error } = await sb.from('exercises').select('*').order('category').order('name');
-  if (error) { console.error(error); return; }
-  allExercises = data || [];
+async function loadLibrary(){
+  var r=await sb.from('exercises').select('*').order('category').order('name');
+  if(r.error){console.error(r.error); return;}
+  allExercises=r.data||[];
   filterLibrary();
 }
 
-function filterLibrary() {
-  const search = document.getElementById('libSearch')?.value.toLowerCase() || '';
-  const cat = document.getElementById('libCat')?.value || '';
-  const equip = document.getElementById('libEquip')?.value || '';
-  const level = document.getElementById('libLevel')?.value || '';
-  const filtered = allExercises.filter(e => {
-    const matchSearch = !search || e.name.toLowerCase().includes(search) || (e.muscles||'').toLowerCase().includes(search);
-    const matchCat = !cat || e.category === cat;
-    const matchEquip = !equip || (e.equipment||'').toLowerCase().includes(equip);
-    const matchLevel = !level || e.level === level;
-    return matchSearch && matchCat && matchEquip && matchLevel;
+function filterLibrary(){
+  var search=(document.getElementById('libSearch')||{}).value||''; search=search.toLowerCase();
+  var cat=(document.getElementById('libCat')||{}).value||'';
+  var equip=(document.getElementById('libEquip')||{}).value||'';
+  var level=(document.getElementById('libLevel')||{}).value||'';
+  var filtered=allExercises.filter(function(e){
+    return (!search||(e.name.toLowerCase().indexOf(search)>-1)||((e.muscles||'').toLowerCase().indexOf(search)>-1))&&(!cat||e.category===cat)&&(!equip||(e.equipment||'').toLowerCase().indexOf(equip)>-1)&&(!level||e.level===level);
   });
-  const levelBadge = { beginner:'badge-active', intermediate:'badge-pending', advanced:'badge-inactive' };
-  const levelLabel = { beginner:'Base', intermediate:'Interm.', advanced:'Avanzato' };
-  const catColor = { push:'#f06060', pull:'#60a0f0', legs:'#a060f0', core:'#f0c060', handstand:'#60f0c0' };
-  const tbody = document.getElementById('libTableBody');
-  const countEl = document.getElementById('libCount');
-  if (countEl) countEl.textContent = filtered.length + ' esercizi' + (allExercises.length !== filtered.length ? ' (filtrati su ' + allExercises.length + ')' : '');
-  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Nessun esercizio trovato.</td></tr>'; return; }
-  tbody.innerHTML = filtered.map(e => {
-    const cc = catColor[e.category] || '#888';
-    const r = parseInt(cc.slice(1,3),16), g = parseInt(cc.slice(3,5),16), b = parseInt(cc.slice(5,7),16);
-    return `<tr>
-      <td style="font-weight:500;">${esc(e.name)}</td>
-      <td><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(${r},${g},${b},0.15);color:${cc};">${e.category||'—'}</span></td>
-      <td style="color:var(--muted);font-size:11px;">${esc(e.muscles||'—')}</td>
-      <td style="color:var(--muted);font-size:11px;">${esc(e.equipment||'—')}</td>
-      <td><span class="badge ${levelBadge[e.level]||''}">${levelLabel[e.level]||e.level||'—'}</span></td>
-      <td style="color:var(--muted);font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(e.progressions||'')}">${esc(e.progressions||'—')}</td>
-      <td style="font-size:10px;color:${e.owner_id?'var(--accent)':'var(--muted)'};">${e.owner_id?'Custom':'Globale'}</td>
-      <td>
-        <button class="action-btn" onclick="openExerciseModal('${e.id}')">Modifica</button>
-        <button class="action-btn danger" onclick="deleteExercise('${e.id}','${esc(e.name)}')">Elimina</button>
-      </td>
-    </tr>`;
+  var levelBadge={beginner:'badge-active',intermediate:'badge-pending',advanced:'badge-inactive'};
+  var levelLabel={beginner:'Base',intermediate:'Interm.',advanced:'Avanzato'};
+  var catColor={push:'#f06060',pull:'#60a0f0',legs:'#a060f0',core:'#f0c060',handstand:'#60f0c0'};
+  var tbody=document.getElementById('libTableBody');
+  var countEl=document.getElementById('libCount');
+  if(countEl) countEl.textContent=filtered.length+' esercizi'+(allExercises.length!==filtered.length?' (filtrati su '+allExercises.length+')':'');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="8" class="empty-table">Nessun esercizio trovato.</td></tr>'; return;}
+  tbody.innerHTML=filtered.map(function(e){
+    var cc=catColor[e.category]||'#888';
+    var r=parseInt(cc.slice(1,3),16),g=parseInt(cc.slice(3,5),16),b=parseInt(cc.slice(5,7),16);
+    return '<tr><td style="font-weight:500;">'+esc(e.name)+'</td><td><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba('+r+','+g+','+b+',0.15);color:'+cc+';">'+(e.category||'-')+'</span></td><td style="color:var(--muted);font-size:11px;">'+esc(e.muscles||'-')+'</td><td style="color:var(--muted);font-size:11px;">'+esc(e.equipment||'-')+'</td><td><span class="badge '+(levelBadge[e.level]||'')+'">'+(levelLabel[e.level]||e.level||'-')+'</span></td><td style="color:var(--muted);font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(e.progressions||'')+'">'+esc(e.progressions||'-')+'</td><td style="font-size:10px;color:'+(e.owner_id?'var(--accent)':'var(--muted)')+';">'+(e.owner_id?'Custom':'Globale')+'</td><td><button class="action-btn" onclick="openExerciseModal(\''+e.id+'\')">Modifica</button><button class="action-btn danger" onclick="deleteExercise(\''+e.id+'\',\''+esc(e.name)+'\')">Elimina</button></td></tr>';
   }).join('');
 }
 
-function openExerciseModal(id) {
-  document.getElementById('exError').textContent = '';
-  if (!id) {
-    document.getElementById('exModalTitle').textContent = 'Nuovo esercizio';
-    document.getElementById('exId').value = '';
-    ['exName','exMuscles','exEquipment','exCue','exProgressions','exNotes'].forEach(f => document.getElementById(f).value = '');
-    document.getElementById('exCategory').value = '';
-    document.getElementById('exLevel').value = '';
-    document.getElementById('exRest').value = '90';
-  } else {
-    const e = allExercises.find(x => x.id === id);
-    if (!e) return;
-    document.getElementById('exModalTitle').textContent = 'Modifica: ' + e.name;
-    document.getElementById('exId').value = e.id;
-    document.getElementById('exName').value = e.name || '';
-    document.getElementById('exCategory').value = e.category || '';
-    document.getElementById('exLevel').value = e.level || '';
-    document.getElementById('exMuscles').value = e.muscles || '';
-    document.getElementById('exEquipment').value = e.equipment || '';
-    document.getElementById('exRest').value = e.default_rest || 90;
-    document.getElementById('exCue').value = e.cue || '';
-    document.getElementById('exProgressions').value = e.progressions || '';
-    document.getElementById('exNotes').value = e.notes || '';
+function openExerciseModal(id){
+  document.getElementById('exError').textContent='';
+  if(!id){
+    document.getElementById('exModalTitle').textContent='Nuovo esercizio';
+    document.getElementById('exId').value='';
+    ['exName','exMuscles','exEquipment','exCue','exProgressions','exNotes'].forEach(function(f){document.getElementById(f).value='';});
+    document.getElementById('exCategory').value='';
+    document.getElementById('exLevel').value='';
+    document.getElementById('exRest').value='90';
+  }else{
+    var e=allExercises.find(function(x){return x.id===id;});
+    if(!e) return;
+    document.getElementById('exModalTitle').textContent='Modifica: '+e.name;
+    document.getElementById('exId').value=e.id;
+    document.getElementById('exName').value=e.name||'';
+    document.getElementById('exCategory').value=e.category||'';
+    document.getElementById('exLevel').value=e.level||'';
+    document.getElementById('exMuscles').value=e.muscles||'';
+    document.getElementById('exEquipment').value=e.equipment||'';
+    document.getElementById('exRest').value=e.default_rest||90;
+    document.getElementById('exCue').value=e.cue||'';
+    document.getElementById('exProgressions').value=e.progressions||'';
+    document.getElementById('exNotes').value=e.notes||'';
   }
   document.getElementById('exerciseModal').classList.add('open');
 }
 
-async function saveExercise() {
-  const errEl = document.getElementById('exError');
-  const name = document.getElementById('exName').value.trim();
-  if (!name) { errEl.textContent = 'Il nome è obbligatorio.'; return; }
-  const id = document.getElementById('exId').value;
-  const payload = {
-    name,
-    category: document.getElementById('exCategory').value || null,
-    level: document.getElementById('exLevel').value || null,
-    muscles: document.getElementById('exMuscles').value.trim() || null,
-    equipment: document.getElementById('exEquipment').value.trim() || null,
-    default_rest: parseInt(document.getElementById('exRest').value) || 90,
-    cue: document.getElementById('exCue').value.trim() || null,
-    progressions: document.getElementById('exProgressions').value.trim() || null,
-    notes: document.getElementById('exNotes').value.trim() || null,
-    owner_id: null
-  };
-  let error;
-  if (id) { ({ error } = await sb.from('exercises').update(payload).eq('id', id)); }
-  else { ({ error } = await sb.from('exercises').insert(payload)); }
-  if (error) { errEl.textContent = 'Errore: ' + error.message; return; }
-  closeModal('exerciseModal');
-  await loadLibrary();
+async function saveExercise(){
+  var errEl=document.getElementById('exError');
+  var name=document.getElementById('exName').value.trim();
+  if(!name){errEl.textContent='Il nome e obbligatorio.'; return;}
+  var id=document.getElementById('exId').value;
+  var payload={name:name,category:document.getElementById('exCategory').value||null,level:document.getElementById('exLevel').value||null,muscles:document.getElementById('exMuscles').value.trim()||null,equipment:document.getElementById('exEquipment').value.trim()||null,default_rest:parseInt(document.getElementById('exRest').value)||90,cue:document.getElementById('exCue').value.trim()||null,progressions:document.getElementById('exProgressions').value.trim()||null,notes:document.getElementById('exNotes').value.trim()||null,owner_id:null};
+  var r;
+  if(id){r=await sb.from('exercises').update(payload).eq('id',id);}
+  else{r=await sb.from('exercises').insert(payload);}
+  if(r.error){errEl.textContent='Errore: '+r.error.message; return;}
+  closeModal('exerciseModal'); await loadLibrary();
 }
 
-async function deleteExercise(id, name) {
-  if (!confirm('Eliminare "' + name + '"?')) return;
-  const { error } = await sb.from('exercises').delete().eq('id', id);
-  if (error) { alert('Errore: ' + error.message); return; }
+async function deleteExercise(id, name){
+  if(!confirm('Eliminare "'+name+'"?')) return;
+  var r=await sb.from('exercises').delete().eq('id',id);
+  if(r.error){alert('Errore: '+r.error.message); return;}
   await loadLibrary();
 }
 </script>
