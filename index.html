@@ -248,7 +248,7 @@ input::placeholder{color:#444;}
       <div class="program-card">
         <div class="program-empty" id="programEmpty">
           Nessun programma assegnato.<br>Il coach lo caricherà presto.<br><br>
-          <button onclick="showScreen('onboardScreen')" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;">Richiedi il tuo programma →</button>
+          <button id="requestProgramBtn" onclick="showScreen('onboardScreen')" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;">Richiedi il tuo programma →</button>
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
             <div style="font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.1em;">OPPURE PROVA UN ALLENAMENTO</div>
             <button onclick="startDemoSession()" style="padding:10px 20px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;">▶ Allenamento personalizzato</button>
@@ -708,6 +708,8 @@ input::placeholder{color:#444;}
       <div class="modal-field"><div class="modal-label">Note libere</div><textarea class="modal-textarea" id="profNote" placeholder="—" style="min-height:60px;"></textarea></div>
       <div class="modal-btns">
         <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
+        <button style="padding:9px 18px;background:transparent;border:1px solid rgba(255,95,95,.4);border-radius:7px;color:var(--red);font-family:var(--mono);font-size:11px;cursor:pointer;" onclick="resetAthleteProfile()">Reset profilo</button>
+        <button style="padding:9px 18px;background:var(--red);border:none;border-radius:7px;color:#fff;font-family:var(--mono);font-size:11px;cursor:pointer;" onclick="deleteAthlete()">Elimina atleta</button>
         <button class="modal-save" onclick="saveAthleteProfile()">Salva profilo</button>
       </div>
     </div>
@@ -1051,7 +1053,12 @@ async function showDash() {
   const name = currentProfile?.name || currentUser.email.split('@')[0];
   document.getElementById('dashUserLabel').textContent = name;
   document.getElementById('dashWelcome').textContent = 'Ciao, ' + name.split(' ')[0] + '!';
-  // Carica programmi dalla tabella programs
+  // Mostra/nascondi bottone richiesta programma in base al profilo
+  const requestBtn = document.getElementById('requestProgramBtn');
+  if (requestBtn) {
+    const hasProfile = currentProfile?.obiettivo || currentProfile?.livello || currentProfile?.eta;
+    requestBtn.style.display = hasProfile ? 'none' : 'inline-block';
+  }
   const { data: programs } = await sb.from('programs').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
   if (programs?.length) {
     document.getElementById('programEmpty').style.display = 'none';
@@ -1632,6 +1639,39 @@ async function loadAthleteProfile(userId) {
     const el = document.getElementById(id);
     if (el) el.value = val || '';
   });
+}
+
+async function resetAthleteProfile() {
+  if (!confirm('Resettare tutti i dati del profilo di questo atleta?')) return;
+  try {
+    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateProfile', userId: athleteProgramsUserId,
+        eta: null, sesso: null, peso: null, altezza: null, livello: null, frequenza: null,
+        obiettivo: null, obiettivo3m: null, luogo: null, disponibilita: null,
+        discipline: null, skill: null, attrezzatura: null, infortuni: null,
+        limitazioni: null, stile: null, sonno: null, motivazione: null, note_libere: null
+      })
+    });
+    const data = await res.json();
+    if (data.error) { alert('Errore: ' + data.error); return; }
+    await loadAthleteProfile(athleteProgramsUserId);
+    alert('Profilo resettato.');
+  } catch(e) { alert('Errore di connessione.'); }
+}
+
+async function deleteAthlete() {
+  if (!confirm('Eliminare definitivamente questo atleta? L\'operazione è irreversibile.')) return;
+  if (!confirm('Sei sicuro? Verranno eliminati account, programmi e sessioni.')) return;
+  try {
+    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deleteUser', userId: athleteProgramsUserId })
+    });
+    const data = await res.json();
+    if (data.error) { alert('Errore: ' + data.error); return; }
+    closeModal('athleteProgramsModal');
+    await renderUserTable();
+    alert('Atleta eliminato.');
+  } catch(e) { alert('Errore di connessione.'); }
 }
 
 async function saveAthleteProfile() {
