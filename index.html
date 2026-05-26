@@ -956,7 +956,7 @@ function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.cl
 async function loginGoogle() {
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: 'https://calislackline.com/api/callback' }
+    options: { redirectTo: 'https://ailistenics.com/api/callback' }
   });
 }
 
@@ -979,7 +979,7 @@ async function doResetPassword() {
   succ.textContent = '';
   if (!email) { err.textContent = 'Inserisci la tua email nel campo sopra.'; return; }
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://calislackline.com/reset'
+    redirectTo: 'https://ailistenics.com/reset'
   });
   if (error) { err.textContent = 'Errore: ' + error.message; }
   else { succ.textContent = 'Email inviata! Controlla la tua casella di posta.'; }
