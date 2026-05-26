@@ -659,60 +659,18 @@ input::placeholder{color:#444;}
 <!-- MODAL PROGRAMMI ATLETA -->
 <div class="modal-overlay" id="athleteProgramsModal">
   <div class="modal" style="max-width:680px;">
-    <div class="modal-title">Atleta: <span id="athleteProgramsName"></span></div>
-
-    <!-- Tab switcher -->
-    <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;">
-      <button id="tabBtnProgrammi" onclick="switchAthleteTab('programmi')" style="padding:8px 16px;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;margin-bottom:-1px;">Programmi</button>
-      <button id="tabBtnProfilo" onclick="switchAthleteTab('profilo')" style="padding:8px 16px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;margin-bottom:-1px;">Profilo atleta</button>
+    <div class="modal-title">Programmi di <span id="athleteProgramsName"></span></div>
+    <div id="athleteProgramsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">+ Aggiungi nuovo programma</div>
+      <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="newProgName" placeholder="es. Home Hero"></div>
+      <div class="modal-field"><div class="modal-label">Workout (separati da virgola)</div><input class="modal-input" id="newProgWorkouts" placeholder="Full Body 1, Upper Body 1, Lower Body 1"></div>
+      <div class="modal-field"><div class="modal-label">System prompt AI Coach</div><textarea class="modal-textarea" id="newProgPrompt" placeholder="Incolla qui il programma e le istruzioni..."></textarea></div>
     </div>
-
-    <!-- TAB PROGRAMMI -->
-    <div id="tabProgrammi">
-      <div id="athleteProgramsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;"></div>
-      <div style="border-top:1px solid var(--border);padding-top:16px;">
-        <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">+ Aggiungi nuovo programma</div>
-        <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="newProgName" placeholder="es. Home Hero"></div>
-        <div class="modal-field"><div class="modal-label">Workout (separati da virgola)</div><input class="modal-input" id="newProgWorkouts" placeholder="Full Body 1, Upper Body 1, Lower Body 1"></div>
-        <div class="modal-field"><div class="modal-label">System prompt AI Coach</div><textarea class="modal-textarea" id="newProgPrompt" placeholder="Incolla qui il programma e le istruzioni..."></textarea></div>
-      </div>
-      <div class="modal-btns">
-        <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
-        <button class="modal-save" onclick="addProgram()">Aggiungi programma</button>
-      </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
+      <button class="modal-save" onclick="addProgram()">Aggiungi programma</button>
     </div>
-
-    <!-- TAB PROFILO -->
-    <div id="tabProfilo" style="display:none;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-        <div class="modal-field"><div class="modal-label">Età</div><input class="modal-input" id="profEta" type="number" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Sesso</div><input class="modal-input" id="profSesso" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Peso (kg)</div><input class="modal-input" id="profPeso" type="number" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Altezza (cm)</div><input class="modal-input" id="profAltezza" type="number" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Livello</div><input class="modal-input" id="profLivello" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Frequenza</div><input class="modal-input" id="profFrequenza" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Obiettivo</div><input class="modal-input" id="profObiettivo" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Obiettivo 3 mesi</div><input class="modal-input" id="profObiettivo3m" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Luogo</div><input class="modal-input" id="profLuogo" placeholder="—"></div>
-        <div class="modal-field"><div class="modal-label">Disponibilità</div><input class="modal-input" id="profDisponibilita" placeholder="—"></div>
-      </div>
-      <div class="modal-field"><div class="modal-label">Discipline</div><input class="modal-input" id="profDiscipline" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Skill attuali</div><input class="modal-input" id="profSkill" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Attrezzatura</div><input class="modal-input" id="profAttrezzatura" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Infortuni</div><input class="modal-input" id="profInfortuni" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Limitazioni</div><input class="modal-input" id="profLimitazioni" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Stile di vita</div><input class="modal-input" id="profStile" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Ore di sonno</div><input class="modal-input" id="profSonno" placeholder="—"></div>
-      <div class="modal-field"><div class="modal-label">Motivazione</div><textarea class="modal-textarea" id="profMotivazione" placeholder="—" style="min-height:60px;"></textarea></div>
-      <div class="modal-field"><div class="modal-label">Note libere</div><textarea class="modal-textarea" id="profNote" placeholder="—" style="min-height:60px;"></textarea></div>
-      <div class="modal-btns">
-        <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
-        <button style="padding:9px 18px;background:transparent;border:1px solid rgba(255,95,95,.4);border-radius:7px;color:var(--red);font-family:var(--mono);font-size:11px;cursor:pointer;" onclick="resetAthleteProfile()">Reset profilo</button>
-        <button style="padding:9px 18px;background:var(--red);border:none;border-radius:7px;color:#fff;font-family:var(--mono);font-size:11px;cursor:pointer;" onclick="deleteAthlete()">Elimina atleta</button>
-        <button class="modal-save" onclick="saveAthleteProfile()">Salva profilo</button>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -1768,9 +1726,7 @@ async function openAthleteProgramsModal(userId, userName) {
   document.getElementById('newProgName').value = '';
   document.getElementById('newProgWorkouts').value = '';
   document.getElementById('newProgPrompt').value = '';
-  switchAthleteTab('programmi');
   await renderAthletePrograms();
-  await loadAthleteProfile(userId);
   document.getElementById('athleteProgramsModal').classList.add('open');
 }
 
