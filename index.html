@@ -613,7 +613,11 @@ input::placeholder{color:#444;}
       <div class="success-glyph">✓</div>
       <div class="success-title">Richiesta inviata!</div>
       <div class="success-sub">Hai ricevuto una mail di conferma.<br>Carlo ti contatterà entro 24 ore.</div>
-      <button onclick="showScreen('loginScreen')" style="padding:11px 24px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;margin-top:8px;">← Torna al login</button>
+      <button onclick="showDash()" style="padding:11px 24px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;margin-top:8px;">← Torna alla dashboard</button>
+      <div id="onboardSuccessDemo" style="display:none;margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--muted);">Nel frattempo prova una sessione personalizzata —<br>l'AI conosce già il tuo profilo.</div>
+        <button onclick="startDemoSession()" style="padding:11px 24px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;">▶ Inizia sessione personalizzata</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1848,6 +1852,9 @@ async function submitOnboard() {
 
     document.getElementById('onboardForm').style.display = 'none';
     document.getElementById('onboardSuccess').style.display = 'flex';
+    if (currentUser) {
+      document.getElementById('onboardSuccessDemo').style.display = 'flex';
+    }
   } catch (e) { btn.disabled = false; btn.textContent = 'Invia richiesta coaching →'; errEl.textContent = 'Errore. Riprova.'; }
 }
 
