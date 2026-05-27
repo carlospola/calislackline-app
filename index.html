@@ -1132,16 +1132,19 @@ function updateSetInfo(text){
     box.innerHTML = html;
   }
 
-  // Timer: cerca recupero nel testo
-  var m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
-  // Aggiorna sempre il valore di recupero quando arriva un nuovo set dall'AI
-  // Se il timer sta girando: aggiorna solo sessionTimerTotal (non resettare il display)
-  // Se il timer è fermo: imposta il nuovo valore
-  if(m && (supersetMatch || setMatch)){
-    var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
-    sessionTimerSet(newSeconds);
-    // Auto-start solo dopo il primo set registrato dall'atleta
-    if(sessionFirstSetDone && !sessionTimerRunning) sessionTimerToggle();
+  // Timer: prendi il recupero dell'ULTIMO [SET:] nella risposta
+  // (quando ci sono più set nella stessa risposta, quello suggerito è sempre l'ultimo)
+  if(supersetMatch || setMatch){
+    var allSetMatches = text.match(/\[SET:[^\]]+\]/g) || [];
+    var lastSetPos = allSetMatches.length > 0 ? text.lastIndexOf(allSetMatches[allSetMatches.length-1]) : 0;
+    var textFromLastSet = text.substring(lastSetPos);
+    var m = textFromLastSet.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
+    if(!m) m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/); // fallback primo trovato
+    if(m){
+      var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
+      sessionTimerSet(newSeconds);
+      if(sessionFirstSetDone && !sessionTimerRunning) sessionTimerToggle();
+    }
   }
 }
 
