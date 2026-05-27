@@ -1398,13 +1398,14 @@ function addBubble(role, text){
       msgs.appendChild(optRow);
     }else{
       setInputLocked(false);
+      // updateSetInfo e detectAndRenderInput SEMPRE chiamati, indipendentemente dal bubble
+      updateSetInfo(text);
+      detectAndRenderInput(text);
       var fmtResult2=fmtText(text);
-      if(!fmtResult2){ msgs.scrollTop=msgs.scrollHeight; return; } // bubble vuoto — non mostrare
+      if(!fmtResult2){ msgs.scrollTop=msgs.scrollHeight; return; } // bubble vuoto — non mostrare visualmente
       bub.innerHTML=fmtResult2;
       row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
     }
-    updateSetInfo(text);
-    detectAndRenderInput(text);
   }else{
     bub.innerHTML=fmtText(text);
     row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
