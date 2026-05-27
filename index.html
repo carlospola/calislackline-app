@@ -1142,14 +1142,14 @@ function updateSetInfo(text){
     box.innerHTML = html;
   }
 
-  // Timer: prendi il recupero dell'ULTIMO [SET:] nella risposta
-  // (quando ci sono più set nella stessa risposta, quello suggerito è sempre l'ultimo)
+  // Timer: prendi il recupero del PRIMO [SET:] nella risposta
+  // Il primo [SET:] è sempre il set corrente da fare
   if(supersetMatch || setMatch){
     var allSetMatches = text.match(/\[SET:[^\]]+\]/g) || [];
-    var lastSetPos = allSetMatches.length > 0 ? text.lastIndexOf(allSetMatches[allSetMatches.length-1]) : 0;
-    var textFromLastSet = text.substring(lastSetPos);
-    var m = textFromLastSet.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
-    if(!m) m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/); // fallback primo trovato
+    var firstSetPos = allSetMatches.length > 0 ? text.indexOf(allSetMatches[0]) : 0;
+    var textFromFirstSet = text.substring(firstSetPos);
+    var m = textFromFirstSet.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
+    if(!m) m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
     if(m){
       var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
       sessionTimerSet(newSeconds);
