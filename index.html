@@ -388,7 +388,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div class="stat-card"><div class="stat-num" id="pStatSessions">—</div><div class="stat-lbl">SESSIONI</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatSessions">—</div><div class="stat-lbl">SET TOTALI</div></div>
         <div class="stat-card"><div class="stat-num" id="pStatPR" style="color:var(--accent);">—</div><div class="stat-lbl">PR REPS</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
@@ -1805,7 +1805,11 @@ function renderProgressCharts(){
         return acc + (ex ? getExSets(ex).length : 0);
       }, 0) * 10) / 10
     : 0;
-  document.getElementById('pStatSessions').textContent = filtered.length;
+  var totalSetsCount = filtered.reduce(function(acc,s){
+    var ex = s.log_data && s.log_data.exercises && s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
+    return acc + (ex ? getExSets(ex).length : 0);
+  }, 0);
+  document.getElementById('pStatSessions').textContent = totalSetsCount || '—';
   document.getElementById('pStatPR').textContent = prReps || '—';
   document.getElementById('pStatAvgReps').textContent = globalAvgReps || '—';
   document.getElementById('pStatTotalReps').textContent = grandTotalReps || '—';
