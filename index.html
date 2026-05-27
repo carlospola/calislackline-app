@@ -970,13 +970,29 @@ async function aiSend(text, isFirst){
 
 async function saveSessionLog(log){
   // Estrai [LOG_DATA:{...}] dal testo del log
+  // Usa parsing manuale per gestire JSON annidato (la regex lazy si ferma alla prima })
   var logData = null;
-  var ldMatch = log.match(/\[LOG_DATA:\s*(\{[\s\S]*?\})\s*\]/);
-  if(ldMatch){
-    try{ logData = JSON.parse(ldMatch[1]); }catch(e){ logData = null; }
+  var tagStart = log.indexOf('[LOG_DATA:');
+  if(tagStart > -1){
+    var jsonStart = log.indexOf('{', tagStart);
+    if(jsonStart > -1){
+      // Conta le parentesi graffe per trovare la chiusura corretta
+      var depth = 0, jsonEnd = -1;
+      for(var i = jsonStart; i < log.length; i++){
+        if(log[i] === '{') depth++;
+        else if(log[i] === '}') { depth--; if(depth === 0){ jsonEnd = i; break; } }
+      }
+      if(jsonEnd > -1){
+        try{ logData = JSON.parse(log.substring(jsonStart, jsonEnd + 1)); }catch(e){ logData = null; }
+      }
+    }
   }
-  // Rimuovi il tag [LOG_DATA:] dal testo salvato — è solo per uso interno
-  var cleanLog = log.replace(/\[LOG_DATA:[\s\S]*?\]\n?/g, '').trim();
+  // Rimuovi tutto il tag [LOG_DATA:...] dal testo visibile
+  var cleanLog = log;
+  if(tagStart > -1){
+    var tagEnd = log.indexOf(']', tagStart + log.substring(tagStart).indexOf('}'));
+    if(tagEnd > -1) cleanLog = (log.substring(0, tagStart) + log.substring(tagEnd + 1)).trim();
+  }
   await sb.from('sessions').insert({
     user_id: currentUser.id,
     workout_name: sessionWorkout,
