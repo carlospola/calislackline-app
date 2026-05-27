@@ -387,9 +387,12 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
           <option value="9999">Tutto</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
         <div class="stat-card"><div class="stat-num" id="pStatSessions">—</div><div class="stat-lbl">SESSIONI</div></div>
         <div class="stat-card"><div class="stat-num" id="pStatPR" style="color:var(--accent);">—</div><div class="stat-lbl">PR REPS</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div class="stat-card"><div class="stat-num" id="pStatAvgReps">—</div><div class="stat-lbl">MEDIA REPS</div></div>
         <div class="stat-card"><div class="stat-num" id="pStatTotalReps">—</div><div class="stat-lbl">TOT REPS</div></div>
       </div>
       <!-- Tre grafici allineati verticalmente con stessa altezza e labels -->
@@ -1791,12 +1794,20 @@ function renderProgressCharts(){
     avgRepsData.push(avg);
     totalRepsData.push(tot);
     avgRPEData.push(avgRPE);
-    if(avg > prReps) prReps = avg;
+    // PR = massimo reps in un singolo set (non media)
+    sets.forEach(function(st){ if(st.reps > prReps) prReps = st.reps; });
     grandTotalReps += tot;
   });
 
+  var globalAvgReps = grandTotalReps > 0 && filtered.length > 0
+    ? Math.round(grandTotalReps / filtered.reduce(function(acc,s){
+        var ex = s.log_data && s.log_data.exercises && s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
+        return acc + (ex ? getExSets(ex).length : 0);
+      }, 0) * 10) / 10
+    : 0;
   document.getElementById('pStatSessions').textContent = filtered.length;
   document.getElementById('pStatPR').textContent = prReps || '—';
+  document.getElementById('pStatAvgReps').textContent = globalAvgReps || '—';
   document.getElementById('pStatTotalReps').textContent = grandTotalReps || '—';
 
   var accent = '#c8f060', accentDim = 'rgba(200,240,96,0.15)';
