@@ -891,10 +891,41 @@ function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt
   aiSend('Inizia sessione: '+programName, true);
 }
 
+function buildSkipMessage(){
+  // Legge il set corrente dal setInfoBox e costruisce un messaggio contestuale
+  var box = document.getElementById('setInfoBox');
+  if(!box || box.innerHTML === 'In attesa...') return 'skip';
+  var boxText = box.innerText || box.textContent || '';
+  // Cerca "Set N/TOT" nel testo del box
+  var setMatch = boxText.match(/Set\s+(\d+)\/(\d+)/i);
+  var exerciseName = currentExercises.length > 0 ? currentExercises[0] : '';
+  if(!exerciseName){
+    // Prova a estrarre il nome dall'esercizio mostrato nel box (prima riga)
+    var firstLine = boxText.split('\n')[0].trim();
+    if(firstLine) exerciseName = firstLine;
+  }
+  if(!setMatch || !exerciseName) return 'skip';
+  var currentSet = parseInt(setMatch[1]);
+  var totalSets = parseInt(setMatch[2]);
+  if(currentSet < totalSets){
+    // Ci sono ancora set — chiedi esplicitamente il prossimo set dello stesso esercizio
+    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' — mostra Set ' + (currentSet+1) + '/' + totalSets + ' di ' + exerciseName;
+  } else {
+    // Ultimo set — passa al prossimo esercizio
+    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' (ultimo set) — passa al prossimo esercizio';
+  }
+}
+
 function qSend(t){
-  addBubble('user',t);
-  if(t==='skip') sessionFirstSetDone = true; // skip conta come set fatto
-  aiSend(t,false);
+  if(t === 'skip'){
+    var skipMsg = buildSkipMessage();
+    addBubble('user', 'skip');
+    sessionFirstSetDone = true;
+    aiSend(skipMsg, false);
+  } else {
+    addBubble('user', t);
+    aiSend(t, false);
+  }
 }
 
 function selRpe(btn, val){
