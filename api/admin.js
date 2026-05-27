@@ -23,7 +23,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Mantieni compatibilità con vecchio sistema
     if (action === 'updateProfile') {
       const { userId, eta, sesso, peso, altezza, livello, frequenza, obiettivo, obiettivo3m,
               luogo, disponibilita, discipline, skill, attrezzatura, infortuni, limitazioni,
@@ -60,21 +59,27 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // Nuovo sistema multi-programma
     if (action === 'addProgram') {
-      const { program_name, workouts, ai_prompt } = req.body;
+      const { program_name, workouts, coach_rules, workout_csv, ai_prompt } = req.body;
       const r = await supabaseRequest('POST', 'programs', {
-        user_id: userId, program_name, workouts, ai_prompt
+        user_id: userId, program_name, workouts,
+        coach_rules: coach_rules || null,
+        workout_csv: workout_csv || null,
+        ai_prompt: ai_prompt || null
       });
       if (!r.ok) return res.status(400).json({ error: 'Errore aggiunta programma' });
-      // Aggiorna status atleta ad active
       await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, { status: 'active' });
       return res.status(200).json({ success: true });
     }
 
     if (action === 'editProgram') {
-      const { programId, program_name, workouts, ai_prompt } = req.body;
-      await supabaseRequest('PATCH', `programs?id=eq.${programId}`, { program_name, workouts, ai_prompt });
+      const { programId, program_name, workouts, coach_rules, workout_csv, ai_prompt } = req.body;
+      await supabaseRequest('PATCH', `programs?id=eq.${programId}`, {
+        program_name, workouts,
+        coach_rules: coach_rules || null,
+        workout_csv: workout_csv || null,
+        ai_prompt: ai_prompt || null
+      });
       return res.status(200).json({ success: true });
     }
 
@@ -86,13 +91,9 @@ export default async function handler(req, res) {
 
     if (action === 'deleteUser') {
       const { userId } = req.body;
-      // Elimina sessioni
       await supabaseRequest('DELETE', `sessions?user_id=eq.${userId}`, undefined);
-      // Elimina programmi
       await supabaseRequest('DELETE', `programs?user_id=eq.${userId}`, undefined);
-      // Elimina profilo
       await supabaseRequest('DELETE', `profiles?id=eq.${userId}`, undefined);
-      // Elimina utente auth
       await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
         method: 'DELETE',
         headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` }
