@@ -1167,12 +1167,16 @@ async function saveSessionLog(log){
     }
   }
 
-  await sb.from('sessions').insert({
+  var saveResult = await sb.from('sessions').insert({
     user_id: currentUser.id,
     workout_name: sessionWorkout,
     log_text: cleanLog,
     log_data: logData
   });
+  if(saveResult.error){
+    console.error('saveSessionLog error:', saveResult.error);
+    alert('Errore salvataggio sessione: ' + saveResult.error.message);
+  }
 }
 
 function sessionTimerSet(seconds){
