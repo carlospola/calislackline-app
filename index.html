@@ -551,7 +551,24 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 </div>
 
 <div class="modal-overlay" id="logModal">
-  <div class="modal"><div class="modal-title" id="logModalTitle">Workout Log</div><div class="log-entry" id="logModalContent"></div><div class="modal-btns"><button class="modal-cancel" onclick="closeModal('logModal')">Chiudi</button></div></div>
+  <div class="modal">
+    <div class="modal-title" id="logModalTitle">Workout Log</div>
+    <div id="logViewMode">
+      <div class="log-entry" id="logModalContent"></div>
+      <div class="modal-btns" style="margin-top:8px;">
+        <button class="modal-cancel" onclick="closeModal('logModal')">Chiudi</button>
+        <button class="action-btn" onclick="toggleLogEdit()">Modifica</button>
+        <button class="action-btn danger" onclick="deleteLog()">Elimina</button>
+      </div>
+    </div>
+    <div id="logEditMode" style="display:none;">
+      <textarea class="modal-textarea" id="logEditContent" style="min-height:220px;"></textarea>
+      <div class="modal-btns" style="margin-top:8px;">
+        <button class="modal-cancel" onclick="toggleLogEdit()">Annulla</button>
+        <button class="modal-save" onclick="saveLogEdit()">Salva</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="newPasswordModal">
@@ -1113,7 +1130,8 @@ function updateSetInfo(text){
 
   // Timer: cerca recupero nel testo
   var m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
-  if(m) sessionTimerSet(parseInt(m[1])*60+parseInt(m[2]));
+  // Aggiorna il recupero solo se il timer NON sta girando — non interrompere un recupero in corso
+  if(m && !sessionTimerRunning) sessionTimerSet(parseInt(m[1])*60+parseInt(m[2]));
 }
 
 function extractOptions(text){
@@ -1384,10 +1402,48 @@ async function removeProgram(programId){
   await renderAthletePrograms(); await renderUserTable();
 }
 
+var currentLogSession = null;
 function openLogModal(s){
+  currentLogSession = s;
   document.getElementById('logModalTitle').textContent=(s.workout_name||'Sessione')+' - '+new Date(s.created_at).toLocaleDateString('it-IT');
   document.getElementById('logModalContent').textContent=s.log_text||'Nessun log.';
+  document.getElementById('logViewMode').style.display='block';
+  document.getElementById('logEditMode').style.display='none';
   document.getElementById('logModal').classList.add('open');
+}
+
+function toggleLogEdit(){
+  var view=document.getElementById('logViewMode'), edit=document.getElementById('logEditMode');
+  if(edit.style.display==='none'){
+    document.getElementById('logEditContent').value=currentLogSession.log_text||'';
+    view.style.display='none'; edit.style.display='block';
+  } else {
+    view.style.display='block'; edit.style.display='none';
+  }
+}
+
+async function saveLogEdit(){
+  var newText=document.getElementById('logEditContent').value.trim();
+  if(!currentLogSession) return;
+  var r=await sb.from('sessions').update({log_text:newText}).eq('id',currentLogSession.id);
+  if(r.error){alert('Errore salvataggio: '+r.error.message); return;}
+  currentLogSession.log_text=newText;
+  document.getElementById('logModalContent').textContent=newText;
+  document.getElementById('logViewMode').style.display='block';
+  document.getElementById('logEditMode').style.display='none';
+  // Aggiorna lista se siamo nella dashboard
+  if(typeof showDash === 'function') showDash();
+}
+
+async function deleteLog(){
+  if(!currentLogSession) return;
+  if(!confirm('Eliminare questo log?')) return;
+  var r=await sb.from('sessions').delete().eq('id',currentLogSession.id);
+  if(r.error){alert('Errore eliminazione: '+r.error.message); return;}
+  closeModal('logModal');
+  currentLogSession=null;
+  if(typeof showDash === 'function') showDash();
+  if(typeof renderLogTable === 'function') renderLogTable();
 }
 
 document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o) o.classList.remove('open');});});
