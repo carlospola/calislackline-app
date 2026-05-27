@@ -662,6 +662,7 @@ var APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSd
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{flowType:'pkce',autoRefreshToken:true,detectSessionInUrl:true,persistSession:true}});
 var currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 var currentSetMode = 'single', currentExercises = [];
+var sessionFirstSetDone = false; // timer auto-start solo dopo il primo set
 var sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft = 0, sessionTimerTotal = 0;
 var allExercises = [];
 var athleteProgramsUserId = null;
@@ -686,7 +687,7 @@ function startDemoSession(){
   var orig = JSON.parse(JSON.stringify(currentProfile||{}));
   currentProfile = Object.assign({}, currentProfile, {ai_prompt:DEMO_PROMPT, _isDemo:true, _orig:orig});
   sessionWorkout = 'Sessione personalizzata';
-  sessionHistory = []; selectedRpe = null; busy = false; currentSetState = null;
+  sessionHistory = []; selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = false;
   document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
   var box = document.getElementById('setInfoBox'); if(box) box.innerHTML = 'In attesa...';
@@ -945,7 +946,7 @@ function sendMsg(){
   // Avvia timer solo se sono state inserite reps numeriche (non su testo libero)
   var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
   if(hasReps){
-    // Stoppa il recupero precedente se sta girando — il nuovo partirà con la risposta AI
+    sessionFirstSetDone = true; // da ora il timer parte automaticamente
     if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
     document.getElementById('sessionTimerGo').textContent='Start';
     document.getElementById('sessionTimerNum').style.color='var(--text)';
@@ -1138,9 +1139,9 @@ function updateSetInfo(text){
   // Se il timer è fermo: imposta il nuovo valore
   if(m && (supersetMatch || setMatch)){
     var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
-    // Imposta e fa partire il recupero — solo se c'è un [SET:] nella risposta
     sessionTimerSet(newSeconds);
-    if(!sessionTimerRunning) sessionTimerToggle();
+    // Auto-start solo dopo il primo set registrato dall'atleta
+    if(sessionFirstSetDone && !sessionTimerRunning) sessionTimerToggle();
   }
 }
 
@@ -1224,7 +1225,12 @@ function stripLogData(t){
     else if(t[i] === '}') { depth--; if(depth === 0){ end = i; break; } }
   }
   if(end === -1) return t.substring(0, start);
-  var closeBracket = t.indexOf(']', end);
+  // Cerca la ] di chiusura saltando whitespace e newline
+  var closeBracket = -1;
+  for(var j = end + 1; j < t.length; j++){
+    if(t[j] === ']'){ closeBracket = j; break; }
+    if(t[j] !== ' ' && t[j] !== '\n' && t[j] !== '\r') break; // stop se trova altro
+  }
   if(closeBracket === -1) return t.substring(0, start);
   return (t.substring(0, start) + t.substring(closeBracket + 1)).trim();
 }
