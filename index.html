@@ -198,7 +198,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 <div class="screen" id="dashScreen">
   <div class="topbar">
     <div class="topbar-brand">AILISTENICS</div>
-    <div class="topbar-right"><div class="topbar-user" id="dashUserLabel"></div><button class="topbar-btn" onclick="showProgress()">Progressi</button><button class="topbar-btn" onclick="showProfile()">Profilo</button><button class="topbar-btn" onclick="doLogout()">Esci</button></div>
+    <div class="topbar-right"><button class="topbar-btn" onclick="showProgress()">Progressi</button><button class="topbar-btn" onclick="showProfile()">Profilo</button><button class="topbar-btn" onclick="doLogout()" title="Esci">&#x23FB;</button></div>
   </div>
   <div class="dash-body">
     <div><div class="dash-name" id="dashWelcome">Ciao!</div><div class="dash-sub">Pronto per allenarti oggi?</div></div>
@@ -312,17 +312,24 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px;" id="messages"></div>
     <!-- SET INFO BOX + TIMER -->
     <div style="flex:0 0 auto;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:12px;padding:8px 16px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Prossimo set</div>
-          <div id="setInfoBox" style="font-size:13px;line-height:1.55;color:var(--text);">In attesa...</div>
+      <!-- Row 1: three info boxes -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border);">
+        <div style="padding:7px 12px;border-right:1px solid var(--border);">
+          <div style="font-size:7px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:3px;">Esercizio</div>
+          <div id="setInfoBox" style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">In attesa...</div>
+          <div id="setNumBox" style="font-size:10px;color:var(--muted);margin-top:1px;">—</div>
         </div>
-        <div style="width:1px;background:var(--border2);height:40px;flex-shrink:0;"></div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;">
-          <div id="sessionTimerNum" style="font-family:var(--display);font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
-          <div style="display:flex;gap:4px;">
-            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:3px 12px;background:var(--accent);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">&#9654;</button>
-            <button onclick="sessionTimerReset()" style="padding:3px 8px;background:var(--border);border:none;border-radius:5px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">&#8635;</button>
+        <div style="padding:7px 12px;border-right:1px solid var(--border);">
+          <div style="font-size:7px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Target</div>
+          <div id="setTargetBox" style="font-size:12px;color:var(--text);">—</div>
+          <div id="setTempoBox" style="font-size:10px;color:var(--muted);margin-top:1px;">—</div>
+        </div>
+        <div style="padding:7px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="font-size:7px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:2px;" id="setRecuperoLabel">Recupero</div>
+          <div id="sessionTimerNum" style="font-family:var(--display);font-size:24px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
+          <div style="display:flex;gap:3px;margin-top:3px;">
+            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:2px 10px;background:var(--accent);border:none;border-radius:4px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">&#9654;</button>
+            <button onclick="sessionTimerReset()" style="padding:2px 7px;background:var(--border);border:none;border-radius:4px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">&#8635;</button>
           </div>
         </div>
       </div>
@@ -820,7 +827,10 @@ function startDemoSession(){
   sessionHistory = []; selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = false;
   document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
-  var box = document.getElementById('setInfoBox'); if(box) box.innerHTML = 'In attesa...';
+  var box = document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
+  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
+  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
+  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='—';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode = 'single'; currentExercises = [];
   renderInputFields('single', []);
@@ -1001,8 +1011,19 @@ async function showDash(){
   });
 }
 
-function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt){
+async function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt){
   if(!coachRules && !extraPrompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
+  // Controlla bozza sessione non completata
+  var draft = await checkDraftSession();
+  if(draft && draft.workout_name === programName && draft.history && draft.history.length > 2){
+    var age = Math.round((Date.now() - new Date(draft.updated_at).getTime()) / 60000);
+    var ageStr = age < 60 ? age+' min fa' : Math.round(age/60)+'h fa';
+    if(confirm('Hai una sessione di '+programName+' non completata ('+ageStr+'). Vuoi riprendere?')){
+      resumeDraftSession(draft); return;
+    } else {
+      await clearDraftSession();
+    }
+  }
   currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:workoutCsv||'', ai_prompt:extraPrompt||''});
   sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
   // Reset timer completo
@@ -1014,7 +1035,10 @@ function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt
   document.getElementById('sessionTimerNum').textContent='00:00';
   document.getElementById('sessionTimerNum').style.color='var(--text)';
   document.getElementById('sessionTimerGo').textContent='\u25B6';
-  var box=document.getElementById('setInfoBox'); if(box) box.innerHTML='In attesa...';
+  var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
+  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
+  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
+  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='—';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode='single'; currentExercises=[];
   renderInputFields('single',[]);
@@ -1022,26 +1046,19 @@ function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt
 }
 
 function buildSkipMessage(){
-  // Legge il set corrente dal setInfoBox e costruisce un messaggio contestuale
-  var box = document.getElementById('setInfoBox');
-  if(!box || box.innerHTML === 'In attesa...') return 'skip';
-  var boxText = box.innerText || box.textContent || '';
-  // Cerca "Set N/TOT" nel testo del box
-  var setMatch = boxText.match(/Set\s+(\d+)\/(\d+)/i);
-  var exerciseName = currentExercises.length > 0 ? currentExercises[0] : '';
-  if(!exerciseName){
-    // Prova a estrarre il nome dall'esercizio mostrato nel box (prima riga)
-    var firstLine = boxText.split('\n')[0].trim();
-    if(firstLine) exerciseName = firstLine;
-  }
+  // Legge dai nuovi box separati
+  var nameBox = document.getElementById('setInfoBox');
+  var numBox = document.getElementById('setNumBox');
+  if(!nameBox || nameBox.textContent === 'In attesa...') return 'skip';
+  var exerciseName = nameBox.textContent.trim();
+  var numText = numBox ? numBox.textContent.trim() : '';
+  var setMatch = numText.match(/Set\s*(\d+)\/(\d+)/i);
   if(!setMatch || !exerciseName) return 'skip';
   var currentSet = parseInt(setMatch[1]);
   var totalSets = parseInt(setMatch[2]);
   if(currentSet < totalSets){
-    // Ci sono ancora set — chiedi esplicitamente il prossimo set dello stesso esercizio
     return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' — mostra subito [SET:' + exerciseName + '] Set ' + (currentSet+1) + '/' + totalSets;
   } else {
-    // Ultimo set — passa al prossimo esercizio senza aspettare
     return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' completato (ultimo set) — mostra subito il primo set dell\'esercizio successivo con [SET:NomeEsercizio]';
   }
 }
@@ -1154,8 +1171,11 @@ async function aiSend(text, isFirst){
     var reply = (data.content&&data.content[0]&&data.content[0].text)||'Errore risposta.';
     sessionHistory.push({role:'assistant', content:reply});
     addBubble('ai', reply);
+    // Salva bozza sessione dopo ogni risposta AI
+    saveDraftSession();
     if(text==='fine'&&reply.indexOf('WORKOUT LOG')>-1){
       saveSessionLog(reply);
+      clearDraftSession();
       // Ferma il timer a fine sessione
       if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
       document.getElementById('sessionTimerGo').textContent='Start';
@@ -1256,64 +1276,51 @@ function sessionTimerReset(){
 
 // updateSetInfo — usa solo [SET:] e [SUPERSET:] come fonte. Se non ci sono tag, non aggiorna il box.
 function updateSetInfo(text){
-  var box = document.getElementById('setInfoBox');
-  if(!box) return;
+  var boxName = document.getElementById('setInfoBox');
+  var boxNum = document.getElementById('setNumBox');
+  var boxTarget = document.getElementById('setTargetBox');
+  var boxTempo = document.getElementById('setTempoBox');
+  if(!boxName) return;
 
   var supersetMatch = text.match(/\[SUPERSET:([^\]]+)\]/);
   var setMatch = text.match(/\[SET:([^\]]+)\]/);
 
-  if(!supersetMatch && !setMatch) {
-    // Nessun tag SET nella risposta — mantieni l'ultimo stato (non resettare)
-    return;
-  }
+  if(!supersetMatch && !setMatch) return; // nessun tag — mantieni stato
 
   var lines = text.split('\n').map(function(l){return l.replace(/\*\*/g,'').trim();}).filter(function(l){return l;});
-  var html = '';
+  var setLine = '', ssHeader = '', exerciseName = '';
 
-  if(supersetMatch) {
-    // Trova la riga del superset (Set N/TOT)
-    var ssHeader = '';
-    var ssExercises = [];
-    for(var i=0; i<lines.length; i++) {
-      var line = lines[i];
-      if(line.match(/SUPERSET\s+[A-Z\d]+\s*[-]\s*Set\s+\d+\/\d+/i)) { ssHeader = line; continue; }
-      if(ssHeader && line.match(/^[A-Za-zÀ-ú].+:\s*[\d]/) && !line.match(/recupero/i) && !line.match(/^\[/)) {
-        ssExercises.push(line.replace(/\s*\|.*$/, '').trim());
-      }
+  if(supersetMatch){
+    exerciseName = 'Superset';
+    for(var i=0; i<lines.length; i++){
+      if(lines[i].match(/SUPERSET\s+[A-Z\d]+\s*[-]\s*Set\s+\d+\/\d+/i)){ ssHeader = lines[i]; break; }
     }
-    if(ssHeader) html += '<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">'+esc(ssHeader)+'</div>';
-    ssExercises.forEach(function(ex){ html += '<div style="font-size:13px;color:var(--text);">'+esc(ex)+'</div>'; });
-
-  } else if(setMatch) {
-    var exerciseName = setMatch[1].trim();
-    // Cerca la riga con Set N/TOT per questo esercizio
-    var setLine = '';
-    for(var j=0; j<lines.length; j++) {
-      if(lines[j].match(/Set\s+\d+\/\d+/i) && !lines[j].match(/SUPERSET/i)) {
-        setLine = lines[j].replace(/\*\*/g,'').trim();
-        break;
-      }
-    }
-    if(setLine) {
-      html += '<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">'+esc(exerciseName)+'</div>';
-      html += '<div style="font-size:12px;color:var(--text2);">'+esc(setLine)+'</div>';
-    } else {
-      html += '<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);">'+esc(exerciseName)+'</div>';
+    setLine = ssHeader;
+  } else if(setMatch){
+    exerciseName = setMatch[1].trim();
+    for(var j=0; j<lines.length; j++){
+      if(lines[j].match(/Set\s+\d+\/\d+/i) && !lines[j].match(/SUPERSET/i)){ setLine = lines[j].replace(/\*\*/g,'').trim(); break; }
     }
   }
 
-  if(html) {
-    currentSetState = html;
-    box.innerHTML = html;
-  }
+  // Popola box Esercizio + numero set
+  boxName.textContent = exerciseName || 'In attesa...';
+  var setNumMatch = setLine.match(/Set\s+(\d+)\/(\d+)/i);
+  boxNum.textContent = setNumMatch ? 'Set '+setNumMatch[1]+'/'+setNumMatch[2] : '';
 
-  // Timer: estrai il recupero dalla stessa riga del setLine già trovato
-  // setLine e ssHeader contengono già "Recupero: mm:ss" — usali direttamente
+  // Popola box Target (reps) e Tempo
+  var repsMatch = setLine.match(/(\d+[-–]?\d*\s*(?:reps?|rip\.?|ripetizioni)?(?:\s+per\s+lato)?)/i);
+  var tempoMatch = setLine.match(/Tempo:\s*([^\s|]+)/i);
+  boxTarget.textContent = repsMatch ? repsMatch[1].trim() : '—';
+  boxTempo.textContent = tempoMatch ? tempoMatch[1] : '—';
+
+  currentSetState = exerciseName;
+
+  // Timer
   if(supersetMatch || setMatch){
-    var timerLine = setLine || ssHeader || '';
+    var timerLine = setLine || '';
     var rm = timerLine.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
     if(!rm){
-      // Fallback: cerca nella riga successiva a setLine nel testo originale
       var setLineIdx = lines.indexOf(setLine);
       if(setLineIdx > -1 && setLineIdx+1 < lines.length){
         rm = lines[setLineIdx+1].match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
@@ -1419,10 +1426,15 @@ function stripLogData(t){
 
 function fmtText(t){
   t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
-  // Rimuovi [LOG_DATA:...] dal bubble — il dato è già salvato su Supabase
+  // Rimuovi [LOG_DATA:...] dal bubble
   t=stripLogData(t);
+  // Rimuovi righe set info strutturate (già visibili negli info box) — es. "Chinup — Set 2/3 | 6-8 reps | Tempo: 30X2 | Recupero: 02:00"
+  t=t.replace(/^[\w\s]+ [—–] Set \d+\/\d+.*$/gm,'');
+  // Rimuovi "Recupero: mm:ss" standalone (già visibile nel timer)
+  t=t.replace(/^[Rr]ecupero:\s*\d+:\d+\s*$/gm,'');
   t=t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'');
-  t=t.replace(/\n{3,}/g,'\n\n').trim();
+  t=t.replace(/\n{3,}/g,'\n\n').replace(/^\n+|\n+$/g,'').trim();
+  if(!t) return '';
   if(t.indexOf('WORKOUT LOG')>-1)
     return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">'+esc(t)+'</pre>';
   return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
@@ -1744,10 +1756,14 @@ function switchProgressTab(tab){
   document.getElementById('ptabEx').style.borderColor = tab === 'exercise' ? 'var(--accent)' : '';
   document.getElementById('ptabOv').style.color = tab === 'overview' ? 'var(--accent)' : '';
   document.getElementById('ptabOv').style.borderColor = tab === 'overview' ? 'var(--accent)' : '';
-  if(tab === 'overview') renderOverviewCharts();
+  if(tab === 'overview'){
+    if(progressData.length > 0){ renderOverviewCharts(); }
+    else { showProgress().then(function(){ switchProgressTab('overview'); }); }
+  }
 }
 
 async function showProgress(){
+  // Returns promise so switchProgressTab can await data load
   showScreen('progressScreen');
   switchProgressTab('exercise');
   var r = await sb.from('sessions')
@@ -1999,6 +2015,74 @@ function renderHeatmapMonth(){
     });
     grid.appendChild(row);
   }
+}
+
+// ============================================================
+// SESSION DRAFT — salva/riprendi sessione non completata
+// ============================================================
+async function saveDraftSession(){
+  if(!currentUser || !sessionWorkout || !sessionHistory.length) return;
+  try{
+    await sb.from('session_drafts').upsert({
+      user_id: currentUser.id,
+      workout_name: sessionWorkout,
+      program_coach_rules: currentProfile.coach_rules || null,
+      program_workout_csv: currentProfile.workout_csv || null,
+      program_extra: currentProfile.ai_prompt || null,
+      history: sessionHistory,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+  }catch(e){ /* silent */ }
+}
+
+async function clearDraftSession(){
+  if(!currentUser) return;
+  try{ await sb.from('session_drafts').delete().eq('user_id', currentUser.id); }catch(e){}
+}
+
+async function checkDraftSession(){
+  if(!currentUser) return null;
+  try{
+    var r = await sb.from('session_drafts')
+      .select('*').eq('user_id', currentUser.id).single();
+    if(r.error || !r.data) return null;
+    // Ignora bozze più vecchie di 24h
+    var age = Date.now() - new Date(r.data.updated_at).getTime();
+    if(age > 24*60*60*1000){ await clearDraftSession(); return null; }
+    return r.data;
+  }catch(e){ return null; }
+}
+
+async function resumeDraftSession(draft){
+  if(!draft) return;
+  currentProfile = Object.assign({}, currentProfile, {
+    coach_rules: draft.program_coach_rules || '',
+    workout_csv: draft.program_workout_csv || '',
+    ai_prompt: draft.program_extra || ''
+  });
+  sessionWorkout = draft.workout_name;
+  sessionHistory = draft.history || [];
+  selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = true;
+  if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval = null; }
+  sessionTimerRunning = false; sessionTimerLeft = 0; sessionTimerTotal = 0;
+  showScreen('sessionScreen');
+  document.getElementById('sessionTitle').textContent = sessionWorkout;
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('sessionTimerNum').textContent = '00:00';
+  document.getElementById('sessionTimerNum').style.color = 'var(--text)';
+  document.getElementById('sessionTimerGo').textContent = '\u25B6';
+  var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
+  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
+  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
+  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='—';
+  document.querySelectorAll('.rpe-btn').forEach(function(b){ b.classList.remove('sel'); });
+  currentSetMode = 'single'; currentExercises = [];
+  renderInputFields('single', []);
+  // Ricostruisci i bubble dalla history
+  sessionHistory.forEach(function(msg){
+    if(msg.role === 'user') addBubble('user', msg.content);
+    else if(msg.role === 'assistant') addBubble('ai', msg.content);
+  });
 }
 
 function buildAthleteContext(profile){
