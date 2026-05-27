@@ -415,27 +415,48 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 
     <!-- TAB OVERVIEW -->
     <div id="ptabOvContent" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <select id="progressPeriodSelectOv" onchange="renderOverviewCharts()" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
-          <option value="30">30 giorni</option>
-          <option value="90" selected>3 mesi</option>
-          <option value="180">6 mesi</option>
-          <option value="9999">Tutto</option>
-        </select>
+
+      <!-- Stats cards overview -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div class="stat-card"><div class="stat-num" id="ovStatSessions">—</div><div class="stat-lbl">SESSIONI</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovStatSets">—</div><div class="stat-lbl">SET TOTALI</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovStatRPE">—</div><div class="stat-lbl">RPE MEDIO</div></div>
       </div>
-      <!-- Heatmap -->
+
+      <!-- Calendario con navigazione mese -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">Frequenza allenamenti</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <button onclick="calNavMonth(-1)" style="background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:var(--mono);font-size:12px;padding:4px 10px;cursor:pointer;">&larr;</button>
+          <div style="font-size:11px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;font-weight:600;" id="calMonthLabel"></div>
+          <button onclick="calNavMonth(1)" style="background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:var(--mono);font-size:12px;padding:4px 10px;cursor:pointer;">&rarr;</button>
+        </div>
+        <!-- Intestazione giorni settimana -->
+        <div style="display:flex;gap:3px;margin-bottom:4px;padding-left:14px;">
+          <div style="width:14px;font-size:7px;color:#555;text-align:center;">L</div>
+          <div style="width:14px;font-size:7px;color:#555;text-align:center;">M</div>
+          <div style="width:14px;font-size:7px;color:#555;text-align:center;">M</div>
+          <div style="width:14px;font-size:7px;color:#555;text-align:center;">G</div>
+          <div style="width:14px;font-size:7px;color:#555;text-align:center;">V</div>
+          <div style="width:14px;font-size:7px;color:#555;text-align:center;">S</div>
+          <div style="width:14px;font-size:7px;color:#555;text-align:center;">D</div>
+        </div>
         <div id="heatmapGrid" style="display:flex;flex-direction:column;gap:3px;overflow-x:auto;padding-bottom:4px;"></div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
           <span style="font-size:9px;color:var(--muted);">riposo</span>
           <div style="width:10px;height:10px;border-radius:2px;background:var(--border2);"></div>
-          <div style="width:10px;height:10px;border-radius:2px;background:rgba(200,240,96,0.3);"></div>
-          <div style="width:10px;height:10px;border-radius:2px;background:rgba(200,240,96,0.6);"></div>
+          <div style="width:10px;height:10px;border-radius:2px;background:rgba(200,240,96,0.35);"></div>
+          <div style="width:10px;height:10px;border-radius:2px;background:rgba(200,240,96,0.65);"></div>
           <div style="width:10px;height:10px;border-radius:2px;background:#c8f060;"></div>
           <span style="font-size:9px;color:var(--muted);">attivo</span>
         </div>
       </div>
+
+      <!-- RPE globale per sessione -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">RPE medio per sessione</div>
+        <div style="position:relative;height:140px;"><canvas id="chartOvRPE"></canvas></div>
+      </div>
+
       <!-- Torta RIR -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
         <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Distribuzione intensit&agrave; (RIR globale)</div>
@@ -444,9 +465,10 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
           <div id="rirPieLegend" style="display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text2);"></div>
         </div>
       </div>
+
       <!-- Modal allenamenti del giorno -->
       <div id="heatmapDayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;padding:20px;">
-        <div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:400px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+        <div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-family:var(--display);font-size:14px;font-weight:700;" id="heatmapDayTitle"></div>
             <button onclick="document.getElementById('heatmapDayModal').style.display='none'" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;">&#10005;</button>
@@ -1693,161 +1715,66 @@ async function submitOnboard(){
 var progressData = [];
 var chartRepsInst = null, chartTotalRepsInst = null, chartRPEInst = null;
 var chartRIRPieInst = null;
-var currentProgressTab = 'exercise';
+var chartOvRPEInst = null;
+var calCurrentMonth = null; // null = mostra tutti i mesi (heatmap globale)
 
-var CHART_DEFAULTS = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { ticks: { color: '#555', font: { family: 'DM Mono, monospace', size: 9 }, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.03)' }, border: { color: 'rgba(255,255,255,0.05)' } },
-    y: { ticks: { color: '#555', font: { family: 'DM Mono, monospace', size: 9 } }, grid: { color: 'rgba(255,255,255,0.03)' }, border: { color: 'rgba(255,255,255,0.05)' } }
+function calNavMonth(dir){
+  if(calCurrentMonth === null){
+    var now = new Date();
+    calCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else {
+    calCurrentMonth = new Date(calCurrentMonth.getFullYear(), calCurrentMonth.getMonth() + dir, 1);
   }
-};
-
-function switchProgressTab(tab){
-  currentProgressTab = tab;
-  document.getElementById('ptabExContent').style.display = tab === 'exercise' ? 'block' : 'none';
-  document.getElementById('ptabOvContent').style.display = tab === 'overview' ? 'block' : 'none';
-  document.getElementById('ptabEx').style.color = tab === 'exercise' ? 'var(--accent)' : '';
-  document.getElementById('ptabEx').style.borderColor = tab === 'exercise' ? 'var(--accent)' : '';
-  document.getElementById('ptabOv').style.color = tab === 'overview' ? 'var(--accent)' : '';
-  document.getElementById('ptabOv').style.borderColor = tab === 'overview' ? 'var(--accent)' : '';
-  if(tab === 'overview') renderOverviewCharts();
-}
-
-async function showProgress(){
-  showScreen('progressScreen');
-  switchProgressTab('exercise');
-  var r = await sb.from('sessions')
-    .select('id,workout_name,created_at,log_data')
-    .eq('user_id', currentUser.id)
-    .order('created_at', {ascending: true});
-  progressData = r.data || [];
-  var exercises = {};
-  progressData.forEach(function(s){
-    if(!s.log_data || !s.log_data.exercises) return;
-    s.log_data.exercises.forEach(function(e){ if(e.name) exercises[e.name] = true; });
-  });
-  var sel = document.getElementById('progressExerciseSelect');
-  sel.innerHTML = '<option value="">Seleziona esercizio...</option>';
-  Object.keys(exercises).sort().forEach(function(name){
-    var opt = document.createElement('option'); opt.value = name; opt.textContent = name; sel.appendChild(opt);
-  });
-  if(Object.keys(exercises).length >= 1){
-    sel.value = Object.keys(exercises)[0];
-    renderProgressCharts();
-  }
-}
-
-function destroyChart(inst){ if(inst) inst.destroy(); return null; }
-
-// Estrai dati per set da un esercizio (gestisce vecchio e nuovo formato)
-function getExSets(ex){
-  if(Array.isArray(ex.sets)){
-    return ex.sets.filter(function(s){ return s.reps > 0; });
-  }
-  // Vecchio formato
-  if(ex.reps > 0){
-    return [{ reps: ex.reps, rir: ex.rir || 0, rpe: ex.rpe || 0, note: '' }];
-  }
-  return [];
-}
-
-function makeBarOpts(extraY){
-  var opts = JSON.parse(JSON.stringify(CHART_DEFAULTS));
-  if(extraY) Object.assign(opts.scales.y, extraY);
-  return opts;
-}
-
-function renderProgressCharts(){
-  var exerciseName = document.getElementById('progressExerciseSelect').value;
-  var period = parseInt(document.getElementById('progressPeriodSelect').value);
-  var emptyEl = document.getElementById('progressEmpty');
-  if(!exerciseName){ emptyEl.style.display='block'; return; }
-  var cutoff = new Date(Date.now() - period * 24*60*60*1000);
-  var filtered = progressData.filter(function(s){
-    if(new Date(s.created_at) < cutoff) return false;
-    if(!s.log_data || !s.log_data.exercises) return false;
-    return s.log_data.exercises.some(function(e){ return e.name === exerciseName; });
-  });
-  if(!filtered.length){ emptyEl.style.display='block'; return; }
-  emptyEl.style.display='none';
-
-  // Shared labels (same for all 3 charts — guaranteed alignment)
-  var labels = filtered.map(function(s){
-    return new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'});
-  });
-
-  var avgRepsData = [], totalRepsData = [], avgRPEData = [];
-  var prReps = 0, grandTotalReps = 0;
-
-  filtered.forEach(function(s){
-    var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
-    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); return; }
-    var sets = getExSets(ex);
-    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); return; }
-    var tot = sets.reduce(function(a,s){ return a+s.reps; }, 0);
-    var avg = Math.round(tot/sets.length*10)/10;
-    var rpeSets = sets.filter(function(s){ return s.rpe > 0; });
-    var avgRPE = rpeSets.length > 0 ? Math.round(rpeSets.reduce(function(a,s){ return a+s.rpe; },0)/rpeSets.length*10)/10 : null;
-    avgRepsData.push(avg);
-    totalRepsData.push(tot);
-    avgRPEData.push(avgRPE);
-    // PR = massimo reps in un singolo set (non media)
-    sets.forEach(function(st){ if(st.reps > prReps) prReps = st.reps; });
-    grandTotalReps += tot;
-  });
-
-  var globalAvgReps = grandTotalReps > 0 && filtered.length > 0
-    ? Math.round(grandTotalReps / filtered.reduce(function(acc,s){
-        var ex = s.log_data && s.log_data.exercises && s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
-        return acc + (ex ? getExSets(ex).length : 0);
-      }, 0) * 10) / 10
-    : 0;
-  var totalSetsCount = filtered.reduce(function(acc,s){
-    var ex = s.log_data && s.log_data.exercises && s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
-    return acc + (ex ? getExSets(ex).length : 0);
-  }, 0);
-  document.getElementById('pStatSessions').textContent = totalSetsCount || '—';
-  document.getElementById('pStatPR').textContent = prReps || '—';
-  document.getElementById('pStatAvgReps').textContent = globalAvgReps || '—';
-  document.getElementById('pStatTotalReps').textContent = grandTotalReps || '—';
-
-  var accent = '#c8f060', accentDim = 'rgba(200,240,96,0.15)';
-
-  // Chart 1: Media reps — barre verdi
-  chartRepsInst = destroyChart(chartRepsInst);
-  chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), {
-    type: 'bar',
-    data: { labels: labels, datasets: [{ data: avgRepsData, backgroundColor: accentDim, borderColor: accent, borderWidth: 1.5, borderRadius: 4 }] },
-    options: makeBarOpts()
-  });
-
-  // Chart 2: Reps totali — barre verde scuro
-  chartTotalRepsInst = destroyChart(chartTotalRepsInst);
-  chartTotalRepsInst = new Chart(document.getElementById('chartTotalReps').getContext('2d'), {
-    type: 'bar',
-    data: { labels: labels, datasets: [{ data: totalRepsData, backgroundColor: 'rgba(200,240,96,0.1)', borderColor: 'rgba(200,240,96,0.4)', borderWidth: 1, borderRadius: 4 }] },
-    options: makeBarOpts()
-  });
-
-  // Chart 3: RPE medio — barre rosse/arancio
-  chartRPEInst = destroyChart(chartRPEInst);
-  chartRPEInst = new Chart(document.getElementById('chartRPE').getContext('2d'), {
-    type: 'bar',
-    data: { labels: labels, datasets: [{ data: avgRPEData, backgroundColor: 'rgba(255,100,60,0.2)', borderColor: 'rgba(255,100,60,0.6)', borderWidth: 1, borderRadius: 4 }] },
-    options: makeBarOpts({ min: 0, max: 10 })
-  });
+  renderHeatmapMonth();
 }
 
 function renderOverviewCharts(){
   var period = parseInt(document.getElementById('progressPeriodSelectOv').value);
   var cutoff = new Date(Date.now() - period * 24*60*60*1000);
   var filtered = progressData.filter(function(s){ return new Date(s.created_at) >= cutoff; });
-  renderHeatmap(filtered, period);
 
-  // Torta RIR — conta ogni set individualmente
+  // Stat cards
+  var totalSets = 0, rpeSum = 0, rpeCount = 0;
+  filtered.forEach(function(s){
+    if(!s.log_data || !s.log_data.exercises) return;
+    s.log_data.exercises.forEach(function(ex){
+      var sets = getExSets(ex);
+      totalSets += sets.length;
+      sets.forEach(function(st){ if(st.rpe > 0){ rpeSum += st.rpe; rpeCount++; } });
+    });
+  });
+  document.getElementById('ovStatSessions').textContent = filtered.length || '—';
+  document.getElementById('ovStatSets').textContent = totalSets || '—';
+  document.getElementById('ovStatRPE').textContent = rpeCount > 0 ? Math.round(rpeSum/rpeCount*10)/10 : '—';
+
+  // Heatmap — inizializza al mese corrente se null
+  if(calCurrentMonth === null){
+    var now = new Date();
+    calCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  renderHeatmapMonth();
+
+  // RPE per sessione (tutte)
+  var rpeLabels = [], rpeData = [];
+  filtered.forEach(function(s){
+    if(!s.log_data || !s.log_data.exercises) return;
+    var sets = [], rSum = 0, rCnt = 0;
+    s.log_data.exercises.forEach(function(ex){ getExSets(ex).forEach(function(st){ if(st.rpe>0){ rSum+=st.rpe; rCnt++; } }); });
+    if(rCnt > 0){
+      rpeLabels.push(new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'}));
+      rpeData.push(Math.round(rSum/rCnt*10)/10);
+    }
+  });
+  chartOvRPEInst = destroyChart(chartOvRPEInst);
+  if(rpeLabels.length > 0){
+    chartOvRPEInst = new Chart(document.getElementById('chartOvRPE').getContext('2d'), {
+      type: 'bar',
+      data: { labels: rpeLabels, datasets: [{ data: rpeData, backgroundColor: 'rgba(255,100,60,0.2)', borderColor: 'rgba(255,100,60,0.6)', borderWidth: 1, borderRadius: 4 }] },
+      options: makeBarOpts({ min: 0, max: 10 })
+    });
+  }
+
+  // Torta RIR
   var rirBuckets = { 'RIR 0': 0, 'RIR 1': 0, 'RIR 2': 0, 'RIR 3+': 0 };
   filtered.forEach(function(s){
     if(!s.log_data || !s.log_data.exercises) return;
@@ -1883,62 +1810,76 @@ function renderOverviewCharts(){
   }).join('');
 }
 
-function renderHeatmap(sessions, period){
+function renderHeatmapMonth(){
   var grid = document.getElementById('heatmapGrid');
-  if(!grid) return;
-  // Mappa giorno -> array sessioni
+  var label = document.getElementById('calMonthLabel');
+  if(!grid || !calCurrentMonth) return;
+
+  // Aggiorna label mese
+  label.textContent = calCurrentMonth.toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+
+  // Mappa giorno -> sessioni (tutte le sessioni, non filtrate per periodo)
   var dayMap = {};
-  sessions.forEach(function(s){
+  progressData.forEach(function(s){
     var d = new Date(s.created_at);
     var key = d.toDateString();
     if(!dayMap[key]) dayMap[key] = [];
     dayMap[key].push(s);
   });
-  var weeks = Math.min(Math.ceil(period/7), 26);
+
+  var year = calCurrentMonth.getFullYear();
+  var month = calCurrentMonth.getMonth();
+  var daysInMonth = new Date(year, month+1, 0).getDate();
   var today = new Date(); today.setHours(0,0,0,0);
-  var startDay = new Date(today);
-  startDay.setDate(today.getDate() - weeks*7);
-  var dow = startDay.getDay();
-  startDay.setDate(startDay.getDate() + (dow===0 ? -6 : 1-dow));
-  var days = []; var cur = new Date(startDay);
-  while(cur <= today){ days.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
+
+  // Genera tutti i giorni del mese
+  var days = [];
+  for(var d=1; d<=daysInMonth; d++) days.push(new Date(year, month, d));
+
+  // Trova il lunedi della prima settimana
+  var firstDay = days[0];
+  var dow = firstDay.getDay();
+  var startOffset = (dow === 0 ? 6 : dow - 1); // quanti giorni prima del lunedi
+
+  // Costruisci griglia settimane (array di 7 slot, null per giorni fuori mese)
+  var totalSlots = startOffset + daysInMonth;
+  var weeks = Math.ceil(totalSlots / 7);
+  var slots = [];
+  for(var i=0; i<startOffset; i++) slots.push(null);
+  days.forEach(function(d){ slots.push(d); });
+  while(slots.length % 7 !== 0) slots.push(null);
   var wkArrays = [];
-  for(var i=0; i<days.length; i+=7) wkArrays.push(days.slice(i, i+7));
-  var dayNames = ['L','M','M','G','V','S','D'];
+  for(var i=0; i<slots.length; i+=7) wkArrays.push(slots.slice(i, i+7));
+
   grid.innerHTML = '';
   for(var di=0; di<7; di++){
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:3px;align-items:center;';
     var lbl = document.createElement('div');
     lbl.style.cssText = 'width:10px;font-size:7px;color:#444;text-align:right;flex-shrink:0;';
-    lbl.textContent = dayNames[di];
-    row.appendChild(lbl);
+    row.appendChild(lbl); // spazio vuoto (header sopra gestisce labels)
     wkArrays.forEach(function(wk){
       var cell = document.createElement('div');
       var d = wk[di];
-      if(!d || d > today){
+      if(!d){
         cell.style.cssText = 'width:14px;height:14px;border-radius:2px;flex-shrink:0;background:transparent;';
       } else {
-        var cnt = (dayMap[d.toDateString()] || []).length;
-        var bg = cnt===0 ? 'var(--border2)' : cnt===1 ? 'rgba(200,240,96,0.35)' : cnt===2 ? 'rgba(200,240,96,0.65)' : '#c8f060';
-        var dayNum = d.getDate();
-        cell.style.cssText = 'width:14px;height:14px;border-radius:2px;flex-shrink:0;background:'+bg+';position:relative;cursor:'+(cnt>0?'pointer':'default')+';display:flex;align-items:flex-end;justify-content:flex-end;';
-        // Numero del giorno in basso a destra (tipo Windows)
+        var isFuture = d > today;
+        var cnt = isFuture ? 0 : (dayMap[d.toDateString()] || []).length;
+        var bg = isFuture ? 'rgba(255,255,255,0.03)' : cnt===0 ? 'var(--border2)' : cnt===1 ? 'rgba(200,240,96,0.35)' : cnt===2 ? 'rgba(200,240,96,0.65)' : '#c8f060';
+        cell.style.cssText = 'width:14px;height:14px;border-radius:2px;flex-shrink:0;background:'+bg+';display:flex;align-items:flex-end;justify-content:flex-end;cursor:'+(cnt>0?'pointer':'default')+';';
         var numSpan = document.createElement('span');
-        numSpan.style.cssText = 'font-size:6px;line-height:1;color:'+(cnt>0?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.2)')+';padding:1px;font-family:DM Mono,monospace;';
-        numSpan.textContent = dayNum;
+        numSpan.style.cssText = 'font-size:6px;line-height:1;color:'+(cnt>0?'rgba(0,0,0,0.5)':isFuture?'rgba(255,255,255,0.1)':'rgba(255,255,255,0.25)')+';padding:1px;font-family:DM Mono,monospace;';
+        numSpan.textContent = d.getDate();
         cell.appendChild(numSpan);
         if(cnt > 0){
           (function(date, sessList){
             cell.onclick = function(){
               var modal = document.getElementById('heatmapDayModal');
-              var title = document.getElementById('heatmapDayTitle');
-              var content = document.getElementById('heatmapDayContent');
-              title.textContent = date.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
-              content.innerHTML = sessList.map(function(s){
+              document.getElementById('heatmapDayTitle').textContent = date.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
+              document.getElementById('heatmapDayContent').innerHTML = sessList.map(function(s){
                 var exList = (s.log_data && s.log_data.exercises) ? s.log_data.exercises.map(function(ex){
                   var sets = getExSets(ex);
-                  var tot = sets.reduce(function(a,st){ return a+st.reps; },0);
                   return '<div style="color:var(--accent);margin-top:6px;">'+ex.name+'</div>'
                     + sets.map(function(st,i){ return '<div>Set '+(i+1)+': '+st.reps+' reps | RIR '+st.rir+(st.rpe?' | RPE '+st.rpe:'')+(st.note?' | '+st.note:'')+'</div>'; }).join('');
                 }).join('') : '';
