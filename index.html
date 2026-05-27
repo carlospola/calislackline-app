@@ -415,6 +415,14 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 
     <!-- TAB OVERVIEW -->
     <div id="ptabOvContent" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <select id="progressPeriodSelectOv" onchange="renderOverviewCharts()" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
+          <option value="30">30 giorni</option>
+          <option value="90" selected>3 mesi</option>
+          <option value="180">6 mesi</option>
+          <option value="9999">Tutto</option>
+        </select>
+      </div>
 
       <!-- Stats cards overview -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
