@@ -606,8 +606,16 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:14px;">+ Aggiungi nuovo programma</div>
       <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="newProgName" placeholder="es. Body By Rings - Fase 1"></div>
       <div class="modal-field">
-        <div class="modal-label">System prompt AI Coach</div>
-        <textarea class="modal-textarea" id="newProgPrompt" style="min-height:200px;" placeholder="Incolla il system prompt del programma..."></textarea>
+        <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Coach Rules</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Regole comportamentali AI</span></div>
+        <textarea class="modal-textarea" id="newProgRules" style="min-height:130px;" placeholder="- Usa [SET:NomeEsercizio] prima di ogni esercizio&#10;- Feedback massimo 5 parole&#10;- Recupero formato mm:ss&#10;- Niente incoraggiamenti&#10;- Chiedi quale workout all'inizio con lista opzioni&#10;- Quando l'utente dice fine genera WORKOUT LOG"></textarea>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Workout</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Esercizio, Set, Reps, RIR, Recupero</span></div>
+        <textarea class="modal-textarea" id="newProgCsv" style="min-height:150px;font-size:11px;" placeholder="Esercizio, Set, Reps, RIR, Recupero&#10;Ring Dip, 4, 6-8, 2, 02:00&#10;Trazioni, 4, 5-7, 2, 02:00&#10;L-sit, 3, 10-15s, -, 01:30"></textarea>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Note extra</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">opzionali</span></div>
+        <textarea class="modal-textarea" id="newProgPrompt" style="min-height:70px;" placeholder="Indicazioni aggiuntive per il coach AI..."></textarea>
       </div>
     </div>
     <div class="modal-btns">
@@ -644,7 +652,7 @@ var infortuniVal = null;
 var currentSetState = null; // persiste l'ultimo set noto
 
 // Regole operative iniettate su ogni sessione — non modificare il formato [SET:] [SUPERSET:]
-var COACH_RUNTIME_RULES = '\n\nREGOLE OPERATIVE SESSIONE:\n- Logga sempre cio che l\'atleta dichiara di aver fatto, indipendentemente da cio che avevi suggerito.\n- Se l\'atleta esegue un esercizio diverso da quello suggerito: registralo nel log, poi continua il piano dal punto corretto.\n- Se l\'atleta aggiunge set extra non pianificati: registrali e riprendi il piano.\n- Non avanzare mai al set successivo senza che l\'atleta abbia dichiarato di aver fatto qualcosa.\n- Il prossimo set suggerito e un riferimento, non un vincolo.\n- Feedback massimo 5 parole. Poi mostra subito il prossimo [SET:].\n- Usa sempre il formato [SET:NomeEsercizio] per ogni set suggerito.';
+// COACH_RUNTIME_RULES rimosso — le regole sono ora in programs.coach_rules (editabile dall'admin)
 
 var DEMO_PROMPT = 'Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.\n\nREGOLE ASSOLUTE:\n- Durante le domande iniziali: solo la domanda + lista opzioni.\n- Durante il workout: formato fisso.\n- [SET:NomeEsercizio] sempre prima di ogni esercizio.\n- Recupero formato mm:ss.\n- Niente incoraggiamenti.\n- Quando l utente dice fine genera WORKOUT LOG.\n\nDOMANDE INIZIALI:\n1.\nQuanto tempo hai?\n- 30 minuti\n- 45 minuti\n- 60 minuti\n- 90 minuti\n\n2.\nDove ti alleni?\n- Casa - solo bodyweight\n- Parco - sbarra e parallele\n- Palestra completa\n- Casa con attrezzi\n\n3.\nObiettivo oggi?\n- Tutto il corpo\n- Solo upper body\n- Solo lower body\n- Forza e skills\n\n4.\nCome ti senti?\n- Carico\n- Nella media\n- Stanco\n\nDopo le 4 risposte vai al primo esercizio.\n\nFORMATO ESERCIZIO:\n[SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n\nFORMATO SUPERSET:\n[SUPERSET:Nome1,Nome2]\nSUPERSET X - Set N/TOT\nNome1: X-Y reps\nNome2: X-Y reps\n-> VAI SUBITO su Nome2\nRecupero: mm:ss\n\nFEEDBACK: ok max 4 parole. Recupero: mm:ss\n\nWORKOUT LOG:\nWORKOUT LOG\n================\nData: [data]\nDurata: [X] min\n[Esercizio]: [sets x reps]';
 
@@ -806,7 +814,7 @@ async function showDash(){
       var item = document.createElement('div');
       item.className = 'program-item';
       item.innerHTML = '<div class="program-item-name">'+esc(prog.program_name)+'</div><button class="program-start-btn">Inizia &#8594;</button>';
-      item.querySelector('.program-start-btn').onclick = function(){startSessionWithPrompt(prog.program_name, prog.ai_prompt);};
+      item.querySelector('.program-start-btn').onclick = function(){startSessionWithPrompt(prog.program_name, prog.coach_rules, prog.workout_csv, prog.ai_prompt);};
       list.appendChild(item);
     });
   }else{
@@ -831,9 +839,9 @@ async function showDash(){
   });
 }
 
-function startSessionWithPrompt(programName, prompt){
-  if(!prompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
-  currentProfile = Object.assign({}, currentProfile, {ai_prompt:prompt});
+function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt){
+  if(!coachRules && !extraPrompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
+  currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:workoutCsv||'', ai_prompt:extraPrompt||''});
   sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null;
   showScreen('sessionScreen');
   document.getElementById('sessionTitle').textContent = programName;
@@ -925,8 +933,11 @@ async function aiSend(text, isFirst){
         sessionContext = '\n\nSTORICO SESSIONI RECENTI:\n'+logs;
       }
     }
-    // COACH_RUNTIME_RULES iniettato su ogni chiamata — garantisce comportamento dinamico
-    var systemPrompt = (currentProfile.ai_prompt||'') + athleteContext + sessionContext + COACH_RUNTIME_RULES;
+    // System prompt assemblato: coach_rules + workout_csv + note extra + profilo atleta + storico
+    var systemPrompt = (currentProfile.coach_rules||currentProfile.ai_prompt||'')
+      + (currentProfile.workout_csv ? '\n\nPROGRAMMA WORKOUT:\n'+currentProfile.workout_csv : '')
+      + (currentProfile.ai_prompt && currentProfile.coach_rules ? '\n\nNOTE COACH:\n'+currentProfile.ai_prompt : '')
+      + athleteContext + sessionContext;
     var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemPrompt,messages:sessionHistory})});
     var data = await res.json();
     removeTyping(tid);
@@ -1222,6 +1233,8 @@ async function openAthleteProgramsModal(userId, userName){
   athleteProgramsUserId=userId;
   document.getElementById('athleteProgramsName').textContent=userName;
   document.getElementById('newProgName').value='';
+  document.getElementById('newProgRules').value='';
+  document.getElementById('newProgCsv').value='';
   document.getElementById('newProgPrompt').value='';
   await renderAthletePrograms();
   document.getElementById('athleteProgramsModal').classList.add('open');
@@ -1233,7 +1246,25 @@ async function renderAthletePrograms(){
   var programs=r.data;
   if(!programs||!programs.length){list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Nessun programma assegnato.</div>'; return;}
   list.innerHTML=programs.map(function(p){
-    return '<div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-family:var(--display);font-size:13px;font-weight:700;">'+esc(p.program_name)+'</div><div style="display:flex;gap:6px;"><button class="action-btn primary" onclick="editProgram(\''+p.id+'\')">Modifica</button><button class="action-btn danger" onclick="removeProgram(\''+p.id+'\')">Rimuovi</button></div></div><div id="edit_'+p.id+'" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;"><div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_'+p.id+'" value="'+esc(p.program_name)+'"></div><div class="modal-field"><div class="modal-label">System prompt</div><textarea class="modal-textarea" id="editPrompt_'+p.id+'" style="min-height:120px;">'+esc(p.ai_prompt||'')+'</textarea></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;"><button class="modal-cancel" onclick="document.getElementById(\'edit_\'+ \''+p.id+'\' +\'\').style.display=\'none\'">Annulla</button><button class="modal-save" onclick="saveEditProgram(\''+p.id+'\')">Salva</button></div></div></div>';
+    return '<div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+      +'<div style="font-family:var(--display);font-size:13px;font-weight:700;">'+esc(p.program_name)+'</div>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<button class="action-btn primary" onclick="editProgram(\''+p.id+'\')">Modifica</button>'
+      +'<button class="action-btn danger" onclick="removeProgram(\''+p.id+'\')">Rimuovi</button>'
+      +'</div></div>'
+      +'<div id="edit_'+p.id+'" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">'
+      +'<div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_'+p.id+'" value="'+esc(p.program_name)+'"></div>'
+      +'<div class="modal-field"><div class="modal-label" style="display:flex;justify-content:space-between;"><span>Coach Rules</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Regole comportamentali AI</span></div>'
+      +'<textarea class="modal-textarea" id="editRules_'+p.id+'" style="min-height:100px;">'+esc(p.coach_rules||'')+'</textarea></div>'
+      +'<div class="modal-field"><div class="modal-label" style="display:flex;justify-content:space-between;"><span>Workout</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Esercizio, Set, Reps, RIR, Recupero</span></div>'
+      +'<textarea class="modal-textarea" id="editCsv_'+p.id+'" style="min-height:120px;font-size:11px;">'+esc(p.workout_csv||'')+'</textarea></div>'
+      +'<div class="modal-field"><div class="modal-label" style="display:flex;justify-content:space-between;"><span>Note extra</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">opzionali</span></div>'
+      +'<textarea class="modal-textarea" id="editPrompt_'+p.id+'" style="min-height:60px;">'+esc(p.ai_prompt||'')+'</textarea></div>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">'
+      +'<button class="modal-cancel" onclick="document.getElementById(\'edit_'+p.id+'\').style.display=\'none\'">Annulla</button>'
+      +'<button class="modal-save" onclick="saveEditProgram(\''+p.id+'\')">Salva</button>'
+      +'</div></div></div>';
   }).join('');
 }
 
@@ -1244,9 +1275,11 @@ function editProgram(id){
 
 async function saveEditProgram(programId){
   var name=document.getElementById('editName_'+programId).value.trim();
+  var rules=document.getElementById('editRules_'+programId).value.trim();
+  var csv=document.getElementById('editCsv_'+programId).value.trim();
   var prompt=document.getElementById('editPrompt_'+programId).value.trim();
-  if(!name||!prompt){alert('Compila tutti i campi.'); return;}
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId:programId,program_name:name,workouts:JSON.stringify([]),ai_prompt:prompt})});
+  if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId:programId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt})});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await renderAthletePrograms();
@@ -1254,12 +1287,16 @@ async function saveEditProgram(programId){
 
 async function addProgram(){
   var name=document.getElementById('newProgName').value.trim();
+  var rules=document.getElementById('newProgRules').value.trim();
+  var csv=document.getElementById('newProgCsv').value.trim();
   var prompt=document.getElementById('newProgPrompt').value.trim();
-  if(!name||!prompt){alert('Inserisci nome e prompt del programma.'); return;}
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify([]),ai_prompt:prompt})});
+  if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt})});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   document.getElementById('newProgName').value='';
+  document.getElementById('newProgRules').value='';
+  document.getElementById('newProgCsv').value='';
   document.getElementById('newProgPrompt').value='';
   await renderAthletePrograms(); await renderUserTable();
 }
