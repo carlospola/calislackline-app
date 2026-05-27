@@ -1130,8 +1130,17 @@ function updateSetInfo(text){
 
   // Timer: cerca recupero nel testo
   var m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
-  // Aggiorna il recupero solo se il timer NON sta girando — non interrompere un recupero in corso
-  if(m && !sessionTimerRunning) sessionTimerSet(parseInt(m[1])*60+parseInt(m[2]));
+  // Aggiorna sempre il valore di recupero quando arriva un nuovo set dall'AI
+  // Se il timer sta girando: aggiorna solo sessionTimerTotal (non resettare il display)
+  // Se il timer è fermo: imposta il nuovo valore
+  if(m){
+    var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
+    if(sessionTimerRunning){
+      sessionTimerTotal = newSeconds; // aggiorna per il prossimo reset
+    } else {
+      sessionTimerSet(newSeconds);
+    }
+  }
 }
 
 function extractOptions(text){
