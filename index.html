@@ -1309,9 +1309,16 @@ function updateSetInfo(text){
   boxNum.textContent = setNumMatch ? 'Set '+setNumMatch[1]+'/'+setNumMatch[2] : '';
 
   // Popola box Target (reps) e Tempo
-  var repsMatch = setLine.match(/(\d+[-–]?\d*\s*(?:reps?|rip\.?|ripetizioni)?(?:\s+per\s+lato)?)/i);
-  var tempoMatch = setLine.match(/Tempo:\s*([^\s|]+)/i);
-  boxTarget.textContent = repsMatch ? repsMatch[1].trim() : '—';
+  // La riga è: "Esercizio — Set N/TOT | 6-8 reps | Tempo: 30X2 | Recupero: mm:ss"
+  // Prendi il primo segmento dopo il primo | che contenga reps
+  var parts = setLine.split('|');
+  var repsMatch = null;
+  for(var pi=1; pi<parts.length; pi++){
+    var pm = parts[pi].match(/(\d+[-–]\d+|\d+)\s*(?:reps?|rip\.?)?(?:\s+per\s+lato)?/i);
+    if(pm && !parts[pi].match(/[Tt]empo|[Rr]ecupero/)){ repsMatch = pm; break; }
+  }
+  var tempoMatch = setLine.match(/[Tt]empo:\s*([^\s|]+)/i);
+  boxTarget.textContent = repsMatch ? repsMatch[0].trim() : '—';
   boxTempo.textContent = tempoMatch ? tempoMatch[1] : '—';
 
   currentSetState = exerciseName;
@@ -1373,7 +1380,8 @@ function addBubble(role, text){
     var asksProgression=text.match(/quale progressione/i)||text.match(/progressione usi/i);
     if(options.length>=2&&options.length<=6){
       var textWithoutOptions=text.split('\n').filter(function(l){return !l.trim().match(/^[-]\s+.+/);}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
-      bub.innerHTML=fmtText(textWithoutOptions);
+      var fmtResult=fmtText(textWithoutOptions);
+      bub.innerHTML=fmtResult||'';
       row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
       if(asksProgression) setInputLocked(true);
       var optRow=document.createElement('div'); optRow.id='quickOptions';
@@ -1390,7 +1398,9 @@ function addBubble(role, text){
       msgs.appendChild(optRow);
     }else{
       setInputLocked(false);
-      bub.innerHTML=fmtText(text);
+      var fmtResult2=fmtText(text);
+      if(!fmtResult2){ msgs.scrollTop=msgs.scrollHeight; return; } // bubble vuoto — non mostrare
+      bub.innerHTML=fmtResult2;
       row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
     }
     updateSetInfo(text);
@@ -1434,7 +1444,7 @@ function fmtText(t){
   t=t.replace(/^[Rr]ecupero:\s*\d+:\d+\s*$/gm,'');
   t=t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'');
   t=t.replace(/\n{3,}/g,'\n\n').replace(/^\n+|\n+$/g,'').trim();
-  if(!t) return '';
+  if(!t || t.replace(/\s/g,'').length === 0) return null;
   if(t.indexOf('WORKOUT LOG')>-1)
     return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">'+esc(t)+'</pre>';
   return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
