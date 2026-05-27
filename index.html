@@ -945,10 +945,11 @@ function sendMsg(){
   // Avvia timer solo se sono state inserite reps numeriche (non su testo libero)
   var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
   if(hasReps){
-    // Stoppa il timer corrente — ripartirà con il valore corretto quando arriva la risposta AI
+    // Resetta e fa partire il timer con il valore di recupero corrente
     if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
-    document.getElementById('sessionTimerGo').textContent='Start';
-    document.getElementById('sessionTimerNum').style.color='var(--text)';
+    var startSecs = sessionTimerTotal > 0 ? sessionTimerTotal : 90;
+    sessionTimerSet(startSecs);
+    setTimeout(function(){ if(!sessionTimerRunning) sessionTimerToggle(); }, 50);
   }
   aiSend(txt, false);
 }
@@ -1132,9 +1133,14 @@ function updateSetInfo(text){
   // Se il timer è fermo: imposta il nuovo valore
   if(m){
     var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
-    // Imposta sempre il nuovo recupero e fai partire il timer automaticamente
-    sessionTimerSet(newSeconds);
-    setTimeout(function(){ if(!sessionTimerRunning) sessionTimerToggle(); }, 50);
+    // Aggiorna il valore di recupero — il timer partirà solo quando l'atleta registra un set
+    sessionTimerTotal = newSeconds;
+    sessionTimerLeft = newSeconds;
+    if(!sessionTimerRunning){
+      document.getElementById('sessionTimerNum').textContent = fmtTime(newSeconds);
+      document.getElementById('sessionTimerNum').style.color = 'var(--text)';
+      document.getElementById('sessionTimerGo').textContent = 'Start';
+    }
   }
 }
 
