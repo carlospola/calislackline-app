@@ -683,9 +683,17 @@ async function init(){
   var code = params.get('code'), error = params.get('error');
   if(code||error) window.history.replaceState({}, document.title, window.location.pathname);
   if(error){clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent='Errore login. Riprova.'; return;}
-  sb.auth.onAuthStateChange(async function(event, session){
-    if(event==='PASSWORD_RECOVERY'){clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('newPasswordModal').classList.add('open');}
-    else if(event==='SIGNED_OUT'){currentUser=null; currentProfile=null; showScreen('loginScreen');}
+  // onAuthStateChange: NON async — evita "message channel closed" error in Chrome
+  sb.auth.onAuthStateChange(function(event, session){
+    if(event==='PASSWORD_RECOVERY'){
+      clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
+      document.getElementById('newPasswordModal').classList.add('open');
+    } else if(event==='SIGNED_OUT'){
+      currentUser=null; currentProfile=null;
+      // Mostra login solo se non siamo già in una schermata attiva post-login
+      var active = document.querySelector('.screen.active');
+      if(!active || active.id === 'loadingScreen') showScreen('loginScreen');
+    }
   });
   try{
     if(code){
@@ -695,17 +703,17 @@ async function init(){
     }
     var s = await sb.auth.getSession();
     clearTimeout(timeout);
-    if(s.data.session){
+    if(s.data&&s.data.session){
       await handleSession(s.data.session);
     } else {
-      // Nessuna sessione attiva — pulizia silenziosa e login
-      await sb.auth.signOut();
+      // Nessuna sessione valida — pulizia silenziosa
+      try{ await sb.auth.signOut(); }catch(ignore){}
       hideLoading(); showScreen('loginScreen');
     }
   }catch(e){
     clearTimeout(timeout);
-    // Token scaduto o invalido — logout silenzioso, nessun messaggio di errore
-    await sb.auth.signOut();
+    // Token scaduto o invalido — logout silenzioso, nessun messaggio
+    try{ await sb.auth.signOut(); }catch(ignore){}
     hideLoading(); showScreen('loginScreen');
   }
 }
