@@ -655,7 +655,7 @@ var currentSetState = null; // persiste l'ultimo set noto
 // COACH_RUNTIME_RULES rimosso — le regole sono ora in programs.coach_rules (editabile dall'admin)
 
 // Formato log strutturato — fisso, non modificabile dall'admin (il parser JS dipende da questo formato)
-var COACH_LOG_FORMAT = '\n\nFORMATO LOG STRUTTURATO (obbligatorio):\nAlla fine di ogni sessione, dopo il WORKOUT LOG testuale, aggiungi questo blocco su una riga sola:\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":N,"reps":N,"rir":N}]}]\n- reps: valore medio dei set completati (numero intero)\n- rir: valore medio dichiarato dall\'atleta (intero, 0 se non dichiarato)\n- sets: numero di set completati\n- Nessuno spazio o newline dentro il JSON';
+var COACH_LOG_FORMAT = '\n\nDOPO IL WORKOUT LOG aggiungi OBBLIGATORIAMENTE questa riga (tutto su una sola riga, nessun newline, nessuno spazio extra):\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":3,"reps":8,"rir":2}]}]\nESEMPIO REALE (copia questo formato esatto):\n[LOG_DATA:{"workout":"PULL 1","exercises":[{"name":"Chinup","sets":3,"reps":6,"rir":2},{"name":"Row","sets":3,"reps":10,"rir":1}]}]\nREGOLE: reps=media set (intero), rir=media dichiarata (intero, 0 se non detto), sets=set completati. TUTTO SU UNA RIGA SOLA.';
 
 var DEMO_PROMPT = 'Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.\n\nREGOLE ASSOLUTE:\n- Durante le domande iniziali: solo la domanda + lista opzioni.\n- Durante il workout: formato fisso.\n- [SET:NomeEsercizio] sempre prima di ogni esercizio.\n- Recupero formato mm:ss.\n- Niente incoraggiamenti.\n- Quando l utente dice fine genera WORKOUT LOG.\n\nDOMANDE INIZIALI:\n1.\nQuanto tempo hai?\n- 30 minuti\n- 45 minuti\n- 60 minuti\n- 90 minuti\n\n2.\nDove ti alleni?\n- Casa - solo bodyweight\n- Parco - sbarra e parallele\n- Palestra completa\n- Casa con attrezzi\n\n3.\nObiettivo oggi?\n- Tutto il corpo\n- Solo upper body\n- Solo lower body\n- Forza e skills\n\n4.\nCome ti senti?\n- Carico\n- Nella media\n- Stanco\n\nDopo le 4 risposte vai al primo esercizio.\n\nFORMATO ESERCIZIO:\n[SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n\nFORMATO SUPERSET:\n[SUPERSET:Nome1,Nome2]\nSUPERSET X - Set N/TOT\nNome1: X-Y reps\nNome2: X-Y reps\n-> VAI SUBITO su Nome2\nRecupero: mm:ss\n\nFEEDBACK: ok max 4 parole. Recupero: mm:ss\n\nWORKOUT LOG:\nWORKOUT LOG\n================\nData: [data]\nDurata: [X] min\n[Esercizio]: [sets x reps]';
 
@@ -971,12 +971,12 @@ async function aiSend(text, isFirst){
 async function saveSessionLog(log){
   // Estrai [LOG_DATA:{...}] dal testo del log
   var logData = null;
-  var ldMatch = log.match(/\[LOG_DATA:(\{[\s\S]*?\})\]/);
+  var ldMatch = log.match(/\[LOG_DATA:\s*(\{[\s\S]*?\})\s*\]/);
   if(ldMatch){
     try{ logData = JSON.parse(ldMatch[1]); }catch(e){ logData = null; }
   }
   // Rimuovi il tag [LOG_DATA:] dal testo salvato — è solo per uso interno
-  var cleanLog = log.replace(/\[LOG_DATA:[^\]]*\]\n?/g, '').trim();
+  var cleanLog = log.replace(/\[LOG_DATA:[\s\S]*?\]\n?/g, '').trim();
   await sb.from('sessions').insert({
     user_id: currentUser.id,
     workout_name: sessionWorkout,
