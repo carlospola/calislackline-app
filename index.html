@@ -161,18 +161,12 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;}
 .loading-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:ldot 1.2s infinite ease-in-out;}
 @keyframes ldot{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
-.generate-btn{padding:10px 16px;background:transparent;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;}
-.generate-btn:hover{background:var(--accent-dim);}
-.generate-btn:disabled{opacity:.4;cursor:not-allowed;}
-.generate-spinner{width:12px;height:12px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:none;}
-.generate-btn.loading .generate-spinner{display:inline-block;}
-.generate-btn.loading .generate-label{opacity:.5;}
-@keyframes spin{to{transform:rotate(360deg);}}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 </style>
 </head>
 <body>
 <div class="loading-screen" id="loadingScreen"><div class="loading-dot"></div></div>
+
 <!-- LOGIN -->
 <div class="screen" id="loginScreen">
   <div class="login-box">
@@ -182,7 +176,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     </div>
     <div class="login-form">
       <button class="google-btn" onclick="loginGoogle()">
-        <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Accedi con Google
       </button>
       <div class="login-divider">oppure</div>
@@ -294,6 +288,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     </div>
   </div>
 </div>
+
 <!-- SESSION SCREEN -->
 <div class="screen" id="sessionScreen">
   <div class="topbar" style="padding:10px 16px;">
@@ -314,17 +309,14 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
   </div>
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
     <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px;" id="messages"></div>
+    <!-- SET INFO BOX + TIMER -->
     <div style="flex:0 0 auto;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-      <div style="padding:8px 16px 6px;">
-        <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Prossimo set</div>
-        <div id="setInfoBox" style="font-size:13px;line-height:1.55;color:var(--text);">In attesa...</div>
-      </div>
-      <div style="display:flex;align-items:center;border-top:1px solid var(--border);padding:6px 16px;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 16px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:8px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:2px;">Cue tecnico</div>
-          <div id="cueBox" style="font-size:12px;color:var(--text2);font-style:italic;">-</div>
+          <div style="font-size:8px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Prossimo set</div>
+          <div id="setInfoBox" style="font-size:13px;line-height:1.55;color:var(--text);">In attesa...</div>
         </div>
-        <div style="width:1px;background:var(--border2);height:32px;flex-shrink:0;"></div>
+        <div style="width:1px;background:var(--border2);height:40px;flex-shrink:0;"></div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;">
           <div id="sessionTimerNum" style="font-family:var(--display);font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
           <div style="display:flex;gap:4px;">
@@ -334,6 +326,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </div>
       </div>
     </div>
+    <!-- INPUT AREA -->
     <div style="flex:0 0 auto;padding:10px 16px max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;gap:8px;">
       <div id="inputContainer"></div>
       <div style="display:flex;flex-direction:column;gap:5px;">
@@ -356,7 +349,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <input type="text" id="inpNote" placeholder="Note (opzionale)..." style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px 13px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;">
+        <input type="text" id="inpNote" placeholder="Scrivi il set, una nota o cosa hai fatto..." style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px 13px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;" onkeydown="if(event.key==='Enter')sendMsg()">
         <button id="sendBtn" onclick="sendMsg()" style="width:48px;height:48px;background:var(--accent);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg viewBox="0 0 24 24" fill="none" width="17" height="17"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -408,6 +401,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     </div>
   </div>
 </div>
+
 <!-- ONBOARD SCREEN -->
 <div class="screen" id="onboardScreen">
   <div class="onboard-wrap">
@@ -534,6 +528,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     </div>
   </div>
 </div>
+
 <!-- MODALS -->
 <div class="modal-overlay" id="exerciseModal">
   <div class="modal" style="max-width:600px;">
@@ -611,19 +606,8 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:14px;">+ Aggiungi nuovo programma</div>
       <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="newProgName" placeholder="es. Body By Rings - Fase 1"></div>
       <div class="modal-field">
-        <div class="modal-label">Descrivi il programma <span style="color:var(--muted);font-size:9px;">(per la generazione AI)</span></div>
-        <textarea class="modal-textarea" id="newProgDesc" style="min-height:80px;" placeholder="es. Push/Pull split 4 giorni, obiettivo forza upper body, niente overhead per tendinite spalla..."></textarea>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <button class="generate-btn" id="generateBtn" onclick="generatePromptWithAI()">
-          <div class="generate-spinner" id="generateSpinner"></div>
-          <span class="generate-label">Genera prompt con AI</span>
-        </button>
-        <div style="font-size:10px;color:var(--muted);" id="generateStatus"></div>
-      </div>
-      <div class="modal-field">
-        <div class="modal-label">System prompt AI Coach <span style="color:var(--muted);font-size:9px;">(generato o scritto a mano)</span></div>
-        <textarea class="modal-textarea" id="newProgPrompt" style="min-height:200px;" placeholder="Clicca 'Genera con AI' oppure incolla il prompt manualmente..."></textarea>
+        <div class="modal-label">System prompt AI Coach</div>
+        <textarea class="modal-textarea" id="newProgPrompt" style="min-height:200px;" placeholder="Incolla il system prompt del programma..."></textarea>
       </div>
     </div>
     <div class="modal-btns">
@@ -644,6 +628,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     <div class="modal-btns"><button class="modal-cancel" onclick="closeModal('createUserModal')">Annulla</button><button class="modal-save" onclick="createUser()">Crea account</button></div>
   </div>
 </div>
+
 <script>
 var SUPABASE_URL = 'https://efziohgwsvplqandzawz.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_R-LAgce572sW0gzDAWyJlA_eXr6H0s7';
@@ -656,8 +641,12 @@ var sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft =
 var allExercises = [];
 var athleteProgramsUserId = null;
 var infortuniVal = null;
+var currentSetState = null; // persiste l'ultimo set noto
 
-var DEMO_PROMPT = 'Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.\n\nREGOLE ASSOLUTE:\n- Durante le domande iniziali: solo la domanda + lista opzioni.\n- Durante il workout: formato fisso.\n- [SET:NomeEsercizio] sempre prima di ogni esercizio.\n- [CUE:max 5 parole] sempre dopo.\n- Recupero formato mm:ss.\n- Niente incoraggiamenti.\n- Quando l utente dice fine genera WORKOUT LOG.\n\nDOMANDE INIZIALI:\n1.\nQuanto tempo hai?\n- 30 minuti\n- 45 minuti\n- 60 minuti\n- 90 minuti\n\n2.\nDove ti alleni?\n- Casa - solo bodyweight\n- Parco - sbarra e parallele\n- Palestra completa\n- Casa con attrezzi\n\n3.\nObiettivo oggi?\n- Tutto il corpo\n- Solo upper body\n- Solo lower body\n- Forza e skills\n\n4.\nCome ti senti?\n- Carico\n- Nella media\n- Stanco\n\nDopo le 4 risposte vai al primo esercizio.\n\nFORMATO ESERCIZIO:\n[SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n[CUE:cue breve]\n\nFORMATO SUPERSET:\n[SUPERSET:Nome1,Nome2]\nSUPERSET X - Set N/TOT\nNome1: X-Y reps\nNome2: X-Y reps\n[CUE:cue breve]\n-> VAI SUBITO su Nome2\nRecupero: mm:ss\n\nFEEDBACK: ok max 4 parole. Recupero: mm:ss\n\nWORKOUT LOG:\nWORKOUT LOG\n================\nData: [data]\nDurata: [X] min\n[Esercizio]: [sets x reps]';
+// Regole operative iniettate su ogni sessione — non modificare il formato [SET:] [SUPERSET:]
+var COACH_RUNTIME_RULES = '\n\nREGOLE OPERATIVE SESSIONE:\n- Logga sempre cio che l\'atleta dichiara di aver fatto, indipendentemente da cio che avevi suggerito.\n- Se l\'atleta esegue un esercizio diverso da quello suggerito: registralo nel log, poi continua il piano dal punto corretto.\n- Se l\'atleta aggiunge set extra non pianificati: registrali e riprendi il piano.\n- Non avanzare mai al set successivo senza che l\'atleta abbia dichiarato di aver fatto qualcosa.\n- Il prossimo set suggerito e un riferimento, non un vincolo.\n- Feedback massimo 5 parole. Poi mostra subito il prossimo [SET:].\n- Usa sempre il formato [SET:NomeEsercizio] per ogni set suggerito.';
+
+var DEMO_PROMPT = 'Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.\n\nREGOLE ASSOLUTE:\n- Durante le domande iniziali: solo la domanda + lista opzioni.\n- Durante il workout: formato fisso.\n- [SET:NomeEsercizio] sempre prima di ogni esercizio.\n- Recupero formato mm:ss.\n- Niente incoraggiamenti.\n- Quando l utente dice fine genera WORKOUT LOG.\n\nDOMANDE INIZIALI:\n1.\nQuanto tempo hai?\n- 30 minuti\n- 45 minuti\n- 60 minuti\n- 90 minuti\n\n2.\nDove ti alleni?\n- Casa - solo bodyweight\n- Parco - sbarra e parallele\n- Palestra completa\n- Casa con attrezzi\n\n3.\nObiettivo oggi?\n- Tutto il corpo\n- Solo upper body\n- Solo lower body\n- Forza e skills\n\n4.\nCome ti senti?\n- Carico\n- Nella media\n- Stanco\n\nDopo le 4 risposte vai al primo esercizio.\n\nFORMATO ESERCIZIO:\n[SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n\nFORMATO SUPERSET:\n[SUPERSET:Nome1,Nome2]\nSUPERSET X - Set N/TOT\nNome1: X-Y reps\nNome2: X-Y reps\n-> VAI SUBITO su Nome2\nRecupero: mm:ss\n\nFEEDBACK: ok max 4 parole. Recupero: mm:ss\n\nWORKOUT LOG:\nWORKOUT LOG\n================\nData: [data]\nDurata: [X] min\n[Esercizio]: [sets x reps]';
 
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fmtTime(s){return String(Math.floor(Math.max(s,0)/60)).padStart(2,'0')+':'+String(Math.max(s,0)%60).padStart(2,'0');}
@@ -669,11 +658,10 @@ function startDemoSession(){
   var orig = JSON.parse(JSON.stringify(currentProfile||{}));
   currentProfile = Object.assign({}, currentProfile, {ai_prompt:DEMO_PROMPT, _isDemo:true, _orig:orig});
   sessionWorkout = 'Sessione personalizzata';
-  sessionHistory = []; selectedRpe = null; busy = false;
+  sessionHistory = []; selectedRpe = null; busy = false; currentSetState = null;
   document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
   var box = document.getElementById('setInfoBox'); if(box) box.innerHTML = 'In attesa...';
-  var cueB = document.getElementById('cueBox'); if(cueB) cueB.textContent = '-';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode = 'single'; currentExercises = [];
   renderInputFields('single', []);
@@ -835,12 +823,11 @@ async function showDash(){
 function startSessionWithPrompt(programName, prompt){
   if(!prompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
   currentProfile = Object.assign({}, currentProfile, {ai_prompt:prompt});
-  sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false;
+  sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null;
   showScreen('sessionScreen');
   document.getElementById('sessionTitle').textContent = programName;
   document.getElementById('messages').innerHTML='';
   var box=document.getElementById('setInfoBox'); if(box) box.innerHTML='In attesa...';
-  var cueB=document.getElementById('cueBox'); if(cueB) cueB.textContent='-';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode='single'; currentExercises=[];
   renderInputFields('single',[]);
@@ -892,6 +879,7 @@ function sendMsg(){
   }else{
     var reps=document.getElementById('reps_a'), rir=document.getElementById('rir_a');
     var repsv=reps?reps.value.trim():'', rirv=rir?rir.value.trim():'';
+    // Accetta anche solo la nota — l'AI capisce cosa è stato fatto
     if(!repsv&&!note){if(n){n.style.borderColor='var(--accent)';setTimeout(function(){n.style.borderColor='';},800);} return;}
     if(repsv) parts.push('Reps: '+repsv);
     if(rirv) parts.push('RIR: '+rirv);
@@ -926,7 +914,8 @@ async function aiSend(text, isFirst){
         sessionContext = '\n\nSTORICO SESSIONI RECENTI:\n'+logs;
       }
     }
-    var systemPrompt = (currentProfile.ai_prompt||'')+athleteContext+sessionContext;
+    // COACH_RUNTIME_RULES iniettato su ogni chiamata — garantisce comportamento dinamico
+    var systemPrompt = (currentProfile.ai_prompt||'') + athleteContext + sessionContext + COACH_RUNTIME_RULES;
     var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemPrompt,messages:sessionHistory})});
     var data = await res.json();
     removeTyping(tid);
@@ -985,25 +974,61 @@ function sessionTimerReset(){
   document.getElementById('sessionTimerGo').textContent='Start';
 }
 
+// updateSetInfo — usa solo [SET:] e [SUPERSET:] come fonte. Se non ci sono tag, non aggiorna il box.
 function updateSetInfo(text){
-  var box=document.getElementById('setInfoBox'), cueBox=document.getElementById('cueBox');
+  var box = document.getElementById('setInfoBox');
   if(!box) return;
-  var lines=text.split('\n').map(function(l){return l.replace(/\*\*/g,'').trim();}).filter(function(l){return l;});
-  var header='', exercises=[], cue='';
-  for(var i=0;i<lines.length;i++){
-    var line=lines[i];
-    var cm=line.match(/\[CUE:([^\]]+)\]/);
-    if(cm){cue=cm[1].trim(); continue;}
-    if(line.match(/[-]\s*(Set\s+\d+\/\d+|Warm-up)/i)&&!line.match(/SUPERSET/i)){header=line.replace(/\s*\|.*$/,'').trim(); exercises=[]; continue;}
-    if(line.match(/SUPERSET\s+[A-Z]\s*[-]\s*Set\s+\d+\/\d+/i)){header=line; exercises=[]; continue;}
-    if(header.match(/SUPERSET/i)&&line.match(/^[A-Za-z].+:\s*[\d]/)&&!line.match(/recupero/i)&&!line.match(/^\[/)){exercises.push(line.replace(/\s*\|.*$/,'').trim());}
+
+  var supersetMatch = text.match(/\[SUPERSET:([^\]]+)\]/);
+  var setMatch = text.match(/\[SET:([^\]]+)\]/);
+
+  if(!supersetMatch && !setMatch) {
+    // Nessun tag SET nella risposta — mantieni l'ultimo stato (non resettare)
+    return;
   }
-  var html='';
-  if(header) html+='<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">'+esc(header)+'</div>';
-  exercises.forEach(function(ex){html+='<div style="font-size:13px;color:var(--text);">'+esc(ex)+'</div>';});
-  if(html) box.innerHTML=html;
-  if(cueBox&&cue) cueBox.textContent=cue;
-  var m=text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
+
+  var lines = text.split('\n').map(function(l){return l.replace(/\*\*/g,'').trim();}).filter(function(l){return l;});
+  var html = '';
+
+  if(supersetMatch) {
+    // Trova la riga del superset (Set N/TOT)
+    var ssHeader = '';
+    var ssExercises = [];
+    for(var i=0; i<lines.length; i++) {
+      var line = lines[i];
+      if(line.match(/SUPERSET\s+[A-Z\d]+\s*[-]\s*Set\s+\d+\/\d+/i)) { ssHeader = line; continue; }
+      if(ssHeader && line.match(/^[A-Za-zÀ-ú].+:\s*[\d]/) && !line.match(/recupero/i) && !line.match(/^\[/)) {
+        ssExercises.push(line.replace(/\s*\|.*$/, '').trim());
+      }
+    }
+    if(ssHeader) html += '<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">'+esc(ssHeader)+'</div>';
+    ssExercises.forEach(function(ex){ html += '<div style="font-size:13px;color:var(--text);">'+esc(ex)+'</div>'; });
+
+  } else if(setMatch) {
+    var exerciseName = setMatch[1].trim();
+    // Cerca la riga con Set N/TOT per questo esercizio
+    var setLine = '';
+    for(var j=0; j<lines.length; j++) {
+      if(lines[j].match(/Set\s+\d+\/\d+/i) && !lines[j].match(/SUPERSET/i)) {
+        setLine = lines[j].replace(/\*\*/g,'').trim();
+        break;
+      }
+    }
+    if(setLine) {
+      html += '<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">'+esc(exerciseName)+'</div>';
+      html += '<div style="font-size:12px;color:var(--text2);">'+esc(setLine)+'</div>';
+    } else {
+      html += '<div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--accent);">'+esc(exerciseName)+'</div>';
+    }
+  }
+
+  if(html) {
+    currentSetState = html;
+    box.innerHTML = html;
+  }
+
+  // Timer: cerca recupero nel testo
+  var m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
   if(m) sessionTimerSet(parseInt(m[1])*60+parseInt(m[2]));
 }
 
@@ -1186,9 +1211,7 @@ async function openAthleteProgramsModal(userId, userName){
   athleteProgramsUserId=userId;
   document.getElementById('athleteProgramsName').textContent=userName;
   document.getElementById('newProgName').value='';
-  document.getElementById('newProgDesc').value='';
   document.getElementById('newProgPrompt').value='';
-  document.getElementById('generateStatus').textContent='';
   await renderAthletePrograms();
   document.getElementById('athleteProgramsModal').classList.add('open');
 }
@@ -1199,7 +1222,7 @@ async function renderAthletePrograms(){
   var programs=r.data;
   if(!programs||!programs.length){list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Nessun programma assegnato.</div>'; return;}
   list.innerHTML=programs.map(function(p){
-    return '<div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-family:var(--display);font-size:13px;font-weight:700;">'+esc(p.program_name)+'</div><div style="display:flex;gap:6px;"><button class="action-btn primary" onclick="editProgram(\''+p.id+'\')">Modifica</button><button class="action-btn danger" onclick="removeProgram(\''+p.id+'\')">Rimuovi</button></div></div><div id="edit_'+p.id+'" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;"><div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_'+p.id+'" value="'+esc(p.program_name)+'"></div><div class="modal-field"><div class="modal-label">System prompt</div><textarea class="modal-textarea" id="editPrompt_'+p.id+'" style="min-height:120px;">'+esc(p.ai_prompt||'')+'</textarea></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;"><button class="modal-cancel" onclick="document.getElementById(\'edit_\''+p.id+'\'\').style.display=\'none\'">Annulla</button><button class="modal-save" onclick="saveEditProgram(\''+p.id+'\')">Salva</button></div></div></div>';
+    return '<div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-family:var(--display);font-size:13px;font-weight:700;">'+esc(p.program_name)+'</div><div style="display:flex;gap:6px;"><button class="action-btn primary" onclick="editProgram(\''+p.id+'\')">Modifica</button><button class="action-btn danger" onclick="removeProgram(\''+p.id+'\')">Rimuovi</button></div></div><div id="edit_'+p.id+'" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;"><div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_'+p.id+'" value="'+esc(p.program_name)+'"></div><div class="modal-field"><div class="modal-label">System prompt</div><textarea class="modal-textarea" id="editPrompt_'+p.id+'" style="min-height:120px;">'+esc(p.ai_prompt||'')+'</textarea></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;"><button class="modal-cancel" onclick="document.getElementById(\'edit_\'+ \''+p.id+'\' +\'\').style.display=\'none\'">Annulla</button><button class="modal-save" onclick="saveEditProgram(\''+p.id+'\')">Salva</button></div></div></div>';
   }).join('');
 }
 
@@ -1218,46 +1241,6 @@ async function saveEditProgram(programId){
   await renderAthletePrograms();
 }
 
-async function generatePromptWithAI(){
-  var desc=document.getElementById('newProgDesc').value.trim();
-  var progName=document.getElementById('newProgName').value.trim();
-  var statusEl=document.getElementById('generateStatus');
-  var btn=document.getElementById('generateBtn');
-  if(!desc){statusEl.textContent='Scrivi prima una descrizione del programma.'; statusEl.style.color='var(--red)'; return;}
-  var athleteR=await sb.from('profiles').select('*').eq('id',athleteProgramsUserId).single();
-  var ap=athleteR.data||{};
-  var exercisesText='';
-  try{
-    var exR=await sb.from('exercises').select('name,category,muscles,equipment,level,cue,progressions').order('category').order('name');
-    if(exR.data&&exR.data.length){
-      exercisesText=exR.data.map(function(e){return '- '+e.name+' ['+( e.category||'?')+'] | '+(e.muscles||'-')+' | '+(e.equipment||'bodyweight')+' | '+(e.level||'?')+(e.cue?' | cue: '+e.cue:'')+(e.progressions?' | prog: '+e.progressions:'');}).join('\n');
-    }
-  }catch(ex){}
-  var profileText=[ap.name?'Nome: '+ap.name:null,ap.eta?'Eta: '+ap.eta:null,ap.livello?'Livello: '+ap.livello:null,ap.obiettivo?'Obiettivo: '+ap.obiettivo:null,ap.obiettivo3m?'Obiettivo 3 mesi: '+ap.obiettivo3m:null,ap.discipline?'Discipline: '+ap.discipline:null,ap.skill?'Skill attuali: '+ap.skill:null,ap.luogo?'Luogo: '+ap.luogo:null,ap.attrezzatura?'Attrezzatura: '+ap.attrezzatura:null,ap.infortuni?'Infortuni: '+ap.infortuni:null,ap.limitazioni?'Limitazioni: '+ap.limitazioni:null,ap.frequenza?'Frequenza: '+ap.frequenza:null,ap.disponibilita?'Disponibilita: '+ap.disponibilita:null].filter(Boolean).join('\n');
-  var systemForGenerator='Sei un esperto coach di calisthenics. Genera un system prompt completo per un AI coach.\n\nFORMATO WORKOUT:\n- [SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n[CUE:max 5 parole]\n- Per superset: [SUPERSET:Nome1,Nome2]\n- Niente incoraggiamenti\n- Quando utente dice fine genera WORKOUT LOG\n- Il prompt deve iniziare chiedendo quale workout fare oggi con lista opzioni\n\nGenera SOLO il system prompt in italiano.';
-  var userMessage='Genera il system prompt per questo programma:\n\nNOME: '+(progName||'Programma')+'\n\nDESCRIZIONE:\n'+desc+'\n\nPROFILO ATLETA:\n'+(profileText||'Non disponibile')+'\n\nLIBRERIA ESERCIZI:\n'+(exercisesText||'Usa esercizi standard calisthenics');
-  btn.classList.add('loading'); btn.disabled=true;
-  statusEl.textContent='Generazione in corso...'; statusEl.style.color='var(--muted)';
-  try{
-    var res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemForGenerator,messages:[{role:'user',content:userMessage}]})});
-    var data=await res.json();
-    var generated=data.content&&data.content[0]&&data.content[0].text;
-    if(generated){
-      document.getElementById('newProgPrompt').value=generated;
-      statusEl.textContent='Prompt generato - modifica se necessario';
-      statusEl.style.color='var(--accent)';
-    }else{
-      statusEl.textContent='Errore nella generazione. Riprova.';
-      statusEl.style.color='var(--red)';
-    }
-  }catch(e){
-    statusEl.textContent='Errore di connessione.';
-    statusEl.style.color='var(--red)';
-  }finally{
-    btn.classList.remove('loading'); btn.disabled=false;
-  }
-}
-
 async function addProgram(){
   var name=document.getElementById('newProgName').value.trim();
   var prompt=document.getElementById('newProgPrompt').value.trim();
@@ -1266,9 +1249,7 @@ async function addProgram(){
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   document.getElementById('newProgName').value='';
-  document.getElementById('newProgDesc').value='';
   document.getElementById('newProgPrompt').value='';
-  document.getElementById('generateStatus').textContent='';
   await renderAthletePrograms(); await renderUserTable();
 }
 
