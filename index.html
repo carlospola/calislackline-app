@@ -687,8 +687,19 @@ async function init(){
     }
     var s = await sb.auth.getSession();
     clearTimeout(timeout);
-    if(s.data.session){await handleSession(s.data.session);}else{hideLoading(); showScreen('loginScreen');}
-  }catch(e){clearTimeout(timeout); hideLoading(); showScreen('loginScreen');}
+    if(s.data.session){
+      await handleSession(s.data.session);
+    } else {
+      // Nessuna sessione attiva — pulizia silenziosa e login
+      await sb.auth.signOut();
+      hideLoading(); showScreen('loginScreen');
+    }
+  }catch(e){
+    clearTimeout(timeout);
+    // Token scaduto o invalido — logout silenzioso, nessun messaggio di errore
+    await sb.auth.signOut();
+    hideLoading(); showScreen('loginScreen');
+  }
 }
 
 async function handleSession(session){
