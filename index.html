@@ -374,8 +374,9 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
   <div style="flex:1;overflow-y:auto;padding:20px;" id="progressBody">
 
     <!-- TAB ESERCIZIO -->
+    <!-- TAB ESERCIZIO -->
     <div id="ptabExContent">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <select id="progressExerciseSelect" onchange="renderProgressCharts()" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
           <option value="">Seleziona esercizio...</option>
         </select>
@@ -386,21 +387,23 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
           <option value="9999">Tutto</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
         <div class="stat-card"><div class="stat-num" id="pStatSessions">—</div><div class="stat-lbl">SESSIONI</div></div>
         <div class="stat-card"><div class="stat-num" id="pStatPR" style="color:var(--accent);">—</div><div class="stat-lbl">PR REPS</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatTotalReps">—</div><div class="stat-lbl">TOT REPS</div></div>
+      </div>
+      <!-- Tre grafici allineati verticalmente con stessa altezza e labels -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:4px;">
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;">Media reps per set</div>
+        <div style="position:relative;height:160px;"><canvas id="chartReps"></canvas></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:4px;">
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Reps totali sessione</div>
+        <div style="position:relative;height:120px;"><canvas id="chartTotalReps"></canvas></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">Reps per sessione</div>
-        <div style="position:relative;height:200px;"><canvas id="chartReps"></canvas></div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Reps totali per sessione</div>
-        <div style="position:relative;height:140px;"><canvas id="chartTotalReps"></canvas></div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">RIR medio</div>
-        <div style="position:relative;height:140px;"><canvas id="chartRIR"></canvas></div>
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">RPE medio</div>
+        <div style="position:relative;height:120px;"><canvas id="chartRPE"></canvas></div>
       </div>
       <div id="progressEmpty" style="display:none;text-align:center;padding:40px 0;font-size:12px;color:var(--muted);">
         Nessun dato per questo esercizio nel periodo selezionato.
@@ -409,7 +412,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 
     <!-- TAB OVERVIEW -->
     <div id="ptabOvContent" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <select id="progressPeriodSelectOv" onchange="renderOverviewCharts()" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
           <option value="30">30 giorni</option>
           <option value="90" selected>3 mesi</option>
@@ -417,11 +420,10 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
           <option value="9999">Tutto</option>
         </select>
       </div>
-
       <!-- Heatmap -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
         <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">Frequenza allenamenti</div>
-        <div id="heatmapGrid" style="display:flex;flex-direction:column;gap:3px;overflow-x:auto;"></div>
+        <div id="heatmapGrid" style="display:flex;flex-direction:column;gap:3px;overflow-x:auto;padding-bottom:4px;"></div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
           <span style="font-size:9px;color:var(--muted);">riposo</span>
           <div style="width:10px;height:10px;border-radius:2px;background:var(--border2);"></div>
@@ -431,22 +433,24 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
           <span style="font-size:9px;color:var(--muted);">attivo</span>
         </div>
       </div>
-
-      <!-- Volume settimanale Push/Pull -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Volume settimanale Push / Pull</div>
-        <div style="position:relative;height:180px;"><canvas id="chartWeeklyVolume"></canvas></div>
-      </div>
-
       <!-- Torta RIR -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
         <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Distribuzione intensit&agrave; (RIR globale)</div>
         <div style="display:flex;align-items:center;gap:20px;">
           <div style="position:relative;height:160px;width:160px;flex-shrink:0;"><canvas id="chartRIRPie"></canvas></div>
-          <div id="rirPieLegend" style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--text2);"></div>
+          <div id="rirPieLegend" style="display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text2);"></div>
         </div>
       </div>
-
+      <!-- Modal allenamenti del giorno -->
+      <div id="heatmapDayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:400px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-family:var(--display);font-size:14px;font-weight:700;" id="heatmapDayTitle"></div>
+            <button onclick="document.getElementById('heatmapDayModal').style.display='none'" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;">&#10005;</button>
+          </div>
+          <div id="heatmapDayContent" style="font-size:12px;color:var(--text2);line-height:1.8;"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1684,8 +1688,8 @@ async function submitOnboard(){
 // PROGRESS SCREEN
 // ============================================================
 var progressData = [];
-var chartRepsInst = null, chartTotalRepsInst = null, chartRIRInst = null;
-var chartWeeklyVolumeInst = null, chartRIRPieInst = null;
+var chartRepsInst = null, chartTotalRepsInst = null, chartRPEInst = null;
+var chartRIRPieInst = null;
 var currentProgressTab = 'exercise';
 
 var CHART_DEFAULTS = {
@@ -1693,8 +1697,8 @@ var CHART_DEFAULTS = {
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
   scales: {
-    x: { ticks: { color: '#666', font: { family: 'DM Mono, monospace', size: 10 }, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.03)' }, border: { color: 'rgba(255,255,255,0.06)' } },
-    y: { ticks: { color: '#666', font: { family: 'DM Mono, monospace', size: 10 } }, grid: { color: 'rgba(255,255,255,0.03)' }, border: { color: 'rgba(255,255,255,0.06)' } }
+    x: { ticks: { color: '#555', font: { family: 'DM Mono, monospace', size: 9 }, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.03)' }, border: { color: 'rgba(255,255,255,0.05)' } },
+    y: { ticks: { color: '#555', font: { family: 'DM Mono, monospace', size: 9 } }, grid: { color: 'rgba(255,255,255,0.03)' }, border: { color: 'rgba(255,255,255,0.05)' } }
   }
 };
 
@@ -1717,7 +1721,6 @@ async function showProgress(){
     .eq('user_id', currentUser.id)
     .order('created_at', {ascending: true});
   progressData = r.data || [];
-  // Popola dropdown esercizi (solo sessioni con log_data)
   var exercises = {};
   progressData.forEach(function(s){
     if(!s.log_data || !s.log_data.exercises) return;
@@ -1734,188 +1737,203 @@ async function showProgress(){
   }
 }
 
-function destroyChart(inst){ if(inst){ inst.destroy(); } return null; }
+function destroyChart(inst){ if(inst) inst.destroy(); return null; }
+
+// Estrai dati per set da un esercizio (gestisce vecchio e nuovo formato)
+function getExSets(ex){
+  if(Array.isArray(ex.sets)){
+    return ex.sets.filter(function(s){ return s.reps > 0; });
+  }
+  // Vecchio formato
+  if(ex.reps > 0){
+    return [{ reps: ex.reps, rir: ex.rir || 0, rpe: ex.rpe || 0, note: '' }];
+  }
+  return [];
+}
+
+function makeBarOpts(extraY){
+  var opts = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+  if(extraY) Object.assign(opts.scales.y, extraY);
+  return opts;
+}
 
 function renderProgressCharts(){
   var exerciseName = document.getElementById('progressExerciseSelect').value;
   var period = parseInt(document.getElementById('progressPeriodSelect').value);
   var emptyEl = document.getElementById('progressEmpty');
-  if(!exerciseName){ emptyEl.style.display = 'block'; return; }
-  var cutoff = new Date(Date.now() - period * 24 * 60 * 60 * 1000);
+  if(!exerciseName){ emptyEl.style.display='block'; return; }
+  var cutoff = new Date(Date.now() - period * 24*60*60*1000);
   var filtered = progressData.filter(function(s){
     if(new Date(s.created_at) < cutoff) return false;
     if(!s.log_data || !s.log_data.exercises) return false;
     return s.log_data.exercises.some(function(e){ return e.name === exerciseName; });
   });
-  if(!filtered.length){ emptyEl.style.display = 'block'; return; }
-  emptyEl.style.display = 'none';
-  var labels = [], repsData = [], totalRepsData = [], rirData = [];
-  var prReps = 0;
+  if(!filtered.length){ emptyEl.style.display='block'; return; }
+  emptyEl.style.display='none';
+
+  // Shared labels (same for all 3 charts — guaranteed alignment)
+  var labels = filtered.map(function(s){
+    return new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'});
+  });
+
+  var avgRepsData = [], totalRepsData = [], avgRPEData = [];
+  var prReps = 0, grandTotalReps = 0;
+
   filtered.forEach(function(s){
     var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
-    if(!ex) return;
-    labels.push(new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'}));
-    var avgReps, totalReps, avgRir;
-    // Nuovo formato: sets=[{reps,rir},...] / Vecchio formato: reps:N, rir:N
-    if(Array.isArray(ex.sets) && ex.sets.length > 0){
-      var validSets = ex.sets.filter(function(s){ return s.reps > 0; }); // esclude set skippati o non completati
-      totalReps = validSets.reduce(function(acc,s){ return acc + s.reps; }, 0);
-      avgReps = validSets.length > 0 ? Math.round(totalReps / validSets.length * 10) / 10 : 0;
-      var rirSets = validSets.filter(function(s){ return s.rir != null; });
-      avgRir = rirSets.length > 0 ? Math.round(rirSets.reduce(function(acc,s){ return acc + s.rir; }, 0) / rirSets.length * 10) / 10 : null;
-    } else {
-      // Vecchio formato
-      avgReps = ex.reps || 0;
-      totalReps = (typeof ex.sets === 'number' ? ex.sets : 1) * avgReps;
-      avgRir = ex.rir != null ? ex.rir : null;
-    }
-    repsData.push(avgReps);
-    totalRepsData.push(totalReps);
-    rirData.push(avgRir);
-    if(avgReps > prReps) prReps = avgReps;
+    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); return; }
+    var sets = getExSets(ex);
+    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); return; }
+    var tot = sets.reduce(function(a,s){ return a+s.reps; }, 0);
+    var avg = Math.round(tot/sets.length*10)/10;
+    var rpeSets = sets.filter(function(s){ return s.rpe > 0; });
+    var avgRPE = rpeSets.length > 0 ? Math.round(rpeSets.reduce(function(a,s){ return a+s.rpe; },0)/rpeSets.length*10)/10 : null;
+    avgRepsData.push(avg);
+    totalRepsData.push(tot);
+    avgRPEData.push(avgRPE);
+    if(avg > prReps) prReps = avg;
+    grandTotalReps += tot;
   });
+
   document.getElementById('pStatSessions').textContent = filtered.length;
   document.getElementById('pStatPR').textContent = prReps || '—';
-  // Grafico reps medie
+  document.getElementById('pStatTotalReps').textContent = grandTotalReps || '—';
+
+  var accent = '#c8f060', accentDim = 'rgba(200,240,96,0.15)';
+
+  // Chart 1: Media reps — barre verdi
   chartRepsInst = destroyChart(chartRepsInst);
-  var ctxR = document.getElementById('chartReps').getContext('2d');
-  var grad = ctxR.createLinearGradient(0,0,0,200);
-  grad.addColorStop(0,'rgba(200,240,96,0.18)'); grad.addColorStop(1,'rgba(200,240,96,0)');
-  chartRepsInst = new Chart(ctxR, { type:'line', data:{ labels:labels, datasets:[{ data:repsData, borderColor:'#c8f060', backgroundColor:grad, borderWidth:2, pointBackgroundColor:'#c8f060', pointRadius:4, fill:true, tension:0.3 }] }, options: JSON.parse(JSON.stringify(CHART_DEFAULTS)) });
-  // Grafico reps totali
+  chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [{ data: avgRepsData, backgroundColor: accentDim, borderColor: accent, borderWidth: 1.5, borderRadius: 4 }] },
+    options: makeBarOpts()
+  });
+
+  // Chart 2: Reps totali — barre verde scuro
   chartTotalRepsInst = destroyChart(chartTotalRepsInst);
-  var ctxT = document.getElementById('chartTotalReps').getContext('2d');
-  chartTotalRepsInst = new Chart(ctxT, { type:'bar', data:{ labels:labels, datasets:[{ data:totalRepsData, backgroundColor:'rgba(200,240,96,0.15)', borderColor:'rgba(200,240,96,0.5)', borderWidth:1, borderRadius:4 }] }, options: JSON.parse(JSON.stringify(CHART_DEFAULTS)) });
-  // Grafico RIR
-  chartRIRInst = destroyChart(chartRIRInst);
-  var ctxRIR = document.getElementById('chartRIR').getContext('2d');
-  var rirOpts = JSON.parse(JSON.stringify(CHART_DEFAULTS));
-  rirOpts.scales.y.reverse = true; rirOpts.scales.y.min = 0; rirOpts.scales.y.max = 5;
-  rirOpts.scales.y.ticks.callback = function(v){ return v+' RIR'; };
-  chartRIRInst = new Chart(ctxRIR, { type:'line', data:{ labels:labels, datasets:[{ data:rirData, borderColor:'#666', backgroundColor:'transparent', borderWidth:1.5, pointBackgroundColor:'#666', pointRadius:3, tension:0.3, spanGaps:true }] }, options: rirOpts });
+  chartTotalRepsInst = new Chart(document.getElementById('chartTotalReps').getContext('2d'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [{ data: totalRepsData, backgroundColor: 'rgba(200,240,96,0.1)', borderColor: 'rgba(200,240,96,0.4)', borderWidth: 1, borderRadius: 4 }] },
+    options: makeBarOpts()
+  });
+
+  // Chart 3: RPE medio — barre rosse/arancio
+  chartRPEInst = destroyChart(chartRPEInst);
+  chartRPEInst = new Chart(document.getElementById('chartRPE').getContext('2d'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [{ data: avgRPEData, backgroundColor: 'rgba(255,100,60,0.2)', borderColor: 'rgba(255,100,60,0.6)', borderWidth: 1, borderRadius: 4 }] },
+    options: makeBarOpts({ min: 0, max: 10 })
+  });
 }
 
 function renderOverviewCharts(){
   var period = parseInt(document.getElementById('progressPeriodSelectOv').value);
-  var cutoff = new Date(Date.now() - period * 24 * 60 * 60 * 1000);
+  var cutoff = new Date(Date.now() - period * 24*60*60*1000);
   var filtered = progressData.filter(function(s){ return new Date(s.created_at) >= cutoff; });
-
-  // --- HEATMAP ---
   renderHeatmap(filtered, period);
 
-  // --- VOLUME SETTIMANALE PUSH/PULL ---
-  var weeks = {};
+  // Torta RIR — conta ogni set individualmente
+  var rirBuckets = { 'RIR 0': 0, 'RIR 1': 0, 'RIR 2': 0, 'RIR 3+': 0 };
   filtered.forEach(function(s){
     if(!s.log_data || !s.log_data.exercises) return;
-    var d = new Date(s.created_at);
-    // Lunedi della settimana
-    var day = d.getDay(); var diff = (day === 0 ? -6 : 1 - day);
-    var mon = new Date(d); mon.setDate(d.getDate() + diff); mon.setHours(0,0,0,0);
-    var wk = mon.toLocaleDateString('it-IT', {day:'numeric', month:'short'});
-    if(!weeks[wk]) weeks[wk] = {push:0, pull:0};
-    var isPush = (s.workout_name||'').toUpperCase().indexOf('PUSH') > -1;
-    var isPull = (s.workout_name||'').toUpperCase().indexOf('PULL') > -1;
-    var totalSets = s.log_data.exercises.reduce(function(acc,e){ return acc + (e.sets||1); }, 0);
-    if(isPush) weeks[wk].push += totalSets;
-    else if(isPull) weeks[wk].pull += totalSets;
-  });
-  var wkLabels = Object.keys(weeks);
-  var pushData = wkLabels.map(function(w){ return weeks[w].push; });
-  var pullData = wkLabels.map(function(w){ return weeks[w].pull; });
-  chartWeeklyVolumeInst = destroyChart(chartWeeklyVolumeInst);
-  var ctxW = document.getElementById('chartWeeklyVolume').getContext('2d');
-  var wOpts = JSON.parse(JSON.stringify(CHART_DEFAULTS));
-  wOpts.plugins.legend = { display: true, labels: { color:'#888', font:{ family:'DM Mono, monospace', size:10 }, boxWidth:10, padding:12 } };
-  chartWeeklyVolumeInst = new Chart(ctxW, { type:'bar', data:{ labels:wkLabels, datasets:[
-    { label:'Push', data:pushData, backgroundColor:'rgba(200,240,96,0.3)', borderColor:'rgba(200,240,96,0.7)', borderWidth:1, borderRadius:3 },
-    { label:'Pull', data:pullData, backgroundColor:'rgba(96,160,240,0.3)', borderColor:'rgba(96,160,240,0.7)', borderWidth:1, borderRadius:3 }
-  ]}, options: wOpts });
-
-  // --- TORTA RIR ---
-  var rirBuckets = {'0 (massimo)':0, '1':0, '2':0, '3+':0};
-  filtered.forEach(function(s){
-    if(!s.log_data || !s.log_data.exercises) return;
-    s.log_data.exercises.forEach(function(e){
-      // Nuovo formato: sets=[{reps,rir}]
-      if(Array.isArray(e.sets)){
-        e.sets.forEach(function(st){
-          var r = st.rir;
-          if(r == null) return;
-          if(r === 0) rirBuckets['0 (massimo)']++;
-          else if(r === 1) rirBuckets['1']++;
-          else if(r === 2) rirBuckets['2']++;
-          else rirBuckets['3+']++;
-        });
-      } else {
-        // Vecchio formato: rir:N
-        var r = e.rir;
+    s.log_data.exercises.forEach(function(ex){
+      getExSets(ex).forEach(function(st){
+        var r = st.rir;
         if(r == null) return;
-        if(r === 0) rirBuckets['0 (massimo)']++;
-        else if(r === 1) rirBuckets['1']++;
-        else if(r === 2) rirBuckets['2']++;
-        else rirBuckets['3+']++;
-      }
+        if(r === 0) rirBuckets['RIR 0']++;
+        else if(r === 1) rirBuckets['RIR 1']++;
+        else if(r === 2) rirBuckets['RIR 2']++;
+        else rirBuckets['RIR 3+']++;
+      });
     });
   });
   var pieLabels = Object.keys(rirBuckets);
   var pieData = pieLabels.map(function(k){ return rirBuckets[k]; });
-  var pieColors = ['#ff5f5f','#ffaa44','#c8f060','#444'];
-  chartRIRPieInst = destroyChart(chartRIRPieInst);
-  var ctxP = document.getElementById('chartRIRPie').getContext('2d');
-  chartRIRPieInst = new Chart(ctxP, { type:'doughnut', data:{ labels:pieLabels, datasets:[{ data:pieData, backgroundColor:pieColors, borderColor:'#141414', borderWidth:2 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, cutout:'65%' } });
-  // Legenda manuale
-  var legend = document.getElementById('rirPieLegend');
+  var pieColors = ['#ff5f5f', '#ffaa44', '#c8f060', '#444'];
   var total = pieData.reduce(function(a,b){ return a+b; }, 0);
-  legend.innerHTML = pieLabels.map(function(l,i){
+  chartRIRPieInst = destroyChart(chartRIRPieInst);
+  if(total > 0){
+    chartRIRPieInst = new Chart(document.getElementById('chartRIRPie').getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderColor: '#141414', borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '60%' }
+    });
+  }
+  var legend = document.getElementById('rirPieLegend');
+  legend.innerHTML = pieLabels.map(function(l, i){
     var pct = total > 0 ? Math.round(pieData[i]/total*100) : 0;
-    return '<div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:2px;background:'+pieColors[i]+';flex-shrink:0;"></div><span>RIR '+l+' — <strong style="color:var(--text)">'+pct+'%</strong></span></div>';
+    return '<div style="display:flex;align-items:center;gap:8px;">'
+      + '<div style="width:10px;height:10px;border-radius:2px;background:'+pieColors[i]+';flex-shrink:0;"></div>'
+      + '<span>'+l+' — <strong style="color:var(--text)">'+pct+'%</strong> ('+pieData[i]+')</span></div>';
   }).join('');
 }
 
 function renderHeatmap(sessions, period){
   var grid = document.getElementById('heatmapGrid');
   if(!grid) return;
-  // Conta sessioni per giorno
-  var dayCounts = {};
+  // Mappa giorno -> array sessioni
+  var dayMap = {};
   sessions.forEach(function(s){
-    var d = new Date(s.created_at).toDateString();
-    dayCounts[d] = (dayCounts[d] || 0) + 1;
+    var d = new Date(s.created_at);
+    var key = d.toDateString();
+    if(!dayMap[key]) dayMap[key] = [];
+    dayMap[key].push(s);
   });
-  // Genera le ultime N settimane
-  var weeks = Math.min(Math.ceil(period / 7), 26);
+  var weeks = Math.min(Math.ceil(period/7), 26);
   var today = new Date(); today.setHours(0,0,0,0);
   var startDay = new Date(today);
-  startDay.setDate(today.getDate() - (weeks * 7));
-  // Trova il lunedi precedente
-  var dow = startDay.getDay(); var diff = (dow === 0 ? -6 : 1 - dow);
-  startDay.setDate(startDay.getDate() + diff);
+  startDay.setDate(today.getDate() - weeks*7);
+  var dow = startDay.getDay();
+  startDay.setDate(startDay.getDate() + (dow===0 ? -6 : 1-dow));
   var days = []; var cur = new Date(startDay);
   while(cur <= today){ days.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
-  // Raggruppa per settimana
   var wkArrays = [];
   for(var i=0; i<days.length; i+=7) wkArrays.push(days.slice(i, i+7));
-  // Renderizza: righe = giorni settimana (Lun-Dom), colonne = settimane
   var dayNames = ['L','M','M','G','V','S','D'];
   grid.innerHTML = '';
   for(var di=0; di<7; di++){
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:3px;align-items:center;';
     var lbl = document.createElement('div');
-    lbl.style.cssText = 'width:12px;font-size:8px;color:#555;text-align:right;flex-shrink:0;';
+    lbl.style.cssText = 'width:10px;font-size:7px;color:#444;text-align:right;flex-shrink:0;';
     lbl.textContent = dayNames[di];
     row.appendChild(lbl);
     wkArrays.forEach(function(wk){
       var cell = document.createElement('div');
-      cell.style.cssText = 'width:12px;height:12px;border-radius:2px;flex-shrink:0;';
       var d = wk[di];
-      if(!d || d > today){ cell.style.background = 'transparent'; }
-      else {
-        var cnt = dayCounts[d.toDateString()] || 0;
-        if(cnt === 0) cell.style.background = 'var(--border2)';
-        else if(cnt === 1) cell.style.background = 'rgba(200,240,96,0.35)';
-        else if(cnt === 2) cell.style.background = 'rgba(200,240,96,0.65)';
-        else cell.style.background = '#c8f060';
-        if(cnt > 0) cell.title = d.toLocaleDateString('it-IT',{day:'numeric',month:'short'}) + ' — ' + cnt + ' sess.';
+      if(!d || d > today){
+        cell.style.cssText = 'width:14px;height:14px;border-radius:2px;flex-shrink:0;background:transparent;';
+      } else {
+        var cnt = (dayMap[d.toDateString()] || []).length;
+        var bg = cnt===0 ? 'var(--border2)' : cnt===1 ? 'rgba(200,240,96,0.35)' : cnt===2 ? 'rgba(200,240,96,0.65)' : '#c8f060';
+        var dayNum = d.getDate();
+        cell.style.cssText = 'width:14px;height:14px;border-radius:2px;flex-shrink:0;background:'+bg+';position:relative;cursor:'+(cnt>0?'pointer':'default')+';display:flex;align-items:flex-end;justify-content:flex-end;';
+        // Numero del giorno in basso a destra (tipo Windows)
+        var numSpan = document.createElement('span');
+        numSpan.style.cssText = 'font-size:6px;line-height:1;color:'+(cnt>0?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.2)')+';padding:1px;font-family:DM Mono,monospace;';
+        numSpan.textContent = dayNum;
+        cell.appendChild(numSpan);
+        if(cnt > 0){
+          (function(date, sessList){
+            cell.onclick = function(){
+              var modal = document.getElementById('heatmapDayModal');
+              var title = document.getElementById('heatmapDayTitle');
+              var content = document.getElementById('heatmapDayContent');
+              title.textContent = date.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
+              content.innerHTML = sessList.map(function(s){
+                var exList = (s.log_data && s.log_data.exercises) ? s.log_data.exercises.map(function(ex){
+                  var sets = getExSets(ex);
+                  var tot = sets.reduce(function(a,st){ return a+st.reps; },0);
+                  return '<div style="color:var(--accent);margin-top:6px;">'+ex.name+'</div>'
+                    + sets.map(function(st,i){ return '<div>Set '+(i+1)+': '+st.reps+' reps | RIR '+st.rir+(st.rpe?' | RPE '+st.rpe:'')+(st.note?' | '+st.note:'')+'</div>'; }).join('');
+                }).join('') : '';
+                return '<div style="border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:8px;">'
+                  +'<div style="font-weight:500;">'+s.workout_name+'</div>'+exList+'</div>';
+              }).join('');
+              modal.style.display = 'flex';
+            };
+          })(d, dayMap[d.toDateString()]);
+        }
       }
       row.appendChild(cell);
     });
