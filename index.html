@@ -446,7 +446,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
           <button onclick="calNavMonth(1)" style="background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:var(--mono);font-size:12px;padding:4px 10px;cursor:pointer;">&rarr;</button>
         </div>
         <!-- Intestazione giorni settimana -->
-        <div style="display:flex;gap:3px;margin-bottom:4px;">
+        <div style="display:flex;gap:3px;margin-bottom:4px;padding-left:0;">
           <div style="width:28px;font-size:9px;color:#555;text-align:center;">L</div>
           <div style="width:28px;font-size:9px;color:#555;text-align:center;">M</div>
           <div style="width:28px;font-size:9px;color:#555;text-align:center;">M</div>
@@ -1428,9 +1428,9 @@ function fmtText(t){
   t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
   // Rimuovi [LOG_DATA:...] dal bubble
   t=stripLogData(t);
-  // Rimuovi righe set info strutturate (già visibili negli info box) — es. "Chinup — Set 2/3 | 6-8 reps | Tempo: 30X2 | Recupero: 02:00"
-  t=t.replace(/^[\w\s]+ [—–] Set \d+\/\d+.*$/gm,'');
-  // Rimuovi "Recupero: mm:ss" standalone (già visibile nel timer)
+  // Rimuovi righe set info strutturate (contengono | e Set N/TOT) — già visibili negli info box
+  t=t.replace(/^.+Set\s+\d+\/\d+.+\|.+$/gm,'');
+  // Rimuovi "Recupero: mm:ss" standalone
   t=t.replace(/^[Rr]ecupero:\s*\d+:\d+\s*$/gm,'');
   t=t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'');
   t=t.replace(/\n{3,}/g,'\n\n').replace(/^\n+|\n+$/g,'').trim();
