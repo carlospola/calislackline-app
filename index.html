@@ -1142,17 +1142,26 @@ function updateSetInfo(text){
     box.innerHTML = html;
   }
 
-  // Timer: prendi il recupero del PRIMO [SET:] nella risposta
-  // Il primo [SET:] è sempre il set corrente da fare
+  // Timer: prendi il recupero dalla RIGA del set mostrato nel setInfoBox
+  // Cerca "Recupero: mm:ss" sulla stessa riga del primo set info (es. "Set 1/3 | ... | Recupero: 02:00")
   if(supersetMatch || setMatch){
-    var allSetMatches = text.match(/\[SET:[^\]]+\]/g) || [];
-    var firstSetPos = allSetMatches.length > 0 ? text.indexOf(allSetMatches[0]) : 0;
-    var textFromFirstSet = text.substring(firstSetPos);
-    var m = textFromFirstSet.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
-    if(!m) m = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
-    if(m){
-      var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
-      sessionTimerSet(newSeconds);
+    var timerSeconds = 0;
+    // Cerca nelle righe che contengono "Set N/TOT" il primo recupero
+    var textLines = text.split('\n');
+    for(var ti = 0; ti < textLines.length; ti++){
+      var tl = textLines[ti];
+      if(tl.match(/Set\s+\d+\/\d+/i) && !tl.match(/SUPERSET/i)){
+        var rm = tl.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
+        if(rm){ timerSeconds = parseInt(rm[1])*60+parseInt(rm[2]); break; }
+      }
+    }
+    if(!timerSeconds){
+      // Fallback: primo recupero nel testo
+      var fm = text.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
+      if(fm) timerSeconds = parseInt(fm[1])*60+parseInt(fm[2]);
+    }
+    if(timerSeconds){
+      sessionTimerSet(timerSeconds);
       if(sessionFirstSetDone && !sessionTimerRunning) sessionTimerToggle();
     }
   }
