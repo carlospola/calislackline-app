@@ -1065,9 +1065,21 @@ function updateSetInfo(text){
 function extractOptions(text){
   var lines=text.split('\n'), options=[];
   for(var i=0;i<lines.length;i++){
-    // Supporta: "- opzione" e "1. opzione" e "1) opzione"
+    // Supporta: "- opzione", "1. opzione", "1) opzione"
     var m=lines[i].match(/^[\s]*(?:[-]|\d+[.)])\s+(.+)$/);
     if(m){var opt=m[1].replace(/\*\*/g,'').trim(); if(opt.length>0&&opt.length<60) options.push(opt);}
+  }
+  // Fallback: formato slash inline "opzione1 / opzione2 / opzione3?"
+  // Scatta solo se non sono state trovate opzioni lista e c'è almeno uno slash
+  if(options.length===0){
+    var slashLine='';
+    for(var j=0;j<lines.length;j++){
+      if(lines[j].indexOf(' / ')>-1){slashLine=lines[j].replace(/\?$/,'').trim(); break;}
+    }
+    if(slashLine){
+      var parts=slashLine.split(' / ').map(function(p){return p.replace(/\*\*/g,'').trim();});
+      parts.forEach(function(p){if(p.length>0&&p.length<60) options.push(p);});
+    }
   }
   return options;
 }
