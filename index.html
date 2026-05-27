@@ -945,13 +945,10 @@ function sendMsg(){
   // Avvia timer solo se sono state inserite reps numeriche (non su testo libero)
   var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
   if(hasReps){
-    // Reset e riparti sempre — non togglare (potrebbe essere in pausa o già running)
-    if(sessionTimerTotal <= 0) sessionTimerSet(90);
-    else sessionTimerReset();
-    // Piccolo delay per assicurarsi che il reset sia completato prima di partire
-    setTimeout(function(){
-      if(!sessionTimerRunning) sessionTimerToggle();
-    }, 50);
+    // Stoppa il timer corrente — ripartirà con il valore corretto quando arriva la risposta AI
+    if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
+    document.getElementById('sessionTimerGo').textContent='Start';
+    document.getElementById('sessionTimerNum').style.color='var(--text)';
   }
   aiSend(txt, false);
 }
@@ -1135,11 +1132,9 @@ function updateSetInfo(text){
   // Se il timer è fermo: imposta il nuovo valore
   if(m){
     var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
-    if(sessionTimerRunning){
-      sessionTimerTotal = newSeconds; // aggiorna per il prossimo reset
-    } else {
-      sessionTimerSet(newSeconds);
-    }
+    // Imposta sempre il nuovo recupero e fai partire il timer automaticamente
+    sessionTimerSet(newSeconds);
+    setTimeout(function(){ if(!sessionTimerRunning) sessionTimerToggle(); }, 50);
   }
 }
 
