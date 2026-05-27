@@ -909,10 +909,10 @@ function buildSkipMessage(){
   var totalSets = parseInt(setMatch[2]);
   if(currentSet < totalSets){
     // Ci sono ancora set — chiedi esplicitamente il prossimo set dello stesso esercizio
-    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' — mostra Set ' + (currentSet+1) + '/' + totalSets + ' di ' + exerciseName;
+    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' — mostra subito [SET:' + exerciseName + '] Set ' + (currentSet+1) + '/' + totalSets;
   } else {
-    // Ultimo set — passa al prossimo esercizio
-    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' (ultimo set) — passa al prossimo esercizio';
+    // Ultimo set — passa al prossimo esercizio senza aspettare
+    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' completato (ultimo set) — mostra subito il primo set dell\'esercizio successivo con [SET:NomeEsercizio]';
   }
 }
 
