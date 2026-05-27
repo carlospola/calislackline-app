@@ -1057,7 +1057,8 @@ function updateSetInfo(text){
 function extractOptions(text){
   var lines=text.split('\n'), options=[];
   for(var i=0;i<lines.length;i++){
-    var m=lines[i].match(/^[\s]*[-]\s+(.+)$/);
+    // Supporta: "- opzione" e "1. opzione" e "1) opzione"
+    var m=lines[i].match(/^[\s]*(?:[-]|\d+[.)])\s+(.+)$/);
     if(m){var opt=m[1].replace(/\*\*/g,'').trim(); if(opt.length>0&&opt.length<60) options.push(opt);}
   }
   return options;
@@ -1113,7 +1114,7 @@ function fmtText(t){
   t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
   t=t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'');
   t=t.replace(/\n{3,}/g,'\n\n').trim();
-  if(t.indexOf('WORKOUT LOG')>-1||t.indexOf('=====')>-1)
+  if(t.indexOf('WORKOUT LOG')>-1)
     return '<pre style="font-size:11px;line-height:1.7;white-space:pre-wrap;color:#aaa;background:#0a0a0a;padding:12px;border-radius:6px;border:1px solid var(--border);">'+esc(t)+'</pre>';
   return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
 }
