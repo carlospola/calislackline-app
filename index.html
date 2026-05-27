@@ -982,7 +982,13 @@ async function aiSend(text, isFirst){
     var reply = (data.content&&data.content[0]&&data.content[0].text)||'Errore risposta.';
     sessionHistory.push({role:'assistant', content:reply});
     addBubble('ai', reply);
-    if(text==='fine'&&reply.indexOf('WORKOUT LOG')>-1) saveSessionLog(reply);
+    if(text==='fine'&&reply.indexOf('WORKOUT LOG')>-1){
+      saveSessionLog(reply);
+      // Ferma il timer a fine sessione
+      if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
+      document.getElementById('sessionTimerGo').textContent='Start';
+      document.getElementById('sessionTimerNum').style.color='var(--text)';
+    }
   }catch(e){
     removeTyping(tid);
     addBubble('ai', 'Errore connessione. Riprova.');
@@ -1208,6 +1214,8 @@ function addBubble(role, text){
 
 function fmtText(t){
   t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
+  // Rimuovi [LOG_DATA:...] dal bubble — il dato è già salvato su Supabase
+  t=t.replace(/\[LOG_DATA:[^\]]*\]/g,'');
   t=t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'');
   t=t.replace(/\n{3,}/g,'\n\n').trim();
   if(t.indexOf('WORKOUT LOG')>-1)
