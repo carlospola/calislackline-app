@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AILISTENICS</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
@@ -197,7 +198,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 <div class="screen" id="dashScreen">
   <div class="topbar">
     <div class="topbar-brand">AILISTENICS</div>
-    <div class="topbar-right"><div class="topbar-user" id="dashUserLabel"></div><button class="topbar-btn" onclick="showProfile()">Profilo</button><button class="topbar-btn" onclick="doLogout()">Esci</button></div>
+    <div class="topbar-right"><div class="topbar-user" id="dashUserLabel"></div><button class="topbar-btn" onclick="showProgress()">Progressi</button><button class="topbar-btn" onclick="showProfile()">Profilo</button><button class="topbar-btn" onclick="doLogout()">Esci</button></div>
   </div>
   <div class="dash-body">
     <div><div class="dash-name" id="dashWelcome">Ciao!</div><div class="dash-sub">Pronto per allenarti oggi?</div></div>
@@ -354,6 +355,66 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
           <svg viewBox="0 0 24 24" fill="none" width="17" height="17"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRESS SCREEN -->
+<div class="screen" id="progressScreen">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="topbar-btn" onclick="showDash()">&larr; Torna</button>
+      <div class="topbar-brand">Progressi</div>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:20px;" id="progressBody">
+
+    <!-- Selettore esercizio -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <select id="progressExerciseSelect" onchange="renderProgressCharts()" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
+        <option value="">Seleziona esercizio...</option>
+      </select>
+      <select id="progressPeriodSelect" onchange="renderProgressCharts()" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
+        <option value="30">30 giorni</option>
+        <option value="90" selected>3 mesi</option>
+        <option value="180">6 mesi</option>
+        <option value="9999">Tutto</option>
+      </select>
+    </div>
+
+    <!-- Stat cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;" id="progressStats">
+      <div class="stat-card"><div class="stat-num" id="pStatSessions">—</div><div class="stat-lbl">SESSIONI</div></div>
+      <div class="stat-card"><div class="stat-num" id="pStatPR" style="color:var(--accent);">—</div><div class="stat-lbl">PR REPS</div></div>
+      <div class="stat-card"><div class="stat-num" id="pStatLastRIR">—</div><div class="stat-lbl">ULTIMO RIR</div></div>
+    </div>
+
+    <!-- Grafico reps -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">Reps per set</div>
+      <div style="position:relative;height:200px;">
+        <canvas id="chartReps"></canvas>
+      </div>
+    </div>
+
+    <!-- Grafico RIR -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">RIR medio</div>
+      <div style="position:relative;height:140px;">
+        <canvas id="chartRIR"></canvas>
+      </div>
+    </div>
+
+    <!-- Grafico volume -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Volume (sets &times; reps)</div>
+      <div style="position:relative;height:140px;">
+        <canvas id="chartVolume"></canvas>
+      </div>
+    </div>
+
+    <div id="progressEmpty" style="display:none;text-align:center;padding:40px 0;font-size:12px;color:var(--muted);">
+      Nessun dato disponibile per questo esercizio nel periodo selezionato.
     </div>
   </div>
 </div>
@@ -1580,6 +1641,184 @@ async function submitOnboard(){
     document.getElementById('onboardSuccess').style.display='flex';
     if(currentUser) document.getElementById('onboardSuccessDemo').style.display='block';
   }catch(e){btn.disabled=false; btn.textContent='Invia richiesta coaching'; errEl.textContent='Errore. Riprova.';}
+}
+
+
+// ============================================================
+// PROGRESS SCREEN
+// ============================================================
+var progressData = []; // sessioni con log_data caricate
+var chartRepsInst = null, chartRIRInst = null, chartVolumeInst = null;
+
+async function showProgress(){
+  showScreen('progressScreen');
+  // Carica tutte le sessioni con log_data per questo utente
+  var r = await sb.from('sessions')
+    .select('id,workout_name,created_at,log_data')
+    .eq('user_id', currentUser.id)
+    .not('log_data', 'is', null)
+    .order('created_at', {ascending: true});
+  progressData = r.data || [];
+  // Popola il dropdown con gli esercizi unici
+  var exercises = {};
+  progressData.forEach(function(s){
+    if(!s.log_data || !s.log_data.exercises) return;
+    s.log_data.exercises.forEach(function(e){
+      if(e.name) exercises[e.name] = true;
+    });
+  });
+  var sel = document.getElementById('progressExerciseSelect');
+  sel.innerHTML = '<option value="">Seleziona esercizio...</option>';
+  Object.keys(exercises).sort().forEach(function(name){
+    var opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  // Se c'è un solo esercizio, selezionalo subito
+  if(Object.keys(exercises).length === 1){
+    sel.value = Object.keys(exercises)[0];
+    renderProgressCharts();
+  } else {
+    clearProgressCharts();
+  }
+}
+
+function clearProgressCharts(){
+  if(chartRepsInst){ chartRepsInst.destroy(); chartRepsInst = null; }
+  if(chartRIRInst){ chartRIRInst.destroy(); chartRIRInst = null; }
+  if(chartVolumeInst){ chartVolumeInst.destroy(); chartVolumeInst = null; }
+  document.getElementById('pStatSessions').textContent = '—';
+  document.getElementById('pStatPR').textContent = '—';
+  document.getElementById('pStatLastRIR').textContent = '—';
+  document.getElementById('progressEmpty').style.display = 'none';
+}
+
+function renderProgressCharts(){
+  var exerciseName = document.getElementById('progressExerciseSelect').value;
+  var period = parseInt(document.getElementById('progressPeriodSelect').value);
+  if(!exerciseName){ clearProgressCharts(); return; }
+
+  var cutoff = new Date(Date.now() - period * 24 * 60 * 60 * 1000);
+
+  // Filtra sessioni per esercizio e periodo
+  var filtered = progressData.filter(function(s){
+    if(new Date(s.created_at) < cutoff) return false;
+    if(!s.log_data || !s.log_data.exercises) return false;
+    return s.log_data.exercises.some(function(e){ return e.name === exerciseName; });
+  });
+
+  if(!filtered.length){
+    clearProgressCharts();
+    document.getElementById('progressEmpty').style.display = 'block';
+    return;
+  }
+  document.getElementById('progressEmpty').style.display = 'none';
+
+  // Costruisci dataset
+  var labels = [], repsData = [], rirData = [], volumeData = [];
+  var prReps = 0, lastRIR = '—';
+
+  filtered.forEach(function(s){
+    var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
+    if(!ex) return;
+    var date = new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'});
+    labels.push(date);
+    repsData.push(ex.reps || 0);
+    rirData.push(ex.rir != null ? ex.rir : null);
+    volumeData.push((ex.sets || 1) * (ex.reps || 0));
+    if((ex.reps || 0) > prReps) prReps = ex.reps;
+    lastRIR = ex.rir != null ? ex.rir : '—';
+  });
+
+  // Stat cards
+  document.getElementById('pStatSessions').textContent = filtered.length;
+  document.getElementById('pStatPR').textContent = prReps || '—';
+  document.getElementById('pStatLastRIR').textContent = lastRIR;
+
+  var accent = '#c8f060';
+  var muted = 'rgba(136,136,136,0.4)';
+  var accentDim = 'rgba(200,240,96,0.15)';
+  var chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: {} } },
+    scales: {
+      x: { ticks: { color: '#888', font: { family: 'DM Mono, monospace', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'rgba(255,255,255,0.08)' } },
+      y: { ticks: { color: '#888', font: { family: 'DM Mono, monospace', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'rgba(255,255,255,0.08)' } }
+    }
+  };
+
+  // Grafico reps
+  if(chartRepsInst) chartRepsInst.destroy();
+  var ctxR = document.getElementById('chartReps').getContext('2d');
+  var gradR = ctxR.createLinearGradient(0, 0, 0, 200);
+  gradR.addColorStop(0, accentDim);
+  gradR.addColorStop(1, 'rgba(200,240,96,0)');
+  chartRepsInst = new Chart(ctxR, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: repsData,
+        borderColor: accent,
+        backgroundColor: gradR,
+        borderWidth: 2,
+        pointBackgroundColor: accent,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: Object.assign({}, chartDefaults)
+  });
+
+  // Grafico RIR
+  if(chartRIRInst) chartRIRInst.destroy();
+  var ctxRIR = document.getElementById('chartRIR').getContext('2d');
+  chartRIRInst = new Chart(ctxRIR, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: rirData,
+        borderColor: '#888',
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        pointBackgroundColor: '#888',
+        pointRadius: 3,
+        tension: 0.3,
+        spanGaps: true
+      }]
+    },
+    options: Object.assign({}, chartDefaults, {
+      scales: Object.assign({}, chartDefaults.scales, {
+        y: Object.assign({}, chartDefaults.scales.y, { reverse: true, min: 0, max: 5,
+          ticks: Object.assign({}, chartDefaults.scales.y.ticks, {
+            callback: function(v){ return v + ' RIR'; }
+          })
+        })
+      })
+    })
+  });
+
+  // Grafico volume
+  if(chartVolumeInst) chartVolumeInst.destroy();
+  var ctxV = document.getElementById('chartVolume').getContext('2d');
+  chartVolumeInst = new Chart(ctxV, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: volumeData,
+        backgroundColor: 'rgba(200,240,96,0.2)',
+        borderColor: 'rgba(200,240,96,0.6)',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: Object.assign({}, chartDefaults)
+  });
 }
 
 function buildAthleteContext(profile){
