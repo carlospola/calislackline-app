@@ -1212,10 +1212,27 @@ function addBubble(role, text){
   msgs.scrollTop=msgs.scrollHeight;
 }
 
+function stripLogData(t){
+  // Rimuovi [LOG_DATA:{...}] con conteggio parentesi — gestisce JSON annidato
+  var start = t.indexOf('[LOG_DATA:');
+  if(start === -1) return t;
+  var braceStart = t.indexOf('{', start);
+  if(braceStart === -1) return t.substring(0, start);
+  var depth = 0, end = -1;
+  for(var i = braceStart; i < t.length; i++){
+    if(t[i] === '{') depth++;
+    else if(t[i] === '}') { depth--; if(depth === 0){ end = i; break; } }
+  }
+  if(end === -1) return t.substring(0, start);
+  var closeBracket = t.indexOf(']', end);
+  if(closeBracket === -1) return t.substring(0, start);
+  return (t.substring(0, start) + t.substring(closeBracket + 1)).trim();
+}
+
 function fmtText(t){
   t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
   // Rimuovi [LOG_DATA:...] dal bubble — il dato è già salvato su Supabase
-  t=t.replace(/\[LOG_DATA:[^\]]*\]/g,'');
+  t=stripLogData(t);
   t=t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'');
   t=t.replace(/\n{3,}/g,'\n\n').trim();
   if(t.indexOf('WORKOUT LOG')>-1)
