@@ -885,7 +885,11 @@ function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt
   aiSend('Inizia sessione: '+programName, true);
 }
 
-function qSend(t){addBubble('user',t); aiSend(t,false);}
+function qSend(t){
+  addBubble('user',t);
+  if(t==='skip') sessionFirstSetDone = true; // skip conta come set fatto
+  aiSend(t,false);
+}
 
 function selRpe(btn, val){
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
