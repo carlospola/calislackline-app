@@ -928,8 +928,13 @@ function sendMsg(){
   // Avvia timer solo se sono state inserite reps numeriche (non su testo libero)
   var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
   if(hasReps){
-    if(sessionTimerTotal <= 0) sessionTimerSet(90); // fallback 1:30 se nessun recupero impostato
-    sessionTimerToggle();
+    // Reset e riparti sempre — non togglare (potrebbe essere in pausa o già running)
+    if(sessionTimerTotal <= 0) sessionTimerSet(90);
+    else sessionTimerReset();
+    // Piccolo delay per assicurarsi che il reset sia completato prima di partire
+    setTimeout(function(){
+      if(!sessionTimerRunning) sessionTimerToggle();
+    }, 50);
   }
   aiSend(txt, false);
 }
