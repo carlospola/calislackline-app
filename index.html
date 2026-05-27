@@ -967,7 +967,7 @@ async function showDash(){
   if(currentProfile&&currentProfile._isDemo&&currentProfile._orig) currentProfile=currentProfile._orig;
   showScreen('dashScreen');
   var name = (currentProfile&&currentProfile.name)||currentUser.email.split('@')[0];
-  document.getElementById('dashUserLabel').textContent = name;
+  var dul = document.getElementById('dashUserLabel'); if(dul) dul.textContent = name;
   document.getElementById('dashWelcome').textContent = 'Ciao, '+name.split(' ')[0]+'!';
   var requestBtn = document.getElementById('requestProgramBtn');
   var sessionBtn = document.getElementById('personalizedSessionBtn');
