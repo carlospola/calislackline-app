@@ -874,10 +874,16 @@ async function showDash(){
 function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt){
   if(!coachRules && !extraPrompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
   currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:workoutCsv||'', ai_prompt:extraPrompt||''});
-  sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null;
+  sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
+  // Reset timer completo
+  if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
+  sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
   document.getElementById('sessionTitle').textContent = programName;
   document.getElementById('messages').innerHTML='';
+  document.getElementById('sessionTimerNum').textContent='00:00';
+  document.getElementById('sessionTimerNum').style.color='var(--text)';
+  document.getElementById('sessionTimerGo').textContent='\u25B6';
   var box=document.getElementById('setInfoBox'); if(box) box.innerHTML='In attesa...';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode='single'; currentExercises=[];
