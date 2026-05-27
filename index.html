@@ -1716,7 +1716,106 @@ var progressData = [];
 var chartRepsInst = null, chartTotalRepsInst = null, chartRPEInst = null;
 var chartRIRPieInst = null;
 var chartOvRPEInst = null;
-var calCurrentMonth = null; // null = mostra tutti i mesi (heatmap globale)
+var calCurrentMonth = null;
+var currentProgressTab = 'exercise';
+
+var CHART_DEFAULTS = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { color: '#555', font: { family: 'DM Mono, monospace', size: 9 }, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.03)' }, border: { color: 'rgba(255,255,255,0.05)' } },
+    y: { ticks: { color: '#555', font: { family: 'DM Mono, monospace', size: 9 } }, grid: { color: 'rgba(255,255,255,0.03)' }, border: { color: 'rgba(255,255,255,0.05)' } }
+  }
+};
+
+function switchProgressTab(tab){
+  currentProgressTab = tab;
+  document.getElementById('ptabExContent').style.display = tab === 'exercise' ? 'block' : 'none';
+  document.getElementById('ptabOvContent').style.display = tab === 'overview' ? 'block' : 'none';
+  document.getElementById('ptabEx').style.color = tab === 'exercise' ? 'var(--accent)' : '';
+  document.getElementById('ptabEx').style.borderColor = tab === 'exercise' ? 'var(--accent)' : '';
+  document.getElementById('ptabOv').style.color = tab === 'overview' ? 'var(--accent)' : '';
+  document.getElementById('ptabOv').style.borderColor = tab === 'overview' ? 'var(--accent)' : '';
+  if(tab === 'overview') renderOverviewCharts();
+}
+
+async function showProgress(){
+  showScreen('progressScreen');
+  switchProgressTab('exercise');
+  var r = await sb.from('sessions')
+    .select('id,workout_name,created_at,log_data')
+    .eq('user_id', currentUser.id)
+    .order('created_at', {ascending: true});
+  progressData = r.data || [];
+  var exercises = {};
+  progressData.forEach(function(s){
+    if(!s.log_data || !s.log_data.exercises) return;
+    s.log_data.exercises.forEach(function(e){ if(e.name) exercises[e.name] = true; });
+  });
+  var sel = document.getElementById('progressExerciseSelect');
+  sel.innerHTML = '<option value="">Seleziona esercizio...</option>';
+  Object.keys(exercises).sort().forEach(function(name){
+    var opt = document.createElement('option'); opt.value = name; opt.textContent = name; sel.appendChild(opt);
+  });
+  if(Object.keys(exercises).length >= 1){ sel.value = Object.keys(exercises)[0]; renderProgressCharts(); }
+}
+
+function destroyChart(inst){ if(inst) inst.destroy(); return null; }
+
+function getExSets(ex){
+  if(Array.isArray(ex.sets)) return ex.sets.filter(function(s){ return s.reps > 0; });
+  if(ex.reps > 0) return [{ reps: ex.reps, rir: ex.rir||0, rpe: ex.rpe||0, note: '' }];
+  return [];
+}
+
+function makeBarOpts(extraY){
+  var opts = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+  if(extraY) Object.assign(opts.scales.y, extraY);
+  return opts;
+}
+
+function renderProgressCharts(){
+  var exerciseName = document.getElementById('progressExerciseSelect').value;
+  var period = parseInt(document.getElementById('progressPeriodSelect').value);
+  var emptyEl = document.getElementById('progressEmpty');
+  if(!exerciseName){ emptyEl.style.display='block'; return; }
+  var cutoff = new Date(Date.now() - period * 24*60*60*1000);
+  var filtered = progressData.filter(function(s){
+    if(new Date(s.created_at) < cutoff) return false;
+    if(!s.log_data || !s.log_data.exercises) return false;
+    return s.log_data.exercises.some(function(e){ return e.name === exerciseName; });
+  });
+  if(!filtered.length){ emptyEl.style.display='block'; return; }
+  emptyEl.style.display='none';
+  var labels = filtered.map(function(s){ return new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'}); });
+  var avgRepsData=[], totalRepsData=[], avgRPEData=[];
+  var prReps=0, grandTotalReps=0, totalSetsCount=0;
+  filtered.forEach(function(s){
+    var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
+    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); return; }
+    var sets = getExSets(ex);
+    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); return; }
+    var tot = sets.reduce(function(a,s){ return a+s.reps; },0);
+    var avg = Math.round(tot/sets.length*10)/10;
+    var rpeSets = sets.filter(function(s){ return s.rpe>0; });
+    var avgRPE = rpeSets.length>0 ? Math.round(rpeSets.reduce(function(a,s){ return a+s.rpe; },0)/rpeSets.length*10)/10 : null;
+    avgRepsData.push(avg); totalRepsData.push(tot); avgRPEData.push(avgRPE);
+    sets.forEach(function(st){ if(st.reps > prReps) prReps = st.reps; });
+    grandTotalReps += tot; totalSetsCount += sets.length;
+  });
+  var globalAvgReps = totalSetsCount>0 ? Math.round(grandTotalReps/totalSetsCount*10)/10 : 0;
+  document.getElementById('pStatSessions').textContent = totalSetsCount || '—';
+  document.getElementById('pStatPR').textContent = prReps || '—';
+  document.getElementById('pStatAvgReps').textContent = globalAvgReps || '—';
+  document.getElementById('pStatTotalReps').textContent = grandTotalReps || '—';
+  var accent='#c8f060', accentDim='rgba(200,240,96,0.15)';
+  chartRepsInst = destroyChart(chartRepsInst);
+  chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRepsData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
+  chartTotalRepsInst = destroyChart(chartTotalRepsInst);
+  chartTotalRepsInst = new Chart(document.getElementById('chartTotalReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:totalRepsData, backgroundColor:'rgba(200,240,96,0.1)', borderColor:'rgba(200,240,96,0.4)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts() });
+  chartRPEInst = destroyChart(chartRPEInst);
+  chartRPEInst = new Chart(document.getElementById('chartRPE').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRPEData, backgroundColor:'rgba(255,100,60,0.2)', borderColor:'rgba(255,100,60,0.6)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts({ min:0, max:10 }) });
+}
 
 function calNavMonth(dir){
   if(calCurrentMonth === null){
