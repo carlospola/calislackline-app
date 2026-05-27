@@ -945,11 +945,10 @@ function sendMsg(){
   // Avvia timer solo se sono state inserite reps numeriche (non su testo libero)
   var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
   if(hasReps){
-    // Resetta e fa partire il timer con il valore di recupero corrente
+    // Stoppa il recupero precedente se sta girando — il nuovo partirà con la risposta AI
     if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
-    var startSecs = sessionTimerTotal > 0 ? sessionTimerTotal : 90;
-    sessionTimerSet(startSecs);
-    setTimeout(function(){ if(!sessionTimerRunning) sessionTimerToggle(); }, 50);
+    document.getElementById('sessionTimerGo').textContent='Start';
+    document.getElementById('sessionTimerNum').style.color='var(--text)';
   }
   aiSend(txt, false);
 }
@@ -994,15 +993,14 @@ async function aiSend(text, isFirst){
 }
 
 async function saveSessionLog(log){
-  // Estrai [LOG_DATA:{...}] dal testo del log
-  // Usa parsing manuale per gestire JSON annidato (la regex lazy si ferma alla prima })
   var logData = null;
   var tagStart = log.indexOf('[LOG_DATA:');
+  var jsonEnd = -1; // dichiarato nello scope esterno
+
   if(tagStart > -1){
     var jsonStart = log.indexOf('{', tagStart);
     if(jsonStart > -1){
-      // Conta le parentesi graffe per trovare la chiusura corretta
-      var depth = 0, jsonEnd = -1;
+      var depth = 0;
       for(var i = jsonStart; i < log.length; i++){
         if(log[i] === '{') depth++;
         else if(log[i] === '}') { depth--; if(depth === 0){ jsonEnd = i; break; } }
@@ -1012,8 +1010,8 @@ async function saveSessionLog(log){
       }
     }
   }
-  // Rimuovi tutto il tag [LOG_DATA:...] dal testo visibile
-  // Pulizia testo: rimuovi tutto da [LOG_DATA: fino alla ] di chiusura
+
+  // Rimuovi [LOG_DATA:...] dal testo visibile
   var cleanLog = log;
   if(tagStart > -1){
     if(jsonEnd > -1){
@@ -1027,6 +1025,7 @@ async function saveSessionLog(log){
       cleanLog = log.substring(0, tagStart).trim();
     }
   }
+
   await sb.from('sessions').insert({
     user_id: currentUser.id,
     workout_name: sessionWorkout,
@@ -1131,16 +1130,11 @@ function updateSetInfo(text){
   // Aggiorna sempre il valore di recupero quando arriva un nuovo set dall'AI
   // Se il timer sta girando: aggiorna solo sessionTimerTotal (non resettare il display)
   // Se il timer è fermo: imposta il nuovo valore
-  if(m){
+  if(m && (supersetMatch || setMatch)){
     var newSeconds = parseInt(m[1])*60+parseInt(m[2]);
-    // Aggiorna il valore di recupero — il timer partirà solo quando l'atleta registra un set
-    sessionTimerTotal = newSeconds;
-    sessionTimerLeft = newSeconds;
-    if(!sessionTimerRunning){
-      document.getElementById('sessionTimerNum').textContent = fmtTime(newSeconds);
-      document.getElementById('sessionTimerNum').style.color = 'var(--text)';
-      document.getElementById('sessionTimerGo').textContent = 'Start';
-    }
+    // Imposta e fa partire il recupero — solo se c'è un [SET:] nella risposta
+    sessionTimerSet(newSeconds);
+    if(!sessionTimerRunning) sessionTimerToggle();
   }
 }
 
