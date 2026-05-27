@@ -686,39 +686,42 @@ async function init(){
   var code = params.get('code'), error = params.get('error');
   if(code||error) window.history.replaceState({}, document.title, window.location.pathname);
   if(error){clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent='Errore login. Riprova.'; return;}
-  // onAuthStateChange: NON async — evita "message channel closed" error in Chrome
-  sb.auth.onAuthStateChange(function(event, session){
-    if(event==='PASSWORD_RECOVERY'){
-      clearTimeout(timeout); hideLoading(); showScreen('loginScreen');
-      document.getElementById('newPasswordModal').classList.add('open');
-    } else if(event==='SIGNED_OUT'){
-      currentUser=null; currentProfile=null;
-      // Mostra login solo se non siamo già in una schermata attiva post-login
-      var active = document.querySelector('.screen.active');
-      if(!active || active.id === 'loadingScreen') showScreen('loginScreen');
-    }
-  });
   try{
     if(code){
       var r = await sb.auth.exchangeCodeForSession(code);
       if(r.error||!r.data.session){clearTimeout(timeout); hideLoading(); showScreen('loginScreen'); document.getElementById('loginError').textContent='Errore autenticazione. Riprova.'; return;}
-      clearTimeout(timeout); await handleSession(r.data.session); return;
+      clearTimeout(timeout); await handleSession(r.data.session);
+      setupAuthListener(); return;
     }
     var s = await sb.auth.getSession();
     clearTimeout(timeout);
     if(s.data&&s.data.session){
       await handleSession(s.data.session);
     } else {
-      // Nessuna sessione valida — pulizia silenziosa
       try{ await sb.auth.signOut(); }catch(ignore){}
       hideLoading(); showScreen('loginScreen');
     }
   }catch(e){
     clearTimeout(timeout);
-    // Token scaduto o invalido — logout silenzioso, nessun messaggio
     try{ await sb.auth.signOut(); }catch(ignore){}
     hideLoading(); showScreen('loginScreen');
   }
+  // Registra listener DOPO l'init — evita conflitti con getSession/signOut iniziali
+  setupAuthListener();
+}
+
+function setupAuthListener(){
+  sb.auth.onAuthStateChange(function(event, session){
+    if(event==='PASSWORD_RECOVERY'){
+      hideLoading(); showScreen('loginScreen');
+      document.getElementById('newPasswordModal').classList.add('open');
+    } else if(event==='SIGNED_OUT'){
+      currentUser=null; currentProfile=null;
+      var active = document.querySelector('.screen.active');
+      if(!active || active.id==='loadingScreen' || active.id==='sessionScreen') return;
+      showScreen('loginScreen');
+    }
+  });
 }
 
 async function handleSession(session){
@@ -968,12 +971,12 @@ async function aiSend(text, isFirst){
 async function saveSessionLog(log){
   // Estrai [LOG_DATA:{...}] dal testo del log
   var logData = null;
-  var ldMatch = log.match(/\[LOG_DATA:(\{.*?\})\]/);
+  var ldMatch = log.match(/\[LOG_DATA:(\{[\s\S]*?\})\]/);
   if(ldMatch){
     try{ logData = JSON.parse(ldMatch[1]); }catch(e){ logData = null; }
   }
   // Rimuovi il tag [LOG_DATA:] dal testo salvato — è solo per uso interno
-  var cleanLog = log.replace(/\[LOG_DATA:\{[^}]*\}\]\n?/g, '').trim();
+  var cleanLog = log.replace(/\[LOG_DATA:[^\]]*\]\n?/g, '').trim();
   await sb.from('sessions').insert({
     user_id: currentUser.id,
     workout_name: sessionWorkout,
