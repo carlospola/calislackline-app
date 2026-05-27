@@ -925,7 +925,9 @@ function sendMsg(){
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   selectedRpe = null;
   addBubble('user', txt);
-  if(parts.some(function(p){return p.indexOf('reps')>-1||p.indexOf('Reps')>-1;})) sessionTimerToggle();
+  // Avvia timer solo se sono state inserite reps numeriche (non su testo libero)
+  var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
+  if(hasReps && sessionTimerTotal > 0) sessionTimerToggle();
   aiSend(txt, false);
 }
 
@@ -988,10 +990,15 @@ async function saveSessionLog(log){
     }
   }
   // Rimuovi tutto il tag [LOG_DATA:...] dal testo visibile
+  // Pulizia testo: rimuovi tutto da [LOG_DATA: fino alla ] di chiusura
   var cleanLog = log;
-  if(tagStart > -1){
-    var tagEnd = log.indexOf(']', tagStart + log.substring(tagStart).indexOf('}'));
-    if(tagEnd > -1) cleanLog = (log.substring(0, tagStart) + log.substring(tagEnd + 1)).trim();
+  if(tagStart > -1 && jsonEnd > -1){
+    // Cerca la ] subito dopo la } di chiusura del JSON
+    var tagEnd = log.indexOf(']', jsonEnd);
+    if(tagEnd > -1) cleanLog = (log.substring(0, tagStart) + log.substring(tagEnd + 1)).replace(/\n\n+/g, '\n').trim();
+  } else if(tagStart > -1){
+    // Fallback: tronca tutto da [LOG_DATA: in poi
+    cleanLog = log.substring(0, tagStart).trim();
   }
   await sb.from('sessions').insert({
     user_id: currentUser.id,
