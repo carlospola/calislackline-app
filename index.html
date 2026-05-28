@@ -337,6 +337,11 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     <!-- INPUT AREA -->
     <div style="flex:0 0 auto;padding:10px 16px max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;gap:8px;">
       <div id="inputContainer"></div>
+      <!-- Campo peso — visibile solo per sessioni gym -->
+      <div id="weightRow" style="display:none;">
+        <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Peso kg <span style="color:#555;font-size:8px;">(opz)</span></div>
+        <input type="number" inputmode="decimal" id="weightInput" placeholder="es. 50" style="width:100%;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:22px;text-align:center;outline:none;">
+      </div>
       <div style="display:flex;flex-direction:column;gap:5px;">
         <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Fatica percepita <span style="color:#444;font-size:8px;">(opz)</span></div>
         <div style="display:flex;gap:3px;align-items:center;">
@@ -760,6 +765,13 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:14px;">+ Aggiungi nuovo programma</div>
       <div class="modal-field"><div class="modal-label">Nome programma</div><input class="modal-input" id="newProgName" placeholder="es. Body By Rings - Fase 1"></div>
       <div class="modal-field">
+        <div class="modal-label">Tipo sessione</div>
+        <select class="modal-input" id="newProgType" style="cursor:pointer;">
+          <option value="bodyweight">Bodyweight / Calisthenics</option>
+          <option value="gym">Palestra (con peso)</option>
+        </select>
+      </div>
+      <div class="modal-field">
         <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Coach Rules</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Regole comportamentali AI</span></div>
         <textarea class="modal-textarea" id="newProgRules" style="min-height:130px;" placeholder="- Usa [SET:NomeEsercizio] prima di ogni esercizio&#10;- Feedback massimo 5 parole&#10;- Recupero formato mm:ss&#10;- Niente incoraggiamenti&#10;- Chiedi quale workout all'inizio con lista opzioni&#10;- Quando l'utente dice fine genera WORKOUT LOG"></textarea>
       </div>
@@ -986,7 +998,7 @@ async function showDash(){
       var item = document.createElement('div');
       item.className = 'program-item';
       item.innerHTML = '<div class="program-item-name">'+esc(prog.program_name)+'</div><button class="program-start-btn">Inizia &#8594;</button>';
-      item.querySelector('.program-start-btn').onclick = function(){startSessionWithPrompt(prog.program_name, prog.coach_rules, prog.workout_csv, prog.ai_prompt);};
+      item.querySelector('.program-start-btn').onclick = function(){startSessionWithPrompt(prog.program_name, prog.coach_rules, prog.workout_csv, prog.ai_prompt, prog.session_type);};
       list.appendChild(item);
     });
   }else{
@@ -1011,7 +1023,7 @@ async function showDash(){
   });
 }
 
-async function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt){
+async function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt, sessionType){
   if(!coachRules && !extraPrompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
   // Controlla bozza sessione non completata
   var draft = await checkDraftSession();
@@ -1024,7 +1036,7 @@ async function startSessionWithPrompt(programName, coachRules, workoutCsv, extra
       await clearDraftSession();
     }
   }
-  currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:workoutCsv||'', ai_prompt:extraPrompt||''});
+  currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:workoutCsv||'', ai_prompt:extraPrompt||'', session_type:sessionType||'bodyweight'});
   sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
   // Reset timer completo
   if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
@@ -1035,6 +1047,9 @@ async function startSessionWithPrompt(programName, coachRules, workoutCsv, extra
   document.getElementById('sessionTimerNum').textContent='00:00';
   document.getElementById('sessionTimerNum').style.color='var(--text)';
   document.getElementById('sessionTimerGo').textContent='\u25B6';
+  // Mostra campo peso solo per sessioni gym
+  var wrow = document.getElementById('weightRow');
+  if(wrow) wrow.style.display = (sessionType==='gym') ? 'block' : 'none';
   var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
   var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
   var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
@@ -1125,11 +1140,14 @@ function sendMsg(){
     if(reps) reps.value=''; if(rir) rir.value='';
   }
   if(selectedRpe!==null) parts.push('Fatica: '+selectedRpe+'/10');
+  var wInput = document.getElementById('weightInput');
+  if(wInput && wInput.value && currentProfile.session_type==='gym') parts.push('Peso: '+wInput.value+'kg');
   if(note) parts.push(note);
   var txt = parts.join(' - ');
   if(n) n.value='';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   selectedRpe = null;
+  var wi = document.getElementById('weightInput'); if(wi) wi.value='';
   addBubble('user', txt);
   // Avvia timer solo se sono state inserite reps numeriche (non su testo libero)
   var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
@@ -1589,7 +1607,7 @@ async function renderAthletePrograms(){
       +'<div id="edit_'+p.id+'" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">'
       +'<div class="modal-field"><div class="modal-label">Nome</div><input class="modal-input" id="editName_'+p.id+'" value="'+esc(p.program_name)+'"></div>'
       +'<div class="modal-field"><div class="modal-label" style="display:flex;justify-content:space-between;"><span>Coach Rules</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Regole comportamentali AI</span></div>'
-      +'<textarea class="modal-textarea" id="editRules_'+p.id+'" style="min-height:100px;">'+esc(p.coach_rules||'')+'</textarea></div>'
+      +'<div class="modal-field"><div class="modal-label">Tipo sessione</div><select class="modal-input" id="editType_'+p.id+'" style="cursor:pointer;"><option value="bodyweight"'+(p.session_type==='gym'?'':' selected')+'>Bodyweight / Calisthenics</option><option value="gym"'+(p.session_type==='gym'?' selected':'')+'>Palestra (con peso)</option></select></div>'+'<textarea class="modal-textarea" id="editRules_'+p.id+'" style="min-height:100px;">'+esc(p.coach_rules||'')+'</textarea></div>'
       +'<div class="modal-field"><div class="modal-label" style="display:flex;justify-content:space-between;"><span>Workout</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Esercizio, Set, Reps, RIR, Recupero</span></div>'
       +'<textarea class="modal-textarea" id="editCsv_'+p.id+'" style="min-height:120px;font-size:11px;">'+esc(p.workout_csv||'')+'</textarea></div>'
       +'<div class="modal-field"><div class="modal-label" style="display:flex;justify-content:space-between;"><span>Note extra</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">opzionali</span></div>'
@@ -1612,7 +1630,8 @@ async function saveEditProgram(programId){
   var csv=document.getElementById('editCsv_'+programId).value.trim();
   var prompt=document.getElementById('editPrompt_'+programId).value.trim();
   if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId:programId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt})});
+  var editType=document.getElementById('editType_'+programId); var sType=editType?editType.value:'bodyweight';
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId:programId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType})});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await renderAthletePrograms();
@@ -1624,7 +1643,8 @@ async function addProgram(){
   var csv=document.getElementById('newProgCsv').value.trim();
   var prompt=document.getElementById('newProgPrompt').value.trim();
   if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt})});
+  var progType=document.getElementById('newProgType').value||'bodyweight';
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:progType})});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   document.getElementById('newProgName').value='';
