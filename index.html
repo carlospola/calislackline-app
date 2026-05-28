@@ -1986,12 +1986,13 @@ function renderHeatmapMonth(){
   for(var i=0; i<slots.length; i+=7) wkArrays.push(slots.slice(i, i+7));
 
   grid.innerHTML = '';
-  for(var di=0; di<7; di++){
+  // Render as rows per week (Windows calendar style) — each week is a row
+  for(var wi=0; wi<wkArrays.length; wi++){
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:3px;align-items:center;';
-    wkArrays.forEach(function(wk){
+    for(var di=0; di<7; di++){
       var cell = document.createElement('div');
-      var d = wk[di];
+      var d = wkArrays[wi][di];
       if(!d){
         cell.style.cssText = 'width:28px;height:28px;border-radius:3px;flex-shrink:0;background:transparent;';
       } else {
@@ -2023,7 +2024,7 @@ function renderHeatmapMonth(){
         }
       }
       row.appendChild(cell);
-    });
+    }
     grid.appendChild(row);
   }
 }
