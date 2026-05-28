@@ -60,12 +60,13 @@ export default async function handler(req, res) {
     }
 
     if (action === 'addProgram') {
-      const { program_name, workouts, coach_rules, workout_csv, ai_prompt } = req.body;
+      const { program_name, workouts, coach_rules, workout_csv, ai_prompt, session_type } = req.body;
       const r = await supabaseRequest('POST', 'programs', {
         user_id: userId, program_name, workouts,
         coach_rules: coach_rules || null,
         workout_csv: workout_csv || null,
-        ai_prompt: ai_prompt || null
+        ai_prompt: ai_prompt || null,
+        session_type: session_type || 'bodyweight'
       });
       if (!r.ok) return res.status(400).json({ error: 'Errore aggiunta programma' });
       await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, { status: 'active' });
@@ -73,12 +74,13 @@ export default async function handler(req, res) {
     }
 
     if (action === 'editProgram') {
-      const { programId, program_name, workouts, coach_rules, workout_csv, ai_prompt } = req.body;
+      const { programId, program_name, workouts, coach_rules, workout_csv, ai_prompt, session_type } = req.body;
       await supabaseRequest('PATCH', `programs?id=eq.${programId}`, {
         program_name, workouts,
         coach_rules: coach_rules || null,
         workout_csv: workout_csv || null,
-        ai_prompt: ai_prompt || null
+        ai_prompt: ai_prompt || null,
+        session_type: session_type || 'bodyweight'
       });
       return res.status(200).json({ success: true });
     }
