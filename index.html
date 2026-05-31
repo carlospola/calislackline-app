@@ -1171,18 +1171,8 @@ async function aiSend(text, isFirst){
   document.getElementById('sendBtn').disabled=true;
   var tid = addTyping();
   try{
-    var athleteContext = buildAthleteContext(currentProfile);
+    var athleteContext = isFirst ? buildAthleteContext(currentProfile) : '';
     var sessionContext = '';
-    if(currentUser&&isFirst){
-      var sr = await sb.from('sessions').select('workout_name,log_text,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(5);
-      if(sr.data&&sr.data.length){
-        var logs = sr.data.map(function(s){
-          var date = new Date(s.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'short'});
-          return '['+date+'] '+s.workout_name+':\n'+(s.log_text||'Nessun log');
-        }).join('\n\n');
-        sessionContext = '\n\nSTORICO SESSIONI RECENTI:\n'+logs;
-      }
-    }
     var lowerText = (text || '').toLowerCase().trim();
     var logFormat = (lowerText === 'fine') ? COACH_LOG_FORMAT : '';
     var systemPrompt = (currentProfile.coach_rules||currentProfile.ai_prompt||'')
@@ -1367,7 +1357,7 @@ function updateSetInfo(text){
 
 function extractOptions(text){
   // Se la risposta contiene un tag esercizio, non sono opzioni a scelta multipla
-  if(/\[SET:|\[SUPERSET:/.test(text)) return [];
+  if(/\[SET:|\[SUPERSET:|\[PRONTO\]/.test(text)) return [];
   var lines=text.split('\n'), options=[];
   for(var i=0;i<lines.length;i++){
     var m=lines[i].match(/^[\s]*(?:[-]|\d+[.)])\s+(.+)$/);
@@ -1399,6 +1389,23 @@ function addBubble(role, text){
   var av=document.createElement('div'); av.className='avatar '+role; av.textContent=role==='ai'?'AI':'TU';
   var bub=document.createElement('div'); bub.className='bubble';
   if(role==='ai'){
+    // Warm-up: checklist come testo nella bubble + singolo bottone "Pronto"
+    if(/\[PRONTO\]/.test(text)){
+      setInputLocked(false);
+      var fmtW=fmtText(text);
+      bub.innerHTML=fmtW||'';
+      row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
+      var pRow=document.createElement('div'); pRow.id='quickOptions';
+      pRow.style.cssText='display:flex;gap:6px;padding:6px 16px 8px 44px;';
+      var pBtn=document.createElement('button');
+      pBtn.textContent='Pronto';
+      pBtn.style.cssText='padding:9px 22px;background:var(--accent);border:none;border-radius:20px;color:#000;font-family:var(--display);font-weight:700;font-size:13px;cursor:pointer;';
+      pBtn.onclick=function(){pRow.remove(); addBubble('user','pronto'); aiSend('pronto',false);};
+      pRow.appendChild(pBtn);
+      msgs.appendChild(pRow);
+      msgs.scrollTop=msgs.scrollHeight;
+      return;
+    }
     var options=extractOptions(text);
     var asksProgression=text.match(/quale progressione/i)||text.match(/progressione usi/i);
     if(options.length>=2&&options.length<=6){
@@ -1456,7 +1463,7 @@ function stripLogData(t){
 }
 
 function fmtText(t){
-  t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
+  t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'').replace(/\[PRONTO\]\s*/g,'');
   t=stripLogData(t);
   t=t.replace(/^.+Set\s+\d+\/\d+.+\|.+$/gm,'');
   t=t.replace(/^[Rr]ecupero:\s*\d+:\d+\s*$/gm,'');
