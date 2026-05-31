@@ -1187,7 +1187,17 @@ async function aiSend(text, isFirst){
       + (currentProfile.workout_csv ? '\n\nPROGRAMMA WORKOUT:\n'+currentProfile.workout_csv : '')
       + (currentProfile.ai_prompt && currentProfile.coach_rules ? '\n\nNOTE COACH:\n'+currentProfile.ai_prompt : '')
       + athleteContext + sessionContext + COACH_LOG_FORMAT;
-    var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemPrompt,messages:sessionHistory})});
+    var MAX_HISTORY = 12; // ~6 scambi user+assistant
+    var lowerText = (text || '').toLowerCase().trim();
+    var keepFull = (lowerText === 'fine' || lowerText === 'recap');
+    var historyToSend = sessionHistory;
+    if(!keepFull && sessionHistory.length > MAX_HISTORY){
+      historyToSend = sessionHistory.slice(-MAX_HISTORY);
+      if(historyToSend[0] && historyToSend[0].role === 'assistant'){
+        historyToSend = historyToSend.slice(1);
+      }
+    }
+    var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemPrompt,messages:historyToSend})});
     var data = await res.json();
     removeTyping(tid);
     var reply = (data.content&&data.content[0]&&data.content[0].text)||'Errore risposta.';
