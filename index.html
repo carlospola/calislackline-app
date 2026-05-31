@@ -355,7 +355,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div id="inputContainer"></div>
       <div id="weightRow" style="display:none;">
         <div style="font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Peso kg</div>
-        <input type="number" inputmode="decimal" id="weightInput" placeholder="" style="width:100%;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:22px;text-align:center;outline:none;">
+        <input type="number" inputmode="decimal" id="weightInput" placeholder="" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:22px;text-align:center;outline:none;">
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;">
         <div style="font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Fatica percepita</div>
@@ -424,14 +424,14 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
         <div class="stat-card"><div class="stat-num" id="pStatSessions">&mdash;</div><div class="stat-lbl">SET TOTALI</div></div>
-        <div class="stat-card"><div class="stat-num" id="pStatPR" style="color:var(--accent);">&mdash;</div><div class="stat-lbl">MASSIMALE</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatPR" style="color:var(--accent);">&mdash;</div><div class="stat-lbl" id="pLblPR">MASSIMALE</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-        <div class="stat-card"><div class="stat-num" id="pStatAvgReps">&mdash;</div><div class="stat-lbl">MEDIA</div></div>
-        <div class="stat-card"><div class="stat-num" id="pStatTotalReps">&mdash;</div><div class="stat-lbl">TOT REPS</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatAvgReps">&mdash;</div><div class="stat-lbl" id="pLblAvg">MEDIA</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatTotalReps">&mdash;</div><div class="stat-lbl" id="pLblTot">TOT REPS</div></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:4px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;">Media reps per set</div>
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;" id="pChartRepsTitle">Media reps per set</div>
         <div style="position:relative;height:160px;"><canvas id="chartReps"></canvas></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:4px;">
@@ -834,7 +834,7 @@ var athleteProgramsUserId = null;
 var infortuniVal = null;
 var currentSetState = null;
 
-var COACH_LOG_FORMAT = '\n\nDOPO IL WORKOUT LOG aggiungi OBBLIGATORIAMENTE questa riga (tutto su UNA SOLA RIGA, zero newline, zero spazi extra):\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":[{"reps":8,"rir":2,"rpe":7,"note":""},{"reps":7,"rir":3,"rpe":8,"note":"stanco"}]}]}]\nESEMPIO REALE con 2 esercizi (copia questo formato):\n[LOG_DATA:{"workout":"PULL 1","exercises":[{"name":"Chinup","sets":[{"reps":8,"rir":2,"rpe":7,"note":"tuck"},{"reps":7,"rir":3,"rpe":8,"note":""}]},{"name":"Bodyweight Row","sets":[{"reps":15,"rir":1,"rpe":6,"note":"troppo facile"}]}]}]\nREGOLE CRITICHE: 1) Includi TUTTI gli esercizi fatti. 2) Solo set con reps>0. 3) rir=dichiarato dall\x27atleta (0 se non detto). 4) rpe=fatica percepita dichiarata (0 se non detta). 5) note=testo libero atleta o stringa vuota. 6) TUTTO SU UNA RIGA SOLA.';
+var COACH_LOG_FORMAT = '\n\nDOPO IL WORKOUT LOG aggiungi OBBLIGATORIAMENTE questa riga (tutto su UNA SOLA RIGA, zero newline, zero spazi extra):\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":""},{"reps":7,"rir":3,"rpe":8,"weight":0,"note":"stanco"}]}]}]\nESEMPIO REALE con 2 esercizi (copia questo formato):\n[LOG_DATA:{"workout":"PULL","exercises":[{"name":"Weighted Pull-up","sets":[{"reps":8,"rir":0,"rpe":9,"weight":20,"note":""},{"reps":12,"rir":1,"rpe":8,"weight":15,"note":""}]},{"name":"Chinup","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":"tuck"}]}]}]\nREGOLE CRITICHE: 1) Includi TUTTI gli esercizi fatti. 2) Solo set con reps>0. 3) rir=dichiarato dall\x27atleta (0 se non detto). 4) rpe=fatica percepita dichiarata (0 se non detta). 5) weight=peso in kg dichiarato dall\x27atleta (0 se a corpo libero o non detto). 6) note=testo libero atleta o stringa vuota. 7) TUTTO SU UNA RIGA SOLA.';
 
 var DEMO_PROMPT = 'Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.\n\nREGOLE ASSOLUTE:\n- Durante le domande iniziali: solo la domanda + lista opzioni.\n- Durante il workout: formato fisso.\n- [SET:NomeEsercizio] sempre prima di ogni esercizio.\n- Recupero formato mm:ss.\n- Niente incoraggiamenti.\n- Quando l utente dice fine genera WORKOUT LOG.\n\nDOMANDE INIZIALI:\n1.\nQuanto tempo hai?\n- 30 minuti\n- 45 minuti\n- 60 minuti\n- 90 minuti\n\n2.\nDove ti alleni?\n- Casa - solo bodyweight\n- Parco - sbarra e parallele\n- Palestra completa\n- Casa con attrezzi\n\n3.\nObiettivo oggi?\n- Tutto il corpo\n- Solo upper body\n- Solo lower body\n- Forza e skills\n\n4.\nCome ti senti?\n- Carico\n- Nella media\n- Stanco\n\nDopo le 4 risposte vai al primo esercizio.\n\nFORMATO ESERCIZIO:\n[SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n\nFORMATO SUPERSET:\n[SUPERSET:Nome1,Nome2]\nSUPERSET X - Set N/TOT\nNome1: X-Y reps\nNome2: X-Y reps\n-> VAI SUBITO su Nome2\nRecupero: mm:ss\n\nFEEDBACK: ok max 4 parole. Recupero: mm:ss\n\nWORKOUT LOG:\nWORKOUT LOG\n================\nData: [data]\nDurata: [X] min\n[Esercizio]: [sets x reps]';
 
@@ -1907,8 +1907,8 @@ async function showProgress(){
 function destroyChart(inst){ if(inst) inst.destroy(); return null; }
 
 function getExSets(ex){
-  if(Array.isArray(ex.sets)) return ex.sets.filter(function(s){ return s.reps > 0; });
-  if(ex.reps > 0) return [{ reps: ex.reps, rir: ex.rir||0, rpe: ex.rpe||0, note: '' }];
+  if(Array.isArray(ex.sets)) return ex.sets.filter(function(s){ return s.reps > 0; }).map(function(s){ return { reps:s.reps, rir:s.rir||0, rpe:s.rpe||0, weight:s.weight||0, note:s.note||'' }; });
+  if(ex.reps > 0) return [{ reps: ex.reps, rir: ex.rir||0, rpe: ex.rpe||0, weight: ex.weight||0, note: '' }];
   return [];
 }
 
@@ -1932,13 +1932,21 @@ function renderProgressCharts(){
   if(!filtered.length){ emptyEl.style.display='block'; return; }
   emptyEl.style.display='none';
   var labels = filtered.map(function(s){ return new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'}); });
-  var avgRepsData=[], totalRepsData=[], avgRPEData=[];
+
+  // È un esercizio con peso? (almeno un set con weight > 0)
+  var isWeighted = filtered.some(function(s){
+    var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
+    return ex && getExSets(ex).some(function(st){ return st.weight > 0; });
+  });
+
+  var avgRepsData=[], totalRepsData=[], avgRPEData=[], maxWeightData=[];
   var prReps=0, grandTotalReps=0, totalSetsCount=0;
+  var prWeight=0, weightSum=0, weightSetsCount=0, totalVolume=0;
   filtered.forEach(function(s){
     var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
-    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); return; }
+    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); maxWeightData.push(0); return; }
     var sets = getExSets(ex);
-    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); return; }
+    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); maxWeightData.push(0); return; }
     var tot = sets.reduce(function(a,s){ return a+s.reps; },0);
     var avg = Math.round(tot/sets.length*10)/10;
     var rpeSets = sets.filter(function(s){ return s.rpe>0; });
@@ -1946,15 +1954,47 @@ function renderProgressCharts(){
     avgRepsData.push(avg); totalRepsData.push(tot); avgRPEData.push(avgRPE);
     sets.forEach(function(st){ if(st.reps > prReps) prReps = st.reps; });
     grandTotalReps += tot; totalSetsCount += sets.length;
+    // peso
+    var sessionMaxW = 0;
+    sets.forEach(function(st){
+      if(st.weight > 0){ weightSum += st.weight; weightSetsCount++; totalVolume += st.weight * st.reps; if(st.weight > sessionMaxW) sessionMaxW = st.weight; }
+      if(st.weight > prWeight) prWeight = st.weight;
+    });
+    maxWeightData.push(sessionMaxW);
   });
-  var globalAvgReps = totalSetsCount>0 ? Math.round(grandTotalReps/totalSetsCount*10)/10 : 0;
-  document.getElementById('pStatSessions').textContent = totalSetsCount || '\u2014';
-  document.getElementById('pStatPR').textContent = prReps || '\u2014';
-  document.getElementById('pStatAvgReps').textContent = globalAvgReps || '\u2014';
-  document.getElementById('pStatTotalReps').textContent = grandTotalReps || '\u2014';
+
+  var lblPR = document.getElementById('pLblPR');
+  var lblAvg = document.getElementById('pLblAvg');
+  var lblTot = document.getElementById('pLblTot');
+  var chartTitle = document.getElementById('pChartRepsTitle');
   var accent='#c8f060', accentDim='rgba(200,240,96,0.15)';
-  chartRepsInst = destroyChart(chartRepsInst);
-  chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRepsData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
+
+  if(isWeighted){
+    var avgWeight = weightSetsCount>0 ? Math.round(weightSum/weightSetsCount*10)/10 : 0;
+    document.getElementById('pStatSessions').textContent = totalSetsCount || '\u2014';
+    document.getElementById('pStatPR').textContent = prWeight ? prWeight+'kg' : '\u2014';
+    document.getElementById('pStatAvgReps').textContent = avgWeight ? avgWeight+'kg' : '\u2014';
+    document.getElementById('pStatTotalReps').textContent = totalVolume ? totalVolume+'kg' : '\u2014';
+    if(lblPR) lblPR.textContent = 'PESO MAX';
+    if(lblAvg) lblAvg.textContent = 'PESO MEDIO';
+    if(lblTot) lblTot.textContent = 'VOLUME';
+    if(chartTitle) chartTitle.textContent = 'Peso massimo (kg)';
+    chartRepsInst = destroyChart(chartRepsInst);
+    chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:maxWeightData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
+  } else {
+    var globalAvgReps = totalSetsCount>0 ? Math.round(grandTotalReps/totalSetsCount*10)/10 : 0;
+    document.getElementById('pStatSessions').textContent = totalSetsCount || '\u2014';
+    document.getElementById('pStatPR').textContent = prReps || '\u2014';
+    document.getElementById('pStatAvgReps').textContent = globalAvgReps || '\u2014';
+    document.getElementById('pStatTotalReps').textContent = grandTotalReps || '\u2014';
+    if(lblPR) lblPR.textContent = 'MASSIMALE';
+    if(lblAvg) lblAvg.textContent = 'MEDIA';
+    if(lblTot) lblTot.textContent = 'TOT REPS';
+    if(chartTitle) chartTitle.textContent = 'Media reps per set';
+    chartRepsInst = destroyChart(chartRepsInst);
+    chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRepsData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
+  }
+
   chartTotalRepsInst = destroyChart(chartTotalRepsInst);
   chartTotalRepsInst = new Chart(document.getElementById('chartTotalReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:totalRepsData, backgroundColor:'rgba(200,240,96,0.1)', borderColor:'rgba(200,240,96,0.4)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts() });
   chartRPEInst = destroyChart(chartRPEInst);
