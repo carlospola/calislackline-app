@@ -163,6 +163,22 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .loading-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:ldot 1.2s infinite ease-in-out;}
 @keyframes ldot{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+/* Workout list overlay */
+#workoutListOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:150;flex-direction:column;padding:0;}
+#workoutListOverlay.open{display:flex;}
+.wlist-topbar{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg);}
+.wlist-title{font-family:var(--display);font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--accent);}
+.wlist-close{font-size:11px;color:var(--text2);cursor:pointer;padding:6px 14px;border:1px solid var(--border2);border-radius:5px;background:transparent;font-family:var(--mono);}
+.wlist-close:hover{color:var(--text);border-color:#444;}
+.wlist-body{flex:1;overflow-y:auto;padding:20px;}
+.wlist-body::-webkit-scrollbar{width:3px;}
+.wlist-body::-webkit-scrollbar-thumb{background:var(--border2);}
+.wlist-group{margin-bottom:24px;}
+.wlist-group-name{font-family:var(--display);font-size:14px;font-weight:700;color:var(--accent);letter-spacing:.05em;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px;text-transform:uppercase;}
+.wlist-ex{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
+.wlist-ex-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.wlist-ex-meta{font-size:12px;color:var(--muted);line-height:1.6;}
+.wlist-empty{text-align:center;font-size:12px;color:var(--muted);padding:40px 0;}
 </style>
 </head>
 <body>
@@ -302,6 +318,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite;"></div>LIVE
       </div>
       <div style="display:flex;gap:4px;">
+        <button class="topbar-btn" onclick="showWorkoutList()">lista</button>
         <button class="topbar-btn" onclick="qSend('skip')">skip</button>
         <button class="topbar-btn" onclick="qSend('recap')">recap</button>
         <button class="topbar-btn" onclick="qSend('fine')">fine</button>
@@ -312,24 +329,23 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     <div style="flex:1;min-height:0;overflow-y:auto;padding:10px 16px;" id="messages"></div>
     <!-- SET INFO BOX + TIMER -->
     <div style="flex:0 0 auto;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-      <!-- Row 1: three info boxes -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border);">
-        <div style="padding:7px 12px;border-right:1px solid var(--border);">
-          <div style="font-size:7px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:3px;">Esercizio</div>
-          <div id="setInfoBox" style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">In attesa...</div>
-          <div id="setNumBox" style="font-size:10px;color:var(--muted);margin-top:1px;">—</div>
+        <div style="padding:8px 12px;border-right:1px solid var(--border);">
+          <div style="font-size:10px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Esercizio</div>
+          <div id="setInfoBox" style="font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">In attesa...</div>
+          <div id="setNumBox" style="font-size:12px;color:var(--muted);margin-top:2px;">&mdash;</div>
         </div>
-        <div style="padding:7px 12px;border-right:1px solid var(--border);">
-          <div style="font-size:7px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Target</div>
-          <div id="setTargetBox" style="font-size:12px;color:var(--text);">—</div>
-          <div id="setTempoBox" style="font-size:10px;color:var(--muted);margin-top:1px;">—</div>
+        <div style="padding:8px 12px;border-right:1px solid var(--border);">
+          <div style="font-size:10px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Target</div>
+          <div id="setTargetBox" style="font-size:14px;color:var(--text);">&mdash;</div>
+          <div id="setTempoBox" style="font-size:12px;color:var(--muted);margin-top:2px;">&mdash;</div>
         </div>
-        <div style="padding:7px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-          <div style="font-size:7px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:2px;" id="setRecuperoLabel">Recupero</div>
-          <div id="sessionTimerNum" style="font-family:var(--display);font-size:24px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
-          <div style="display:flex;gap:3px;margin-top:3px;">
-            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:2px 10px;background:var(--accent);border:none;border-radius:4px;font-family:var(--mono);font-size:9px;color:#000;cursor:pointer;">&#9654;</button>
-            <button onclick="sessionTimerReset()" style="padding:2px 7px;background:var(--border);border:none;border-radius:4px;font-family:var(--mono);font-size:9px;color:var(--text2);cursor:pointer;">&#8635;</button>
+        <div style="padding:8px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="font-size:10px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;" id="setRecuperoLabel">Recupero</div>
+          <div id="sessionTimerNum" style="font-family:var(--display);font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
+          <div style="display:flex;gap:3px;margin-top:4px;">
+            <button id="sessionTimerGo" onclick="sessionTimerToggle()" style="padding:2px 10px;background:var(--accent);border:none;border-radius:4px;font-family:var(--mono);font-size:10px;color:#000;cursor:pointer;">&#9654;</button>
+            <button onclick="sessionTimerReset()" style="padding:2px 7px;background:var(--border);border:none;border-radius:4px;font-family:var(--mono);font-size:10px;color:var(--text2);cursor:pointer;">&#8635;</button>
           </div>
         </div>
       </div>
@@ -337,15 +353,14 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     <!-- INPUT AREA -->
     <div style="flex:0 0 auto;padding:10px 16px max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;gap:8px;">
       <div id="inputContainer"></div>
-      <!-- Campo peso — visibile solo per sessioni gym -->
       <div id="weightRow" style="display:none;">
-        <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Peso kg <span style="color:#555;font-size:8px;">(opz)</span></div>
-        <input type="number" inputmode="decimal" id="weightInput" placeholder="es. 50" style="width:100%;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:22px;text-align:center;outline:none;">
+        <div style="font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Peso kg</div>
+        <input type="number" inputmode="decimal" id="weightInput" placeholder="50" style="width:100%;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:22px;text-align:center;outline:none;">
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;">
-        <div style="font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Fatica percepita <span style="color:#444;font-size:8px;">(opz)</span></div>
+        <div style="font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Fatica percepita</div>
         <div style="display:flex;gap:3px;align-items:center;">
-          <span style="font-size:9px;color:var(--muted);width:28px;text-align:center;">&#128564;</span>
+          <span style="font-size:11px;color:var(--muted);width:28px;text-align:center;">&#128564;</span>
           <div id="rpeBtns" style="flex:1;display:flex;gap:2px;">
             <button class="rpe-btn" onclick="selRpe(this,1)">1</button>
             <button class="rpe-btn" onclick="selRpe(this,2)">2</button>
@@ -358,7 +373,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
             <button class="rpe-btn" onclick="selRpe(this,9)">9</button>
             <button class="rpe-btn" onclick="selRpe(this,10)">10</button>
           </div>
-          <span style="font-size:9px;color:var(--muted);width:28px;text-align:center;">&#128293;</span>
+          <span style="font-size:11px;color:var(--muted);width:28px;text-align:center;">&#128293;</span>
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -369,6 +384,15 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       </div>
     </div>
   </div>
+</div>
+
+<!-- WORKOUT LIST OVERLAY -->
+<div id="workoutListOverlay">
+  <div class="wlist-topbar">
+    <div class="wlist-title" id="wlistTitle">Workout completo</div>
+    <button class="wlist-close" onclick="closeWorkoutList()">Chiudi</button>
+  </div>
+  <div class="wlist-body" id="wlistBody"></div>
 </div>
 
 <!-- PROGRESS SCREEN -->
@@ -386,7 +410,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
   <div style="flex:1;overflow-y:auto;padding:20px;" id="progressBody">
 
     <!-- TAB ESERCIZIO -->
-    <!-- TAB ESERCIZIO -->
     <div id="ptabExContent">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <select id="progressExerciseSelect" onchange="renderProgressCharts()" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;">
@@ -400,14 +423,13 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div class="stat-card"><div class="stat-num" id="pStatSessions">—</div><div class="stat-lbl">SET TOTALI</div></div>
-        <div class="stat-card"><div class="stat-num" id="pStatPR" style="color:var(--accent);">—</div><div class="stat-lbl">MASSIMALE</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatSessions">&mdash;</div><div class="stat-lbl">SET TOTALI</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatPR" style="color:var(--accent);">&mdash;</div><div class="stat-lbl">MASSIMALE</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-        <div class="stat-card"><div class="stat-num" id="pStatAvgReps">—</div><div class="stat-lbl">MEDIA</div></div>
-        <div class="stat-card"><div class="stat-num" id="pStatTotalReps">—</div><div class="stat-lbl">TOT REPS</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatAvgReps">&mdash;</div><div class="stat-lbl">MEDIA</div></div>
+        <div class="stat-card"><div class="stat-num" id="pStatTotalReps">&mdash;</div><div class="stat-lbl">TOT REPS</div></div>
       </div>
-      <!-- Tre grafici allineati verticalmente con stessa altezza e labels -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:4px;">
         <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;">Media reps per set</div>
         <div style="position:relative;height:160px;"><canvas id="chartReps"></canvas></div>
@@ -436,21 +458,18 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </select>
       </div>
 
-      <!-- Stats cards overview -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
-        <div class="stat-card"><div class="stat-num" id="ovStatSessions">—</div><div class="stat-lbl">SESSIONI</div></div>
-        <div class="stat-card"><div class="stat-num" id="ovStatSets">—</div><div class="stat-lbl">SET TOTALI</div></div>
-        <div class="stat-card"><div class="stat-num" id="ovStatRPE">—</div><div class="stat-lbl">RPE MEDIO</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovStatSessions">&mdash;</div><div class="stat-lbl">SESSIONI</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovStatSets">&mdash;</div><div class="stat-lbl">SET TOTALI</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovStatRPE">&mdash;</div><div class="stat-lbl">RPE MEDIO</div></div>
       </div>
 
-      <!-- Calendario con navigazione mese -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <button onclick="calNavMonth(-1)" style="background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:var(--mono);font-size:12px;padding:4px 10px;cursor:pointer;">&larr;</button>
           <div style="font-size:11px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;font-weight:600;" id="calMonthLabel"></div>
           <button onclick="calNavMonth(1)" style="background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:var(--mono);font-size:12px;padding:4px 10px;cursor:pointer;">&rarr;</button>
         </div>
-        <!-- Intestazione giorni settimana -->
         <div style="display:flex;gap:3px;margin-bottom:4px;padding-left:0;">
           <div style="width:28px;font-size:9px;color:#555;text-align:center;">L</div>
           <div style="width:28px;font-size:9px;color:#555;text-align:center;">M</div>
@@ -471,13 +490,11 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </div>
       </div>
 
-      <!-- RPE globale per sessione -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
         <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">RPE medio per sessione</div>
         <div style="position:relative;height:140px;"><canvas id="chartOvRPE"></canvas></div>
       </div>
 
-      <!-- Torta RIR -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
         <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Distribuzione intensit&agrave; (RIR globale)</div>
         <div style="display:flex;align-items:center;gap:20px;">
@@ -486,7 +503,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         </div>
       </div>
 
-      <!-- Modal allenamenti del giorno -->
       <div id="heatmapDayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;padding:20px;">
         <div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -811,17 +827,13 @@ var APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSd
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{flowType:'pkce',autoRefreshToken:true,detectSessionInUrl:true,persistSession:true}});
 var currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 var currentSetMode = 'single', currentExercises = [];
-var sessionFirstSetDone = false; // timer auto-start solo dopo il primo set
+var sessionFirstSetDone = false;
 var sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft = 0, sessionTimerTotal = 0;
 var allExercises = [];
 var athleteProgramsUserId = null;
 var infortuniVal = null;
-var currentSetState = null; // persiste l'ultimo set noto
+var currentSetState = null;
 
-// Regole operative iniettate su ogni sessione — non modificare il formato [SET:] [SUPERSET:]
-// COACH_RUNTIME_RULES rimosso — le regole sono ora in programs.coach_rules (editabile dall'admin)
-
-// Formato log strutturato — fisso, non modificabile dall'admin (il parser JS dipende da questo formato)
 var COACH_LOG_FORMAT = '\n\nDOPO IL WORKOUT LOG aggiungi OBBLIGATORIAMENTE questa riga (tutto su UNA SOLA RIGA, zero newline, zero spazi extra):\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":[{"reps":8,"rir":2,"rpe":7,"note":""},{"reps":7,"rir":3,"rpe":8,"note":"stanco"}]}]}]\nESEMPIO REALE con 2 esercizi (copia questo formato):\n[LOG_DATA:{"workout":"PULL 1","exercises":[{"name":"Chinup","sets":[{"reps":8,"rir":2,"rpe":7,"note":"tuck"},{"reps":7,"rir":3,"rpe":8,"note":""}]},{"name":"Bodyweight Row","sets":[{"reps":15,"rir":1,"rpe":6,"note":"troppo facile"}]}]}]\nREGOLE CRITICHE: 1) Includi TUTTI gli esercizi fatti. 2) Solo set con reps>0. 3) rir=dichiarato dall\x27atleta (0 se non detto). 4) rpe=fatica percepita dichiarata (0 se non detta). 5) note=testo libero atleta o stringa vuota. 6) TUTTO SU UNA RIGA SOLA.';
 
 var DEMO_PROMPT = 'Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.\n\nREGOLE ASSOLUTE:\n- Durante le domande iniziali: solo la domanda + lista opzioni.\n- Durante il workout: formato fisso.\n- [SET:NomeEsercizio] sempre prima di ogni esercizio.\n- Recupero formato mm:ss.\n- Niente incoraggiamenti.\n- Quando l utente dice fine genera WORKOUT LOG.\n\nDOMANDE INIZIALI:\n1.\nQuanto tempo hai?\n- 30 minuti\n- 45 minuti\n- 60 minuti\n- 90 minuti\n\n2.\nDove ti alleni?\n- Casa - solo bodyweight\n- Parco - sbarra e parallele\n- Palestra completa\n- Casa con attrezzi\n\n3.\nObiettivo oggi?\n- Tutto il corpo\n- Solo upper body\n- Solo lower body\n- Forza e skills\n\n4.\nCome ti senti?\n- Carico\n- Nella media\n- Stanco\n\nDopo le 4 risposte vai al primo esercizio.\n\nFORMATO ESERCIZIO:\n[SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n\nFORMATO SUPERSET:\n[SUPERSET:Nome1,Nome2]\nSUPERSET X - Set N/TOT\nNome1: X-Y reps\nNome2: X-Y reps\n-> VAI SUBITO su Nome2\nRecupero: mm:ss\n\nFEEDBACK: ok max 4 parole. Recupero: mm:ss\n\nWORKOUT LOG:\nWORKOUT LOG\n================\nData: [data]\nDurata: [X] min\n[Esercizio]: [sets x reps]';
@@ -840,9 +852,9 @@ function startDemoSession(){
   document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
   var box = document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
-  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
-  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
-  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='—';
+  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='\u2014';
+  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='\u2014';
+  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='\u2014';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode = 'single'; currentExercises = [];
   renderInputFields('single', []);
@@ -876,7 +888,6 @@ async function init(){
     try{ await sb.auth.signOut(); }catch(ignore){}
     hideLoading(); showScreen('loginScreen');
   }
-  // Registra listener DOPO l'init — evita conflitti con getSession/signOut iniziali
   setupAuthListener();
 }
 
@@ -1025,7 +1036,6 @@ async function showDash(){
 
 async function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt, sessionType){
   if(!coachRules && !extraPrompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
-  // Controlla bozza sessione non completata
   var draft = await checkDraftSession();
   if(draft && draft.workout_name === programName && draft.history && draft.history.length > 2){
     var age = Math.round((Date.now() - new Date(draft.updated_at).getTime()) / 60000);
@@ -1038,7 +1048,6 @@ async function startSessionWithPrompt(programName, coachRules, workoutCsv, extra
   }
   currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:workoutCsv||'', ai_prompt:extraPrompt||'', session_type:sessionType||'bodyweight'});
   sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
-  // Reset timer completo
   if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
   sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
@@ -1047,13 +1056,12 @@ async function startSessionWithPrompt(programName, coachRules, workoutCsv, extra
   document.getElementById('sessionTimerNum').textContent='00:00';
   document.getElementById('sessionTimerNum').style.color='var(--text)';
   document.getElementById('sessionTimerGo').textContent='\u25B6';
-  // Mostra campo peso solo per sessioni gym
   var wrow = document.getElementById('weightRow');
   if(wrow) wrow.style.display = (sessionType==='gym') ? 'block' : 'none';
   var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
-  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
-  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
-  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='—';
+  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='\u2014';
+  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='\u2014';
+  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='\u2014';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode='single'; currentExercises=[];
   renderInputFields('single',[]);
@@ -1061,7 +1069,6 @@ async function startSessionWithPrompt(programName, coachRules, workoutCsv, extra
 }
 
 function buildSkipMessage(){
-  // Legge dai nuovi box separati
   var nameBox = document.getElementById('setInfoBox');
   var numBox = document.getElementById('setNumBox');
   if(!nameBox || nameBox.textContent === 'In attesa...') return 'skip';
@@ -1072,9 +1079,9 @@ function buildSkipMessage(){
   var currentSet = parseInt(setMatch[1]);
   var totalSets = parseInt(setMatch[2]);
   if(currentSet < totalSets){
-    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' — mostra subito [SET:' + exerciseName + '] Set ' + (currentSet+1) + '/' + totalSets;
+    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' \u2014 mostra subito [SET:' + exerciseName + '] Set ' + (currentSet+1) + '/' + totalSets;
   } else {
-    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' completato (ultimo set) — mostra subito il primo set dell\'esercizio successivo con [SET:NomeEsercizio]';
+    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' completato (ultimo set) \u2014 mostra subito il primo set dell\'esercizio successivo con [SET:NomeEsercizio]';
   }
 }
 
@@ -1097,7 +1104,7 @@ function selRpe(btn, val){
 }
 
 function inputFieldHTML(id, label){
-  return '<div style="display:flex;flex-direction:column;gap:3px;flex:1;"><div style="font-size:8px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;font-weight:600;">'+label+'</div><div style="display:flex;gap:5px;"><div style="flex:1;"><div style="font-size:8px;color:var(--muted);">Reps</div><input type="number" id="reps_'+id+'" placeholder="-" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;"></div><div style="flex:1;"><div style="font-size:8px;color:var(--muted);">RIR</div><input type="number" id="rir_'+id+'" placeholder="-" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;"></div></div></div>';
+  return '<div style="display:flex;flex-direction:column;gap:3px;flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;font-weight:600;">'+label+'</div><div style="display:flex;gap:5px;"><div style="flex:1;"><div style="font-size:10px;color:var(--muted);">Reps</div><input type="number" id="reps_'+id+'" placeholder="-" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;"></div><div style="flex:1;"><div style="font-size:10px;color:var(--muted);">RIR</div><input type="number" id="rir_'+id+'" placeholder="-" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text);font-family:var(--mono);font-size:17px;outline:none;width:100%;text-align:center;"></div></div></div>';
 }
 
 function renderInputFields(mode, exercises){
@@ -1106,7 +1113,7 @@ function renderInputFields(mode, exercises){
   if(mode==='superset'&&exercises.length>=2){
     container.innerHTML='<div style="display:flex;gap:8px;align-items:stretch;">'+inputFieldHTML('a',exercises[0])+'<div style="width:1px;background:var(--border2);flex-shrink:0;margin:4px 0;"></div>'+inputFieldHTML('b',exercises[1])+'</div>';
   }else{
-    container.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div style="display:flex;flex-direction:column;gap:3px;"><div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Ripetizioni <span style="color:#444;font-size:8px;">(opz)</span></div><input type="number" id="reps_a" placeholder="es. 8" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;"></div><div style="display:flex;flex-direction:column;gap:3px;"><div style="font-size:9px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Rip. riserva <span style="color:#444;font-size:8px;">(opz)</span></div><input type="number" id="rir_a" placeholder="es. 2" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;"></div></div>';
+    container.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div style="display:flex;flex-direction:column;gap:3px;"><div style="font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Ripetizioni</div><input type="number" id="reps_a" placeholder="8" min="0" max="99" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;"></div><div style="display:flex;flex-direction:column;gap:3px;"><div style="font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">Ripetizioni in riserva</div><input type="number" id="rir_a" placeholder="2" min="0" max="10" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;outline:none;width:100%;text-align:center;"></div></div>';
   }
 }
 
@@ -1133,7 +1140,6 @@ function sendMsg(){
   }else{
     var reps=document.getElementById('reps_a'), rir=document.getElementById('rir_a');
     var repsv=reps?reps.value.trim():'', rirv=rir?rir.value.trim():'';
-    // Accetta anche solo la nota — l'AI capisce cosa è stato fatto
     if(!repsv&&!note){if(n){n.style.borderColor='var(--accent)';setTimeout(function(){n.style.borderColor='';},800);} return;}
     if(repsv) parts.push('Reps: '+repsv);
     if(rirv) parts.push('RIR: '+rirv);
@@ -1149,10 +1155,9 @@ function sendMsg(){
   selectedRpe = null;
   var wi = document.getElementById('weightInput'); if(wi) wi.value='';
   addBubble('user', txt);
-  // Avvia timer solo se sono state inserite reps numeriche (non su testo libero)
   var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
   if(hasReps){
-    sessionFirstSetDone = true; // da ora il timer parte automaticamente
+    sessionFirstSetDone = true;
     if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
     document.getElementById('sessionTimerGo').textContent='Start';
     document.getElementById('sessionTimerNum').style.color='var(--text)';
@@ -1178,7 +1183,6 @@ async function aiSend(text, isFirst){
         sessionContext = '\n\nSTORICO SESSIONI RECENTI:\n'+logs;
       }
     }
-    // System prompt assemblato: coach_rules + workout_csv + note extra + profilo atleta + storico + log format
     var systemPrompt = (currentProfile.coach_rules||currentProfile.ai_prompt||'')
       + (currentProfile.workout_csv ? '\n\nPROGRAMMA WORKOUT:\n'+currentProfile.workout_csv : '')
       + (currentProfile.ai_prompt && currentProfile.coach_rules ? '\n\nNOTE COACH:\n'+currentProfile.ai_prompt : '')
@@ -1189,12 +1193,10 @@ async function aiSend(text, isFirst){
     var reply = (data.content&&data.content[0]&&data.content[0].text)||'Errore risposta.';
     sessionHistory.push({role:'assistant', content:reply});
     addBubble('ai', reply);
-    // Salva bozza sessione dopo ogni risposta AI
     saveDraftSession();
     if(text==='fine'&&reply.indexOf('WORKOUT LOG')>-1){
       saveSessionLog(reply);
       clearDraftSession();
-      // Ferma il timer a fine sessione
       if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
       document.getElementById('sessionTimerGo').textContent='Start';
       document.getElementById('sessionTimerNum').style.color='var(--text)';
@@ -1211,7 +1213,7 @@ async function aiSend(text, isFirst){
 async function saveSessionLog(log){
   var logData = null;
   var tagStart = log.indexOf('[LOG_DATA:');
-  var jsonEnd = -1; // dichiarato nello scope esterno
+  var jsonEnd = -1;
 
   if(tagStart > -1){
     var jsonStart = log.indexOf('{', tagStart);
@@ -1227,7 +1229,6 @@ async function saveSessionLog(log){
     }
   }
 
-  // Rimuovi [LOG_DATA:...] dal testo visibile
   var cleanLog = log;
   if(tagStart > -1){
     if(jsonEnd > -1){
@@ -1292,7 +1293,6 @@ function sessionTimerReset(){
   document.getElementById('sessionTimerGo').textContent='Start';
 }
 
-// updateSetInfo — usa solo [SET:] e [SUPERSET:] come fonte. Se non ci sono tag, non aggiorna il box.
 function updateSetInfo(text){
   var boxName = document.getElementById('setInfoBox');
   var boxNum = document.getElementById('setNumBox');
@@ -1303,7 +1303,7 @@ function updateSetInfo(text){
   var supersetMatch = text.match(/\[SUPERSET:([^\]]+)\]/);
   var setMatch = text.match(/\[SET:([^\]]+)\]/);
 
-  if(!supersetMatch && !setMatch) return; // nessun tag — mantieni stato
+  if(!supersetMatch && !setMatch) return;
 
   var lines = text.split('\n').map(function(l){return l.replace(/\*\*/g,'').trim();}).filter(function(l){return l;});
   var setLine = '', ssHeader = '', exerciseName = '';
@@ -1321,27 +1321,22 @@ function updateSetInfo(text){
     }
   }
 
-  // Popola box Esercizio + numero set
   boxName.textContent = exerciseName || 'In attesa...';
   var setNumMatch = setLine.match(/Set\s+(\d+)\/(\d+)/i);
   boxNum.textContent = setNumMatch ? 'Set '+setNumMatch[1]+'/'+setNumMatch[2] : '';
 
-  // Popola box Target (reps) e Tempo
-  // La riga è: "Esercizio — Set N/TOT | 6-8 reps | Tempo: 30X2 | Recupero: mm:ss"
-  // Prendi il primo segmento dopo il primo | che contenga reps
   var parts = setLine.split('|');
   var repsMatch = null;
   for(var pi=1; pi<parts.length; pi++){
-    var pm = parts[pi].match(/(\d+[-–]\d+|\d+)\s*(?:reps?|rip\.?)?(?:\s+per\s+lato)?/i);
+    var pm = parts[pi].match(/(\d+[-\u2013]\d+|\d+)\s*(?:reps?|rip\.?)?(?:\s+per\s+lato)?/i);
     if(pm && !parts[pi].match(/[Tt]empo|[Rr]ecupero/)){ repsMatch = pm; break; }
   }
   var tempoMatch = setLine.match(/[Tt]empo:\s*([^\s|]+)/i);
-  boxTarget.textContent = repsMatch ? repsMatch[0].trim() : '—';
-  boxTempo.textContent = tempoMatch ? tempoMatch[1] : '—';
+  boxTarget.textContent = repsMatch ? repsMatch[0].trim() : '\u2014';
+  boxTempo.textContent = tempoMatch ? tempoMatch[1] : '\u2014';
 
   currentSetState = exerciseName;
 
-  // Timer
   if(supersetMatch || setMatch){
     var timerLine = setLine || '';
     var rm = timerLine.match(/[Rr]ecupero[^:]*[:]?\s*(\d+):(\d+)/);
@@ -1362,12 +1357,9 @@ function updateSetInfo(text){
 function extractOptions(text){
   var lines=text.split('\n'), options=[];
   for(var i=0;i<lines.length;i++){
-    // Supporta: "- opzione", "1. opzione", "1) opzione"
     var m=lines[i].match(/^[\s]*(?:[-]|\d+[.)])\s+(.+)$/);
     if(m){var opt=m[1].replace(/\*\*/g,'').trim(); if(opt.length>0&&opt.length<60) options.push(opt);}
   }
-  // Fallback: formato slash inline "opzione1 / opzione2 / opzione3?"
-  // Scatta solo se non sono state trovate opzioni lista e c'è almeno uno slash
   if(options.length===0){
     var slashLine='';
     for(var j=0;j<lines.length;j++){
@@ -1416,11 +1408,10 @@ function addBubble(role, text){
       msgs.appendChild(optRow);
     }else{
       setInputLocked(false);
-      // updateSetInfo e detectAndRenderInput SEMPRE chiamati, indipendentemente dal bubble
       updateSetInfo(text);
       detectAndRenderInput(text);
       var fmtResult2=fmtText(text);
-      if(!fmtResult2){ msgs.scrollTop=msgs.scrollHeight; return; } // bubble vuoto — non mostrare visualmente
+      if(!fmtResult2){ msgs.scrollTop=msgs.scrollHeight; return; }
       bub.innerHTML=fmtResult2;
       row.appendChild(av); row.appendChild(bub); msgs.appendChild(row);
     }
@@ -1432,7 +1423,6 @@ function addBubble(role, text){
 }
 
 function stripLogData(t){
-  // Rimuovi [LOG_DATA:{...}] con conteggio parentesi — gestisce JSON annidato
   var start = t.indexOf('[LOG_DATA:');
   if(start === -1) return t;
   var braceStart = t.indexOf('{', start);
@@ -1443,11 +1433,10 @@ function stripLogData(t){
     else if(t[i] === '}') { depth--; if(depth === 0){ end = i; break; } }
   }
   if(end === -1) return t.substring(0, start);
-  // Cerca la ] di chiusura saltando whitespace e newline
   var closeBracket = -1;
   for(var j = end + 1; j < t.length; j++){
     if(t[j] === ']'){ closeBracket = j; break; }
-    if(t[j] !== ' ' && t[j] !== '\n' && t[j] !== '\r') break; // stop se trova altro
+    if(t[j] !== ' ' && t[j] !== '\n' && t[j] !== '\r') break;
   }
   if(closeBracket === -1) return t.substring(0, start);
   return (t.substring(0, start) + t.substring(closeBracket + 1)).trim();
@@ -1455,11 +1444,8 @@ function stripLogData(t){
 
 function fmtText(t){
   t=t.replace(/\[SUPERSET:[^\]]+\]\s*/g,'').replace(/\[SET:[^\]]+\]\s*/g,'').replace(/\[CUE:[^\]]+\]\s*/g,'');
-  // Rimuovi [LOG_DATA:...] dal bubble
   t=stripLogData(t);
-  // Rimuovi righe set info strutturate (contengono | e Set N/TOT) — già visibili negli info box
   t=t.replace(/^.+Set\s+\d+\/\d+.+\|.+$/gm,'');
-  // Rimuovi "Recupero: mm:ss" standalone
   t=t.replace(/^[Rr]ecupero:\s*\d+:\d+\s*$/gm,'');
   t=t.replace(/Quando sei pronto[^.\n]*[.\n]/gi,'').replace(/Dimmi quante reps[^.\n]*[.\n]/gi,'');
   t=t.replace(/\n{3,}/g,'\n\n').replace(/^\n+|\n+$/g,'').trim();
@@ -1476,6 +1462,92 @@ function addTyping(){
   msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight; return id;
 }
 function removeTyping(id){var el=document.getElementById(id); if(el) el.remove();}
+
+// ============================================================
+// WORKOUT LIST OVERLAY
+// ============================================================
+function showWorkoutList(){
+  var overlay = document.getElementById('workoutListOverlay');
+  var body = document.getElementById('wlistBody');
+  var title = document.getElementById('wlistTitle');
+  title.textContent = sessionWorkout || 'Workout completo';
+  body.innerHTML = '';
+  var csv = currentProfile && currentProfile.workout_csv ? currentProfile.workout_csv : '';
+  if(!csv.trim()){
+    body.innerHTML = '<div class="wlist-empty">Nessun dettaglio workout disponibile per questo programma.</div>';
+    overlay.classList.add('open');
+    return;
+  }
+  var lines = csv.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+  if(lines.length < 2){
+    body.innerHTML = '<div class="wlist-empty">Nessun esercizio configurato.</div>';
+    overlay.classList.add('open');
+    return;
+  }
+  var header = lines[0].split(',').map(function(h){return h.trim().toLowerCase();});
+  var idxWorkout = -1, idxEsercizio = -1, idxSets = -1, idxReps = -1, idxTempo = -1, idxRecupero = -1, idxRir = -1, idxNote = -1;
+  header.forEach(function(h, i){
+    if(h === 'workout') idxWorkout = i;
+    else if(h === 'esercizio' || h === 'nome') idxEsercizio = i;
+    else if(h === 'set' || h === 'sets') idxSets = i;
+    else if(h === 'reps' || h === 'ripetizioni') idxReps = i;
+    else if(h === 'tempo' || h === 'tempo esecuzione') idxTempo = i;
+    else if(h === 'recupero' || h === 'riposo') idxRecupero = i;
+    else if(h === 'rir') idxRir = i;
+    else if(h === 'note') idxNote = i;
+  });
+  var groups = {};
+  var orderedWorkouts = [];
+  for(var i=1; i<lines.length; i++){
+    var cells = lines[i].split(',').map(function(c){return c.trim();});
+    if(cells.length < 2) continue;
+    var wname = (idxWorkout >= 0 && cells[idxWorkout]) ? cells[idxWorkout] : 'Workout';
+    if(!groups[wname]){ groups[wname] = []; orderedWorkouts.push(wname); }
+    groups[wname].push({
+      nome: idxEsercizio >= 0 ? (cells[idxEsercizio] || '-') : (cells[0] || '-'),
+      sets: idxSets >= 0 ? cells[idxSets] : '',
+      reps: idxReps >= 0 ? cells[idxReps] : '',
+      tempo: idxTempo >= 0 ? cells[idxTempo] : '',
+      recupero: idxRecupero >= 0 ? cells[idxRecupero] : '',
+      rir: idxRir >= 0 ? cells[idxRir] : '',
+      note: idxNote >= 0 ? cells[idxNote] : ''
+    });
+  }
+  if(orderedWorkouts.length === 0){
+    body.innerHTML = '<div class="wlist-empty">Nessun esercizio trovato nel CSV.</div>';
+    overlay.classList.add('open');
+    return;
+  }
+  var html = '';
+  orderedWorkouts.forEach(function(wname){
+    var exercises = groups[wname];
+    html += '<div class="wlist-group">';
+    if(orderedWorkouts.length > 1 || wname !== 'Workout'){
+      html += '<div class="wlist-group-name">'+esc(wname)+'</div>';
+    }
+    exercises.forEach(function(ex){
+      html += '<div class="wlist-ex">';
+      html += '<div class="wlist-ex-name">'+esc(ex.nome)+'</div>';
+      var meta = [];
+      if(ex.sets && ex.reps) meta.push(esc(ex.sets)+' set \u00D7 '+esc(ex.reps)+' reps');
+      else if(ex.sets) meta.push(esc(ex.sets)+' set');
+      else if(ex.reps) meta.push(esc(ex.reps)+' reps');
+      if(ex.tempo) meta.push('Tempo: '+esc(ex.tempo));
+      if(ex.rir && ex.rir !== '-') meta.push('RIR: '+esc(ex.rir));
+      if(ex.recupero) meta.push('Recupero: '+esc(ex.recupero));
+      if(meta.length) html += '<div class="wlist-ex-meta">'+meta.join(' \u00B7 ')+'</div>';
+      if(ex.note) html += '<div class="wlist-ex-meta" style="margin-top:4px;font-style:italic;">'+esc(ex.note)+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  body.innerHTML = html;
+  overlay.classList.add('open');
+}
+
+function closeWorkoutList(){
+  document.getElementById('workoutListOverlay').classList.remove('open');
+}
 
 async function showAdmin(){showScreen('adminScreen'); await renderUserTable(); await renderLogTable();}
 
@@ -1691,7 +1763,6 @@ async function saveLogEdit(){
   document.getElementById('logModalContent').textContent=newText;
   document.getElementById('logViewMode').style.display='block';
   document.getElementById('logEditMode').style.display='none';
-  // Aggiorna lista se siamo nella dashboard
   if(typeof showDash === 'function') showDash();
 }
 
@@ -1759,7 +1830,6 @@ async function submitOnboard(){
   }catch(e){btn.disabled=false; btn.textContent='Invia richiesta coaching'; errEl.textContent='Errore. Riprova.';}
 }
 
-
 // ============================================================
 // PROGRESS SCREEN
 // ============================================================
@@ -1794,7 +1864,6 @@ function switchProgressTab(tab){
 }
 
 async function showProgress(){
-  // Returns promise so switchProgressTab can await data load
   showScreen('progressScreen');
   switchProgressTab('exercise');
   var r = await sb.from('sessions')
@@ -1859,10 +1928,10 @@ function renderProgressCharts(){
     grandTotalReps += tot; totalSetsCount += sets.length;
   });
   var globalAvgReps = totalSetsCount>0 ? Math.round(grandTotalReps/totalSetsCount*10)/10 : 0;
-  document.getElementById('pStatSessions').textContent = totalSetsCount || '—';
-  document.getElementById('pStatPR').textContent = prReps || '—';
-  document.getElementById('pStatAvgReps').textContent = globalAvgReps || '—';
-  document.getElementById('pStatTotalReps').textContent = grandTotalReps || '—';
+  document.getElementById('pStatSessions').textContent = totalSetsCount || '\u2014';
+  document.getElementById('pStatPR').textContent = prReps || '\u2014';
+  document.getElementById('pStatAvgReps').textContent = globalAvgReps || '\u2014';
+  document.getElementById('pStatTotalReps').textContent = grandTotalReps || '\u2014';
   var accent='#c8f060', accentDim='rgba(200,240,96,0.15)';
   chartRepsInst = destroyChart(chartRepsInst);
   chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRepsData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
@@ -1887,7 +1956,6 @@ function renderOverviewCharts(){
   var cutoff = new Date(Date.now() - period * 24*60*60*1000);
   var filtered = progressData.filter(function(s){ return new Date(s.created_at) >= cutoff; });
 
-  // Stat cards
   var totalSets = 0, rpeSum = 0, rpeCount = 0;
   filtered.forEach(function(s){
     if(!s.log_data || !s.log_data.exercises) return;
@@ -1899,20 +1967,18 @@ function renderOverviewCharts(){
   });
   document.getElementById('ovStatSessions').textContent = filtered.length;
   document.getElementById('ovStatSets').textContent = totalSets;
-  document.getElementById('ovStatRPE').textContent = rpeCount > 0 ? Math.round(rpeSum/rpeCount*10)/10 : '—';
+  document.getElementById('ovStatRPE').textContent = rpeCount > 0 ? Math.round(rpeSum/rpeCount*10)/10 : '\u2014';
 
-  // Heatmap — inizializza al mese corrente se null
   if(calCurrentMonth === null){
     var now = new Date();
     calCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   }
   renderHeatmapMonth();
 
-  // RPE per sessione (tutte)
   var rpeLabels = [], rpeData = [];
   filtered.forEach(function(s){
     if(!s.log_data || !s.log_data.exercises) return;
-    var sets = [], rSum = 0, rCnt = 0;
+    var rSum = 0, rCnt = 0;
     s.log_data.exercises.forEach(function(ex){ getExSets(ex).forEach(function(st){ if(st.rpe>0){ rSum+=st.rpe; rCnt++; } }); });
     if(rCnt > 0){
       rpeLabels.push(new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'}));
@@ -1928,7 +1994,6 @@ function renderOverviewCharts(){
     });
   }
 
-  // Torta RIR
   var rirBuckets = { 'RIR 0': 0, 'RIR 1': 0, 'RIR 2': 0, 'RIR 3+': 0 };
   filtered.forEach(function(s){
     if(!s.log_data || !s.log_data.exercises) return;
@@ -1960,7 +2025,7 @@ function renderOverviewCharts(){
     var pct = total > 0 ? Math.round(pieData[i]/total*100) : 0;
     return '<div style="display:flex;align-items:center;gap:8px;">'
       + '<div style="width:10px;height:10px;border-radius:2px;background:'+pieColors[i]+';flex-shrink:0;"></div>'
-      + '<span>'+l+' — <strong style="color:var(--text)">'+pct+'%</strong> ('+pieData[i]+')</span></div>';
+      + '<span>'+l+' \u2014 <strong style="color:var(--text)">'+pct+'%</strong> ('+pieData[i]+')</span></div>';
   }).join('');
 }
 
@@ -1969,10 +2034,8 @@ function renderHeatmapMonth(){
   var label = document.getElementById('calMonthLabel');
   if(!grid || !calCurrentMonth) return;
 
-  // Aggiorna label mese
   label.textContent = calCurrentMonth.toLocaleDateString('it-IT', {month:'long', year:'numeric'});
 
-  // Mappa giorno -> sessioni (tutte le sessioni, non filtrate per periodo)
   var dayMap = {};
   progressData.forEach(function(s){
     var d = new Date(s.created_at);
@@ -1986,18 +2049,13 @@ function renderHeatmapMonth(){
   var daysInMonth = new Date(year, month+1, 0).getDate();
   var today = new Date(); today.setHours(0,0,0,0);
 
-  // Genera tutti i giorni del mese
   var days = [];
   for(var d=1; d<=daysInMonth; d++) days.push(new Date(year, month, d));
 
-  // Trova il lunedi della prima settimana
   var firstDay = days[0];
   var dow = firstDay.getDay();
-  var startOffset = (dow === 0 ? 6 : dow - 1); // quanti giorni prima del lunedi
+  var startOffset = (dow === 0 ? 6 : dow - 1);
 
-  // Costruisci griglia settimane (array di 7 slot, null per giorni fuori mese)
-  var totalSlots = startOffset + daysInMonth;
-  var weeks = Math.ceil(totalSlots / 7);
   var slots = [];
   for(var i=0; i<startOffset; i++) slots.push(null);
   days.forEach(function(d){ slots.push(d); });
@@ -2006,7 +2064,6 @@ function renderHeatmapMonth(){
   for(var i=0; i<slots.length; i+=7) wkArrays.push(slots.slice(i, i+7));
 
   grid.innerHTML = '';
-  // Render as rows per week (Windows calendar style) — each week is a row
   for(var wi=0; wi<wkArrays.length; wi++){
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:3px;align-items:center;';
@@ -2021,26 +2078,23 @@ function renderHeatmapMonth(){
         var bg = isFuture ? 'rgba(255,255,255,0.03)' : cnt===0 ? 'var(--border2)' : cnt===1 ? 'rgba(200,240,96,0.35)' : cnt===2 ? 'rgba(200,240,96,0.65)' : '#c8f060';
         cell.style.cssText = 'width:28px;height:28px;border-radius:3px;flex-shrink:0;background:'+bg+';display:flex;align-items:flex-end;justify-content:flex-end;cursor:'+(cnt>0?'pointer':'default')+';';
         var numSpan = document.createElement('span');
-        numSpan.style.cssText = 'font-size:9px;line-height:1;color:'+(cnt>0?'rgba(0,0,0,0.6)':isFuture?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.3)')+';padding:2px;font-family:DM Mono,monospace;';
+        numSpan.style.cssText = 'font-size:9px;line-height:1;color:'+(cnt>0?'rgba(0,0,0,0.6)':isFuture?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.3)')+';padding:2px 3px;';
         numSpan.textContent = d.getDate();
         cell.appendChild(numSpan);
         if(cnt > 0){
-          (function(date, sessList){
-            cell.onclick = function(){
+          (function(day){
+            cell.addEventListener('click', function(){
+              var sessions = dayMap[day.toDateString()] || [];
               var modal = document.getElementById('heatmapDayModal');
-              document.getElementById('heatmapDayTitle').textContent = date.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
-              document.getElementById('heatmapDayContent').innerHTML = sessList.map(function(s){
-                var exList = (s.log_data && s.log_data.exercises) ? s.log_data.exercises.map(function(ex){
-                  var sets = getExSets(ex);
-                  return '<div style="color:var(--accent);margin-top:6px;">'+ex.name+'</div>'
-                    + sets.map(function(st,i){ return '<div>Set '+(i+1)+': '+st.reps+' reps | RIR '+st.rir+(st.rpe?' | RPE '+st.rpe:'')+(st.note?' | '+st.note:'')+'</div>'; }).join('');
-                }).join('') : '';
-                return '<div style="border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:8px;">'
-                  +'<div style="font-weight:500;">'+s.workout_name+'</div>'+exList+'</div>';
+              document.getElementById('heatmapDayTitle').textContent = day.toLocaleDateString('it-IT', {day:'numeric', month:'long', year:'numeric'});
+              document.getElementById('heatmapDayContent').innerHTML = sessions.map(function(s){
+                return '<div style="padding:8px 0;border-bottom:1px solid var(--border);">'
+                  +'<div style="font-weight:600;color:var(--text);">'+esc(s.workout_name||'-')+'</div>'
+                  +'<div style="font-size:11px;color:var(--muted);">'+new Date(s.created_at).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})+'</div></div>';
               }).join('');
               modal.style.display = 'flex';
-            };
-          })(d, dayMap[d.toDateString()]);
+            });
+          })(d);
         }
       }
       row.appendChild(cell);
@@ -2050,21 +2104,26 @@ function renderHeatmapMonth(){
 }
 
 // ============================================================
-// SESSION DRAFT — salva/riprendi sessione non completata
+// SESSION DRAFT (resume in-progress sessions)
 // ============================================================
 async function saveDraftSession(){
-  if(!currentUser || !sessionWorkout || !sessionHistory.length) return;
+  if(!currentUser || !sessionWorkout || sessionHistory.length < 2) return;
+  if(currentProfile && currentProfile._isDemo) return;
   try{
-    await sb.from('session_drafts').upsert({
+    var draft = {
       user_id: currentUser.id,
       workout_name: sessionWorkout,
-      program_coach_rules: currentProfile.coach_rules || null,
-      program_workout_csv: currentProfile.workout_csv || null,
-      program_extra: currentProfile.ai_prompt || null,
       history: sessionHistory,
+      session_type: currentProfile && currentProfile.session_type || 'bodyweight',
       updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
-  }catch(e){ /* silent */ }
+    };
+    var existing = await sb.from('session_drafts').select('id').eq('user_id', currentUser.id).maybeSingle();
+    if(existing && existing.data && existing.data.id){
+      await sb.from('session_drafts').update(draft).eq('user_id', currentUser.id);
+    } else {
+      await sb.from('session_drafts').insert(draft);
+    }
+  }catch(e){ /* silent fail, draft is opzionale */ }
 }
 
 async function clearDraftSession(){
@@ -2075,130 +2134,159 @@ async function clearDraftSession(){
 async function checkDraftSession(){
   if(!currentUser) return null;
   try{
-    var r = await sb.from('session_drafts')
-      .select('*').eq('user_id', currentUser.id).single();
-    if(r.error || !r.data) return null;
-    // Ignora bozze più vecchie di 24h
-    var age = Date.now() - new Date(r.data.updated_at).getTime();
-    if(age > 24*60*60*1000){ await clearDraftSession(); return null; }
-    return r.data;
+    var r = await sb.from('session_drafts').select('*').eq('user_id', currentUser.id).maybeSingle();
+    return r && r.data ? r.data : null;
   }catch(e){ return null; }
 }
 
-async function resumeDraftSession(draft){
-  if(!draft) return;
-  currentProfile = Object.assign({}, currentProfile, {
-    coach_rules: draft.program_coach_rules || '',
-    workout_csv: draft.program_workout_csv || '',
-    ai_prompt: draft.program_extra || ''
-  });
+function resumeDraftSession(draft){
   sessionWorkout = draft.workout_name;
   sessionHistory = draft.history || [];
   selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = true;
-  if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval = null; }
-  sessionTimerRunning = false; sessionTimerLeft = 0; sessionTimerTotal = 0;
+  if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
+  sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
   document.getElementById('sessionTitle').textContent = sessionWorkout;
   document.getElementById('messages').innerHTML = '';
-  document.getElementById('sessionTimerNum').textContent = '00:00';
-  document.getElementById('sessionTimerNum').style.color = 'var(--text)';
-  document.getElementById('sessionTimerGo').textContent = '\u25B6';
+  document.getElementById('sessionTimerNum').textContent='00:00';
+  document.getElementById('sessionTimerNum').style.color='var(--text)';
+  document.getElementById('sessionTimerGo').textContent='\u25B6';
+  var wrow = document.getElementById('weightRow');
+  if(wrow) wrow.style.display = (draft.session_type==='gym') ? 'block' : 'none';
   var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
-  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
-  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
-  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='—';
-  document.querySelectorAll('.rpe-btn').forEach(function(b){ b.classList.remove('sel'); });
-  currentSetMode = 'single'; currentExercises = [];
-  renderInputFields('single', []);
-  // Ricostruisci i bubble dalla history
-  sessionHistory.forEach(function(msg){
-    if(msg.role === 'user') addBubble('user', msg.content);
-    else if(msg.role === 'assistant') addBubble('ai', msg.content);
+  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='\u2014';
+  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='\u2014';
+  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='\u2014';
+  document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
+  currentSetMode='single'; currentExercises=[];
+  renderInputFields('single',[]);
+  // Replay history
+  sessionHistory.forEach(function(m){
+    if(m.role==='user') addBubble('user', m.content);
+    else addBubble('ai', m.content);
   });
 }
 
+// ============================================================
+// ATHLETE CONTEXT for AI
+// ============================================================
 function buildAthleteContext(profile){
   if(!profile) return '';
-  var fields=[profile.eta?'Eta: '+profile.eta:null,profile.sesso?'Sesso: '+profile.sesso:null,profile.peso?'Peso: '+profile.peso+' kg':null,profile.altezza?'Altezza: '+profile.altezza+' cm':null,profile.livello?'Livello: '+profile.livello:null,profile.frequenza?'Frequenza: '+profile.frequenza:null,profile.discipline?'Discipline: '+profile.discipline:null,profile.skill?'Skill: '+profile.skill:null,profile.obiettivo?'Obiettivo: '+profile.obiettivo:null,profile.obiettivo3m?'Obiettivo 3 mesi: '+profile.obiettivo3m:null,profile.disponibilita?'Disponibilita: '+profile.disponibilita:null,profile.luogo?'Luogo: '+profile.luogo:null,profile.attrezzatura?'Attrezzatura: '+profile.attrezzatura:null,profile.infortuni?'Infortuni: '+profile.infortuni:null,profile.limitazioni?'Limitazioni: '+profile.limitazioni:null,profile.stile?'Stile: '+profile.stile:null,profile.sonno?'Sonno: '+profile.sonno:null].filter(Boolean);
-  if(!fields.length) return '';
-  return '\n\nPROFILO ATLETA:\n'+fields.join('\n');
+  var parts = [];
+  if(profile.eta) parts.push('Et\u00E0: '+profile.eta);
+  if(profile.sesso) parts.push('Sesso: '+profile.sesso);
+  if(profile.peso) parts.push('Peso: '+profile.peso+'kg');
+  if(profile.altezza) parts.push('Altezza: '+profile.altezza+'cm');
+  if(profile.livello) parts.push('Livello: '+profile.livello);
+  if(profile.frequenza) parts.push('Frequenza: '+profile.frequenza);
+  if(profile.discipline) parts.push('Discipline: '+profile.discipline);
+  if(profile.skill) parts.push('Skill: '+profile.skill);
+  if(profile.obiettivo) parts.push('Obiettivo: '+profile.obiettivo);
+  if(profile.obiettivo3m) parts.push('Obiettivo 3 mesi: '+profile.obiettivo3m);
+  if(profile.disponibilita) parts.push('Disponibilit\u00E0: '+profile.disponibilita);
+  if(profile.luogo) parts.push('Luogo: '+profile.luogo);
+  if(profile.attrezzatura) parts.push('Attrezzatura: '+profile.attrezzatura);
+  if(profile.infortuni && profile.infortuni!=='No') parts.push('Infortuni: '+profile.infortuni);
+  if(profile.limitazioni) parts.push('Limitazioni: '+profile.limitazioni);
+  if(profile.stile) parts.push('Stile vita: '+profile.stile);
+  if(profile.sonno) parts.push('Sonno: '+profile.sonno);
+  if(profile.motivazione) parts.push('Motivazione: '+profile.motivazione);
+  if(profile.note_libere) parts.push('Note: '+profile.note_libere);
+  if(!parts.length) return '';
+  return '\n\nPROFILO ATLETA:\n'+parts.join('\n');
 }
 
+// ============================================================
+// EXERCISE LIBRARY (admin)
+// ============================================================
 async function loadLibrary(){
-  var r=await sb.from('exercises').select('*').order('category').order('name');
-  if(r.error){console.error(r.error); return;}
-  allExercises=r.data||[];
+  var r = await sb.from('exercises').select('*').order('name',{ascending:true});
+  allExercises = r.data || [];
   filterLibrary();
 }
 
 function filterLibrary(){
-  var search=(document.getElementById('libSearch')||{}).value||''; search=search.toLowerCase();
-  var cat=(document.getElementById('libCat')||{}).value||'';
-  var equip=(document.getElementById('libEquip')||{}).value||'';
-  var level=(document.getElementById('libLevel')||{}).value||'';
-  var filtered=allExercises.filter(function(e){
-    return (!search||(e.name.toLowerCase().indexOf(search)>-1)||((e.muscles||'').toLowerCase().indexOf(search)>-1))&&(!cat||e.category===cat)&&(!equip||(e.equipment||'').toLowerCase().indexOf(equip)>-1)&&(!level||e.level===level);
+  var q = (document.getElementById('libSearch').value||'').toLowerCase().trim();
+  var cat = document.getElementById('libCat').value;
+  var equip = (document.getElementById('libEquip').value||'').toLowerCase();
+  var level = document.getElementById('libLevel').value;
+  var filtered = allExercises.filter(function(ex){
+    if(q && ex.name && ex.name.toLowerCase().indexOf(q)===-1) return false;
+    if(cat && ex.category !== cat) return false;
+    if(equip && (!ex.equipment || ex.equipment.toLowerCase().indexOf(equip)===-1)) return false;
+    if(level && ex.level !== level) return false;
+    return true;
   });
-  var levelBadge={beginner:'badge-active',intermediate:'badge-pending',advanced:'badge-inactive'};
-  var levelLabel={beginner:'Base',intermediate:'Interm.',advanced:'Avanzato'};
-  var catColor={push:'#f06060',pull:'#60a0f0',legs:'#a060f0',core:'#f0c060',handstand:'#60f0c0'};
-  var tbody=document.getElementById('libTableBody');
-  var countEl=document.getElementById('libCount');
-  if(countEl) countEl.textContent=filtered.length+' esercizi'+(allExercises.length!==filtered.length?' (filtrati su '+allExercises.length+')':'');
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="8" class="empty-table">Nessun esercizio trovato.</td></tr>'; return;}
-  tbody.innerHTML=filtered.map(function(e){
-    var cc=catColor[e.category]||'#888';
-    var r=parseInt(cc.slice(1,3),16),g=parseInt(cc.slice(3,5),16),b=parseInt(cc.slice(5,7),16);
-    return '<tr><td style="font-weight:500;">'+esc(e.name)+'</td><td><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba('+r+','+g+','+b+',0.15);color:'+cc+';">'+(e.category||'-')+'</span></td><td style="color:var(--muted);font-size:11px;">'+esc(e.muscles||'-')+'</td><td style="color:var(--muted);font-size:11px;">'+esc(e.equipment||'-')+'</td><td><span class="badge '+(levelBadge[e.level]||'')+'">'+(levelLabel[e.level]||e.level||'-')+'</span></td><td style="color:var(--muted);font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(e.progressions||'')+'">'+esc(e.progressions||'-')+'</td><td style="font-size:10px;color:'+(e.owner_id?'var(--accent)':'var(--muted)')+';">'+(e.owner_id?'Custom':'Globale')+'</td><td><button class="action-btn" onclick="openExerciseModal(\''+e.id+'\')">Modifica</button><button class="action-btn danger" onclick="deleteExercise(\''+e.id+'\',\''+esc(e.name)+'\')">Elimina</button></td></tr>';
+  document.getElementById('libCount').textContent = filtered.length + ' / ' + allExercises.length + ' esercizi';
+  var tbody = document.getElementById('libTableBody');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Nessun esercizio trovato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(ex){
+    return '<tr><td>'+esc(ex.name||'-')+'</td>'
+      +'<td style="color:var(--muted)">'+esc(ex.category||'-')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px;">'+esc(ex.muscles||'-')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px;">'+esc(ex.equipment||'-')+'</td>'
+      +'<td><span class="badge">'+esc(ex.level||'-')+'</span></td>'
+      +'<td style="color:var(--muted);font-size:11px;">'+esc(ex.progressions||'-')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px;">'+esc(ex.cue||'-')+'</td>'
+      +'<td><button class="action-btn" onclick="openExerciseModal(\''+ex.id+'\')">Modifica</button>'
+      +'<button class="action-btn danger" onclick="deleteExercise(\''+ex.id+'\')">X</button></td></tr>';
   }).join('');
 }
 
 function openExerciseModal(id){
-  document.getElementById('exError').textContent='';
-  if(!id){
-    document.getElementById('exModalTitle').textContent='Nuovo esercizio';
-    document.getElementById('exId').value='';
-    ['exName','exMuscles','exEquipment','exCue','exProgressions','exNotes'].forEach(function(f){document.getElementById(f).value='';});
-    document.getElementById('exCategory').value='';
-    document.getElementById('exLevel').value='';
-    document.getElementById('exRest').value='90';
-  }else{
-    var e=allExercises.find(function(x){return x.id===id;});
-    if(!e) return;
-    document.getElementById('exModalTitle').textContent='Modifica: '+e.name;
-    document.getElementById('exId').value=e.id;
-    document.getElementById('exName').value=e.name||'';
-    document.getElementById('exCategory').value=e.category||'';
-    document.getElementById('exLevel').value=e.level||'';
-    document.getElementById('exMuscles').value=e.muscles||'';
-    document.getElementById('exEquipment').value=e.equipment||'';
-    document.getElementById('exRest').value=e.default_rest||90;
-    document.getElementById('exCue').value=e.cue||'';
-    document.getElementById('exProgressions').value=e.progressions||'';
-    document.getElementById('exNotes').value=e.notes||'';
-  }
+  var ex = id ? allExercises.find(function(e){return e.id===id;}) : null;
+  document.getElementById('exModalTitle').textContent = ex ? 'Modifica esercizio' : 'Nuovo esercizio';
+  document.getElementById('exId').value = ex ? ex.id : '';
+  document.getElementById('exName').value = ex ? (ex.name||'') : '';
+  document.getElementById('exCategory').value = ex ? (ex.category||'') : '';
+  document.getElementById('exLevel').value = ex ? (ex.level||'') : '';
+  document.getElementById('exMuscles').value = ex ? (ex.muscles||'') : '';
+  document.getElementById('exEquipment').value = ex ? (ex.equipment||'') : '';
+  document.getElementById('exRest').value = ex ? (ex.rest_seconds||'') : '';
+  document.getElementById('exCue').value = ex ? (ex.cue||'') : '';
+  document.getElementById('exProgressions').value = ex ? (ex.progressions||'') : '';
+  document.getElementById('exNotes').value = ex ? (ex.notes||'') : '';
+  document.getElementById('exError').textContent = '';
   document.getElementById('exerciseModal').classList.add('open');
 }
 
 async function saveExercise(){
-  var errEl=document.getElementById('exError');
-  var name=document.getElementById('exName').value.trim();
-  if(!name){errEl.textContent='Il nome e obbligatorio.'; return;}
-  var id=document.getElementById('exId').value;
-  var payload={name:name,category:document.getElementById('exCategory').value||null,level:document.getElementById('exLevel').value||null,muscles:document.getElementById('exMuscles').value.trim()||null,equipment:document.getElementById('exEquipment').value.trim()||null,default_rest:parseInt(document.getElementById('exRest').value)||90,cue:document.getElementById('exCue').value.trim()||null,progressions:document.getElementById('exProgressions').value.trim()||null,notes:document.getElementById('exNotes').value.trim()||null,owner_id:null};
+  var id = document.getElementById('exId').value;
+  var name = document.getElementById('exName').value.trim();
+  var errEl = document.getElementById('exError');
+  if(!name){ errEl.textContent = 'Il nome \u00E8 obbligatorio.'; return; }
+  var data = {
+    name: name,
+    category: document.getElementById('exCategory').value||null,
+    level: document.getElementById('exLevel').value||null,
+    muscles: document.getElementById('exMuscles').value.trim()||null,
+    equipment: document.getElementById('exEquipment').value.trim()||null,
+    rest_seconds: document.getElementById('exRest').value?parseInt(document.getElementById('exRest').value):null,
+    cue: document.getElementById('exCue').value.trim()||null,
+    progressions: document.getElementById('exProgressions').value.trim()||null,
+    notes: document.getElementById('exNotes').value.trim()||null
+  };
   var r;
-  if(id){r=await sb.from('exercises').update(payload).eq('id',id);}
-  else{r=await sb.from('exercises').insert(payload);}
-  if(r.error){errEl.textContent='Errore: '+r.error.message; return;}
-  closeModal('exerciseModal'); await loadLibrary();
-}
-
-async function deleteExercise(id, name){
-  if(!confirm('Eliminare "'+name+'"?')) return;
-  var r=await sb.from('exercises').delete().eq('id',id);
-  if(r.error){alert('Errore: '+r.error.message); return;}
+  if(id){
+    r = await sb.from('exercises').update(data).eq('id', id);
+  } else {
+    r = await sb.from('exercises').insert(data);
+  }
+  if(r.error){ errEl.textContent = 'Errore: '+r.error.message; return; }
+  closeModal('exerciseModal');
   await loadLibrary();
 }
+
+async function deleteExercise(id){
+  if(!confirm('Eliminare questo esercizio?')) return;
+  var r = await sb.from('exercises').delete().eq('id', id);
+  if(r.error){ alert('Errore: '+r.error.message); return; }
+  await loadLibrary();
+}
+
 </script>
 </body>
 </html>
