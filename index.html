@@ -1183,12 +1183,13 @@ async function aiSend(text, isFirst){
         sessionContext = '\n\nSTORICO SESSIONI RECENTI:\n'+logs;
       }
     }
+    var lowerText = (text || '').toLowerCase().trim();
+    var logFormat = (lowerText === 'fine') ? COACH_LOG_FORMAT : '';
     var systemPrompt = (currentProfile.coach_rules||currentProfile.ai_prompt||'')
       + (currentProfile.workout_csv ? '\n\nPROGRAMMA WORKOUT:\n'+currentProfile.workout_csv : '')
       + (currentProfile.ai_prompt && currentProfile.coach_rules ? '\n\nNOTE COACH:\n'+currentProfile.ai_prompt : '')
-      + athleteContext + sessionContext + COACH_LOG_FORMAT;
+      + athleteContext + sessionContext + logFormat;
     var MAX_HISTORY = 12; // ~6 scambi user+assistant
-    var lowerText = (text || '').toLowerCase().trim();
     var keepFull = (lowerText === 'fine' || lowerText === 'recap');
     var historyToSend = sessionHistory;
     if(!keepFull && sessionHistory.length > MAX_HISTORY){
@@ -1365,6 +1366,8 @@ function updateSetInfo(text){
 }
 
 function extractOptions(text){
+  // Se la risposta contiene un tag esercizio, non sono opzioni a scelta multipla
+  if(/\[SET:|\[SUPERSET:/.test(text)) return [];
   var lines=text.split('\n'), options=[];
   for(var i=0;i<lines.length;i++){
     var m=lines[i].match(/^[\s]*(?:[-]|\d+[.)])\s+(.+)$/);
