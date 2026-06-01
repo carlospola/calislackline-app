@@ -1,11 +1,38 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // --- Auth gate: only an authenticated admin may call this endpoint ---
+  // Verifies the caller's Supabase JWT and checks profiles.role === 'admin'.
+  // This endpoint uses the service-role key (bypasses RLS), so without this
+  // gate anyone could create/delete users and edit any profile.
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return res.status(401).json({ error: 'Autenticazione richiesta' });
+  try {
+    const uRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${token}` }
+    });
+    if (!uRes.ok) return res.status(401).json({ error: 'Sessione non valida' });
+    const u = await uRes.json();
+    if (!u || !u.id) return res.status(401).json({ error: 'Sessione non valida' });
+    const pRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${u.id}&select=role`,
+      { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+    );
+    const rows = await pRes.json();
+    if (!Array.isArray(rows) || !rows[0] || rows[0].role !== 'admin') {
+      return res.status(403).json({ error: 'Accesso riservato agli amministratori' });
+    }
+  } catch (e) {
+    return res.status(401).json({ error: 'Autenticazione fallita' });
+  }
+
   const { action, userId } = req.body;
 
   async function supabaseRequest(method, path, body) {

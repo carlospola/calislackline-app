@@ -1669,10 +1669,18 @@ function openLogModalById(id){
   if(s) openLogModal(s);
 }
 
+// Wrapper per /api/admin: allega il token di sessione Supabase come Bearer,
+// cosi' l'endpoint privilegiato puo' verificare che il chiamante sia admin.
+async function adminFetch(payload){
+  var token='';
+  try{ var s=await sb.auth.getSession(); token=(s&&s.data&&s.data.session&&s.data.session.access_token)||''; }catch(e){}
+  return fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
+}
+
 async function toggleStatus(userId, currentStatus){
   var newStatus=currentStatus==='active'?'inactive':'active';
   if(currentStatus==='active'&&!confirm('Disattivare questo atleta?')) return;
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateStatus',userId:userId,status:newStatus})});
+  var r=await adminFetch({action:'updateStatus',userId:userId,status:newStatus});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await renderUserTable();
@@ -1690,7 +1698,7 @@ async function createUser(){
   var email=document.getElementById('newUserEmail').value.trim();
   var pass=document.getElementById('newUserPass').value.trim();
   if(!name||!email||!pass){alert('Compila tutti i campi.'); return;}
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'createUser',name:name,email:email,password:pass})});
+  var r=await adminFetch({action:'createUser',name:name,email:email,password:pass});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   closeModal('createUserModal'); await renderUserTable();
@@ -1710,7 +1718,7 @@ async function openAthleteProfileModal(userId, userName){
 }
 
 async function saveAthleteProfile(){
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateProfile',userId:athleteProgramsUserId,eta:document.getElementById('apEta').value||null,sesso:document.getElementById('apSesso').value||null,peso:document.getElementById('apPeso').value||null,altezza:document.getElementById('apAltezza').value||null,livello:document.getElementById('apLivello').value||null,frequenza:document.getElementById('apFrequenza').value||null,obiettivo:document.getElementById('apObiettivo').value||null,obiettivo3m:document.getElementById('apObiettivo3m').value||null,luogo:document.getElementById('apLuogo').value||null,disponibilita:document.getElementById('apDisponibilita').value||null,discipline:document.getElementById('apDiscipline').value||null,skill:document.getElementById('apSkill').value||null,attrezzatura:document.getElementById('apAttrezzatura').value||null,infortuni:document.getElementById('apInfortuni').value||null,limitazioni:document.getElementById('apLimitazioni').value||null,stile:document.getElementById('apStile').value||null,sonno:document.getElementById('apSonno').value||null,motivazione:document.getElementById('apMotivazione').value||null,note_libere:document.getElementById('apNote').value||null})});
+  var r=await adminFetch({action:'updateProfile',userId:athleteProgramsUserId,eta:document.getElementById('apEta').value||null,sesso:document.getElementById('apSesso').value||null,peso:document.getElementById('apPeso').value||null,altezza:document.getElementById('apAltezza').value||null,livello:document.getElementById('apLivello').value||null,frequenza:document.getElementById('apFrequenza').value||null,obiettivo:document.getElementById('apObiettivo').value||null,obiettivo3m:document.getElementById('apObiettivo3m').value||null,luogo:document.getElementById('apLuogo').value||null,disponibilita:document.getElementById('apDisponibilita').value||null,discipline:document.getElementById('apDiscipline').value||null,skill:document.getElementById('apSkill').value||null,attrezzatura:document.getElementById('apAttrezzatura').value||null,infortuni:document.getElementById('apInfortuni').value||null,limitazioni:document.getElementById('apLimitazioni').value||null,stile:document.getElementById('apStile').value||null,sonno:document.getElementById('apSonno').value||null,motivazione:document.getElementById('apMotivazione').value||null,note_libere:document.getElementById('apNote').value||null});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   closeModal('athleteProfileModal'); await renderUserTable(); alert('Profilo salvato.');
@@ -1718,7 +1726,7 @@ async function saveAthleteProfile(){
 
 async function resetAthleteProfile(){
   if(!confirm('Resettare tutti i dati del profilo?')) return;
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateProfile',userId:athleteProgramsUserId,eta:null,sesso:null,peso:null,altezza:null,livello:null,frequenza:null,obiettivo:null,obiettivo3m:null,luogo:null,disponibilita:null,discipline:null,skill:null,attrezzatura:null,infortuni:null,limitazioni:null,stile:null,sonno:null,motivazione:null,note_libere:null})});
+  var r=await adminFetch({action:'updateProfile',userId:athleteProgramsUserId,eta:null,sesso:null,peso:null,altezza:null,livello:null,frequenza:null,obiettivo:null,obiettivo3m:null,luogo:null,disponibilita:null,discipline:null,skill:null,attrezzatura:null,infortuni:null,limitazioni:null,stile:null,sonno:null,motivazione:null,note_libere:null});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await openAthleteProfileModal(athleteProgramsUserId, document.getElementById('athleteProfileName').textContent);
@@ -1728,7 +1736,7 @@ async function resetAthleteProfile(){
 async function deleteAthlete(){
   if(!confirm('Eliminare definitivamente questo atleta?')) return;
   if(!confirm('Sicuro? Verranno eliminati account, programmi e sessioni.')) return;
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deleteUser',userId:athleteProgramsUserId})});
+  var r=await adminFetch({action:'deleteUser',userId:athleteProgramsUserId});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   closeModal('athleteProfileModal'); await renderUserTable(); alert('Atleta eliminato.');
@@ -1785,7 +1793,7 @@ async function saveEditProgram(programId){
   var prompt=document.getElementById('editPrompt_'+programId).value.trim();
   if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
   var editType=document.getElementById('editType_'+programId); var sType=editType?editType.value:'bodyweight';
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editProgram',programId:programId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType})});
+  var r=await adminFetch({action:'editProgram',programId:programId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await renderAthletePrograms();
@@ -1798,7 +1806,7 @@ async function addProgram(){
   var prompt=document.getElementById('newProgPrompt').value.trim();
   if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
   var progType=document.getElementById('newProgType').value||'bodyweight';
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:progType})});
+  var r=await adminFetch({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:progType});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   document.getElementById('newProgName').value='';
@@ -1810,7 +1818,7 @@ async function addProgram(){
 
 async function removeProgram(programId){
   if(!confirm('Rimuovere questo programma?')) return;
-  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'removeProgram',programId:programId})});
+  var r=await adminFetch({action:'removeProgram',programId:programId});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await renderAthletePrograms(); await renderUserTable();
