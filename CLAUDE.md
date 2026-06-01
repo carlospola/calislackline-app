@@ -33,7 +33,13 @@ for all reads and athlete-scoped writes; privileged operations go through `/api/
 - **`api/admin.js`** — privileged Supabase operations using the **service-role key** (bypasses RLS).
   Single endpoint dispatched by `req.body.action`: `createUser`, `deleteUser`, `updateProfile`,
   `updateStatus`, `addProgram`/`editProgram`/`removeProgram`, `updateProgram`, `resetProgram`.
-  CORS is wide open (`*`) and there is **no auth check** on this endpoint — be aware when editing.
+  Protected by an **auth gate**: the handler reads the caller's Supabase JWT from the
+  `Authorization: Bearer <token>` header, verifies it via `GET /auth/v1/user`, then checks that the
+  user's `profiles.role === 'admin'` — otherwise it returns `401` (missing/invalid token) or `403`
+  (authenticated but not an admin). CORS is still wide open (`*`), but a valid **admin token is now
+  required**. The frontend never calls this endpoint with a bare `fetch`: it uses the `adminFetch()`
+  helper in `index.html`, which attaches the current session's access token and wraps every
+  `/api/admin` call. The service-role key still bypasses RLS, so keep this gate intact when editing.
 - **`api/callback.js`** — OAuth/recovery redirect handler; routes `type=recovery` to `/reset`.
 
 ### Supabase tables (inferred from queries — there are no migration files)
