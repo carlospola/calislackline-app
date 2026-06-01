@@ -1,10 +1,31 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // --- Auth gate: solo un utente Supabase autenticato puo' chiamare questo proxy ---
+  // Verifica il JWT del chiamante (stessa logica di api/admin.js, ma SENZA il check
+  // del ruolo: qui basta essere loggati). Senza questo gate /api/chat e' un proxy
+  // aperto verso Anthropic e chiunque puo' consumare ANTHROPIC_API_KEY.
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return res.status(401).json({ error: 'Autenticazione richiesta' });
+  try {
+    const uRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${token}` }
+    });
+    if (!uRes.ok) return res.status(401).json({ error: 'Sessione non valida' });
+    const u = await uRes.json();
+    if (!u || !u.id) return res.status(401).json({ error: 'Sessione non valida' });
+  } catch (e) {
+    return res.status(401).json({ error: 'Autenticazione fallita' });
+  }
 
   try {
     const body = req.body;

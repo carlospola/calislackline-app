@@ -1236,7 +1236,14 @@ async function aiSend(text, isFirst){
         historyToSend = historyToSend.slice(1);
       }
     }
-    var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemPrompt,messages:historyToSend})});
+    var chatToken='';
+    try{ var cs=await sb.auth.getSession(); chatToken=(cs&&cs.data&&cs.data.session&&cs.data.session.access_token)||''; }catch(e){}
+    var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken},body:JSON.stringify({system:systemPrompt,messages:historyToSend})});
+    if(res.status===401){
+      removeTyping(tid);
+      addBubble('ai','Sessione scaduta. Esci e rientra per continuare.');
+      return;
+    }
     var data = await res.json();
     removeTyping(tid);
     var reply = (data.content&&data.content[0]&&data.content[0].text)||'Errore risposta.';
