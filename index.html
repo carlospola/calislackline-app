@@ -166,6 +166,11 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 /* Workout list overlay */
 #workoutListOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:150;flex-direction:column;padding:0;}
 #workoutListOverlay.open{display:flex;}
+#workoutPickerOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:150;flex-direction:column;padding:0;}
+#workoutPickerOverlay.open{display:flex;}
+.wpick-btn{display:block;width:100%;text-align:left;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px 18px;margin-bottom:10px;color:var(--text);font-family:var(--display);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+.wpick-btn:hover{border-color:var(--accent);color:var(--accent);}
+.wpick-sub{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:400;margin-top:4px;}
 .wlist-topbar{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg);}
 .wlist-title{font-family:var(--display);font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--accent);}
 .wlist-close{font-size:11px;color:var(--text2);cursor:pointer;padding:6px 14px;border:1px solid var(--border2);border-radius:5px;background:transparent;font-family:var(--mono);}
@@ -393,6 +398,14 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     <button class="wlist-close" onclick="closeWorkoutList()">Chiudi</button>
   </div>
   <div class="wlist-body" id="wlistBody"></div>
+</div>
+
+<div id="workoutPickerOverlay">
+  <div class="wlist-topbar">
+    <div class="wlist-title" id="wpickTitle">Scegli il workout</div>
+    <button class="wlist-close" onclick="closeWorkoutPicker()">Annulla</button>
+  </div>
+  <div class="wlist-body" id="wpickBody"></div>
 </div>
 
 <!-- PROGRESS SCREEN -->
@@ -1046,12 +1059,47 @@ async function startSessionWithPrompt(programName, coachRules, workoutCsv, extra
       await clearDraftSession();
     }
   }
-  currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:workoutCsv||'', ai_prompt:extraPrompt||'', session_type:sessionType||'bodyweight'});
-  sessionWorkout = programName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
+  // CSV multi-workout: fai scegliere quale workout e invia all'AI solo quel blocco.
+  var parsed = parseWorkoutCsv(workoutCsv||'');
+  if(parsed.orderedWorkouts.length >= 2){
+    showWorkoutPicker(programName, coachRules, workoutCsv, extraPrompt, sessionType, parsed);
+    return;
+  }
+  beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, null);
+}
+
+function showWorkoutPicker(programName, coachRules, workoutCsv, extraPrompt, sessionType, parsed){
+  var overlay = document.getElementById('workoutPickerOverlay');
+  var body = document.getElementById('wpickBody');
+  document.getElementById('wpickTitle').textContent = programName;
+  body.innerHTML = '';
+  parsed.orderedWorkouts.forEach(function(wname){
+    var n = (parsed.fieldsByWorkout[wname]||[]).length;
+    var btn = document.createElement('button');
+    btn.className = 'wpick-btn';
+    btn.innerHTML = esc(wname)+'<div class="wpick-sub">'+n+(n===1?' esercizio':' esercizi')+'</div>';
+    btn.onclick = function(){
+      overlay.classList.remove('open');
+      beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, wname);
+    };
+    body.appendChild(btn);
+  });
+  overlay.classList.add('open');
+}
+
+function closeWorkoutPicker(){
+  document.getElementById('workoutPickerOverlay').classList.remove('open');
+}
+
+function beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, chosenWorkout){
+  var csvToUse = chosenWorkout ? buildFilteredCsv(workoutCsv||'', chosenWorkout) : (workoutCsv||'');
+  var displayName = chosenWorkout ? (programName+' \u2014 '+chosenWorkout) : programName;
+  currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:csvToUse, ai_prompt:extraPrompt||'', session_type:sessionType||'bodyweight'});
+  sessionWorkout = displayName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
   if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
   sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
-  document.getElementById('sessionTitle').textContent = programName;
+  document.getElementById('sessionTitle').textContent = displayName;
   document.getElementById('messages').innerHTML='';
   document.getElementById('sessionTimerNum').textContent='00:00';
   document.getElementById('sessionTimerNum').style.color='var(--text)';
@@ -1065,7 +1113,7 @@ async function startSessionWithPrompt(programName, coachRules, workoutCsv, extra
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
   currentSetMode='single'; currentExercises=[];
   renderInputFields('single',[]);
-  aiSend('Inizia sessione: '+programName, true);
+  aiSend('Inizia sessione: '+displayName, true);
 }
 
 function buildSkipMessage(){
@@ -1486,24 +1534,14 @@ function removeTyping(id){var el=document.getElementById(id); if(el) el.remove()
 // ============================================================
 // WORKOUT LIST OVERLAY
 // ============================================================
-function showWorkoutList(){
-  var overlay = document.getElementById('workoutListOverlay');
-  var body = document.getElementById('wlistBody');
-  var title = document.getElementById('wlistTitle');
-  title.textContent = sessionWorkout || 'Workout completo';
-  body.innerHTML = '';
-  var csv = currentProfile && currentProfile.workout_csv ? currentProfile.workout_csv : '';
-  if(!csv.trim()){
-    body.innerHTML = '<div class="wlist-empty">Nessun dettaglio workout disponibile per questo programma.</div>';
-    overlay.classList.add('open');
-    return;
-  }
+// Parser CSV workout condiviso. Ritorna header, ordine workout, righe grezze per
+// workout (per ricostruire un CSV filtrato) e campi parsati (per il rendering).
+function parseWorkoutCsv(csv){
+  var result = { headerLine:'', orderedWorkouts:[], rowsByWorkout:{}, fieldsByWorkout:{} };
+  if(!csv || !csv.trim()) return result;
   var lines = csv.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
-  if(lines.length < 2){
-    body.innerHTML = '<div class="wlist-empty">Nessun esercizio configurato.</div>';
-    overlay.classList.add('open');
-    return;
-  }
+  if(lines.length < 2) return result;
+  result.headerLine = lines[0];
   var header = lines[0].split(',').map(function(h){return h.trim().toLowerCase();});
   var idxWorkout = -1, idxEsercizio = -1, idxSets = -1, idxReps = -1, idxTempo = -1, idxRecupero = -1, idxRir = -1, idxNote = -1;
   header.forEach(function(h, i){
@@ -1516,14 +1554,13 @@ function showWorkoutList(){
     else if(h === 'rir') idxRir = i;
     else if(h === 'note') idxNote = i;
   });
-  var groups = {};
-  var orderedWorkouts = [];
   for(var i=1; i<lines.length; i++){
     var cells = lines[i].split(',').map(function(c){return c.trim();});
     if(cells.length < 2) continue;
     var wname = (idxWorkout >= 0 && cells[idxWorkout]) ? cells[idxWorkout] : 'Workout';
-    if(!groups[wname]){ groups[wname] = []; orderedWorkouts.push(wname); }
-    groups[wname].push({
+    if(!result.rowsByWorkout[wname]){ result.rowsByWorkout[wname] = []; result.fieldsByWorkout[wname] = []; result.orderedWorkouts.push(wname); }
+    result.rowsByWorkout[wname].push(lines[i]);
+    result.fieldsByWorkout[wname].push({
       nome: idxEsercizio >= 0 ? (cells[idxEsercizio] || '-') : (cells[0] || '-'),
       sets: idxSets >= 0 ? cells[idxSets] : '',
       reps: idxReps >= 0 ? cells[idxReps] : '',
@@ -1533,14 +1570,39 @@ function showWorkoutList(){
       note: idxNote >= 0 ? cells[idxNote] : ''
     });
   }
+  return result;
+}
+
+// Ricostruisce un CSV con header + solo le righe del workout scelto.
+// Fallback al CSV originale se il workout non esiste.
+function buildFilteredCsv(csv, workoutName){
+  var parsed = parseWorkoutCsv(csv);
+  if(!parsed.headerLine || !parsed.rowsByWorkout[workoutName]) return csv;
+  return parsed.headerLine + '\n' + parsed.rowsByWorkout[workoutName].join('\n');
+}
+
+function showWorkoutList(){
+  var overlay = document.getElementById('workoutListOverlay');
+  var body = document.getElementById('wlistBody');
+  var title = document.getElementById('wlistTitle');
+  title.textContent = sessionWorkout || 'Workout completo';
+  body.innerHTML = '';
+  var csv = currentProfile && currentProfile.workout_csv ? currentProfile.workout_csv : '';
+  if(!csv.trim()){
+    body.innerHTML = '<div class="wlist-empty">Nessun dettaglio workout disponibile per questo programma.</div>';
+    overlay.classList.add('open');
+    return;
+  }
+  var parsed = parseWorkoutCsv(csv);
+  var orderedWorkouts = parsed.orderedWorkouts;
   if(orderedWorkouts.length === 0){
-    body.innerHTML = '<div class="wlist-empty">Nessun esercizio trovato nel CSV.</div>';
+    body.innerHTML = '<div class="wlist-empty">Nessun esercizio configurato.</div>';
     overlay.classList.add('open');
     return;
   }
   var html = '';
   orderedWorkouts.forEach(function(wname){
-    var exercises = groups[wname];
+    var exercises = parsed.fieldsByWorkout[wname];
     html += '<div class="wlist-group">';
     if(orderedWorkouts.length > 1 || wname !== 'Workout'){
       html += '<div class="wlist-group-name">'+esc(wname)+'</div>';
