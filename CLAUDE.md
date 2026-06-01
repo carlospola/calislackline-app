@@ -50,10 +50,23 @@ for all reads and athlete-scoped writes; privileged operations go through `/api/
 
 ## The AI session flow (most important to understand)
 
+**Pre-chat workout picker.** Before the session opens, `startSessionWithPrompt()` (~line 1050)
+parses the program's `workout_csv` with `parseWorkoutCsv()` (~line 1539, groups rows by the
+`workout` column). If the CSV defines **≥2 workouts**, it shows a picker overlay
+(`#workoutPickerOverlay` / `showWorkoutPicker`) so the athlete chooses which one to run; with
+0–1 workouts it skips straight to `beginSession()`. On confirm, `beginSession()` (~line 1094)
+calls `buildFilteredCsv()` (~line 1578) to rebuild the CSV with only the chosen workout's block
+(header + its rows; falls back to the full CSV if the workout isn't found), so the system prompt
+carries just that one workout instead of the whole program (**API-cost reduction**). It also sets
+`sessionWorkout = "Programma — Workout"` (the display name shown in the session title and saved
+with the log).
+
 This is the core loop and the trickiest part. In `aiSend()` (~line 1168):
 
 1. The **system prompt** is assembled per-message from `coach_rules`/`ai_prompt` + `workout_csv` +
    athlete context (`buildAthleteContext`, ~line 2233, only on the first message of a session).
+   Note that `workout_csv` here is already the **filtered** block for the chosen workout (see the
+   pre-chat picker above), not necessarily the program's full CSV.
 2. History is trimmed to `MAX_HISTORY = 12` messages, except when the user sends `fine` or `recap`
    (then full history is kept).
 3. The model communicates back to the UI through **bracket tags embedded in its replies**:
