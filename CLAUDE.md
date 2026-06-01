@@ -29,7 +29,17 @@ for all reads and athlete-scoped writes; privileged operations go through `/api/
 
 - **`api/chat.js`** — proxies to the Anthropic Messages API (`claude-sonnet-4-5`, max_tokens 1000).
   Keeps `ANTHROPIC_API_KEY` server-side. Frontend posts `{system, messages}`; this is the only
-  thing standing between the browser and the model.
+  thing standing between the browser and the model. Protected by an **auth gate**: before forwarding
+  to Anthropic, the handler reads the caller's Supabase JWT from the `Authorization: Bearer <token>`
+  header and verifies it via `GET /auth/v1/user` (same logic and `apikey`/header as `api/admin.js`,
+  but **without** the role check — any authenticated Supabase user is allowed; no `403`). It returns
+  `401` if the token is missing or invalid. CORS is still wide open (`*`), but `Allow-Headers` now
+  includes `Authorization` and a valid **logged-in user token is required**. The frontend attaches
+  the token in `aiSend()` (it pulls the current session's `access_token` from `sb.auth.getSession()`,
+  same source as `adminFetch()`); on a `401` it shows a visible "Sessione scaduta" message to the
+  athlete. This closes the previously-open proxy; **rate-limiting remains as a phase-2 follow-up.**
+  Reuses the existing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` env vars — no new
+  variable.
 - **`api/admin.js`** — privileged Supabase operations using the **service-role key** (bypasses RLS).
   Single endpoint dispatched by `req.body.action`: `createUser`, `deleteUser`, `updateProfile`,
   `updateStatus`, `addProgram`/`editProgram`/`removeProgram`, `updateProgram`, `resetProgram`.
@@ -98,7 +108,8 @@ When changing prompt assembly, the bracket-tag contract, or `LOG_DATA` shape, ke
 ### Required environment variables (Vercel project settings)
 
 - `ANTHROPIC_API_KEY` — used by `api/chat.js`.
-- `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — used by `api/admin.js`.
+- `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — used by `api/admin.js` **and now also
+  by `api/chat.js`** (for its JWT auth gate; reused, not new).
 - The frontend Supabase URL and anon key are hardcoded in `index.html` / `reset.html`.
 
 ## Regole di lavoro
