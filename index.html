@@ -325,8 +325,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div style="display:flex;gap:4px;">
         <button class="topbar-btn" onclick="showWorkoutList()">lista</button>
         <button class="topbar-btn" onclick="qSend('skip')">skip</button>
-        <button class="topbar-btn" onclick="qSend('recap')">recap</button>
-        <button class="topbar-btn" onclick="qSend('fine')">fine</button>
       </div>
     </div>
   </div>
@@ -1004,6 +1002,11 @@ async function doLogout(){
 }
 
 async function showDash(){
+  // Uscita sessione: ferma il timer di recupero (il bottone "fine" non esiste piu')
+  if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
+  sessionTimerRunning=false;
+  var stg=document.getElementById('sessionTimerGo'); if(stg) stg.textContent='Start';
+  var stn=document.getElementById('sessionTimerNum'); if(stn) stn.style.color='var(--text)';
   if(currentProfile&&currentProfile._isDemo&&currentProfile._orig) currentProfile=currentProfile._orig;
   showScreen('dashScreen');
   var name = (currentProfile&&currentProfile.name)||currentUser.email.split('@')[0];
@@ -1203,16 +1206,16 @@ function sendMsg(){
   if(wInput && wInput.value && currentProfile.session_type==='gym') parts.push('Peso: '+wInput.value+'kg');
   if(note) parts.push(note);
   // Tappa 1 — salvataggio permanente di ogni serie (stessa forma di log_data)
-  var rpeVal = (selectedRpe!==null) ? selectedRpe : 0;
+  var rpeVal = (selectedRpe!==null) ? selectedRpe : null;
   var weightVal = (wInput && wInput.value && currentProfile.session_type==='gym') ? parseFloat(wInput.value) : 0;
   var pendingSets = [];
   if(currentSetMode==='superset' && currentExercises.length>=2){
-    if(repsAv && parseInt(repsAv)>0) pendingSets.push({name:currentExercises[0], set:{reps:parseInt(repsAv), rir:rirAv?parseInt(rirAv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
-    if(repsBv && parseInt(repsBv)>0) pendingSets.push({name:currentExercises[1], set:{reps:parseInt(repsBv), rir:rirBv?parseInt(rirBv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
+    if(repsAv && parseInt(repsAv)>0) pendingSets.push({name:currentExercises[0], set:{reps:parseInt(repsAv), rir:rirAv?parseInt(rirAv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
+    if(repsBv && parseInt(repsBv)>0) pendingSets.push({name:currentExercises[1], set:{reps:parseInt(repsBv), rir:rirBv?parseInt(rirBv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
   } else {
     if(repsv && parseInt(repsv)>0){
       var setName = (currentExercises && currentExercises[0]) || currentSetState || 'Esercizio';
-      pendingSets.push({name:setName, set:{reps:parseInt(repsv), rir:rirv?parseInt(rirv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
+      pendingSets.push({name:setName, set:{reps:parseInt(repsv), rir:rirv?parseInt(rirv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
     }
   }
   if(pendingSets.length) queueAutosave(pendingSets);
@@ -1240,16 +1243,13 @@ async function aiSend(text, isFirst){
   try{
     var athleteContext = isFirst ? buildAthleteContext(currentProfile) : '';
     var sessionContext = '';
-    var lowerText = (text || '').toLowerCase().trim();
-    var logFormat = (lowerText === 'fine') ? COACH_LOG_FORMAT : '';
     var systemPrompt = (currentProfile.coach_rules||currentProfile.ai_prompt||'')
       + (currentProfile.workout_csv ? '\n\nPROGRAMMA WORKOUT:\n'+currentProfile.workout_csv : '')
       + (currentProfile.ai_prompt && currentProfile.coach_rules ? '\n\nNOTE COACH:\n'+currentProfile.ai_prompt : '')
-      + athleteContext + sessionContext + logFormat;
+      + athleteContext + sessionContext;
     var MAX_HISTORY = 12; // ~6 scambi user+assistant
-    var keepFull = (lowerText === 'fine' || lowerText === 'recap');
     var historyToSend = sessionHistory;
-    if(!keepFull && sessionHistory.length > MAX_HISTORY){
+    if(sessionHistory.length > MAX_HISTORY){
       historyToSend = sessionHistory.slice(-MAX_HISTORY);
       if(historyToSend[0] && historyToSend[0].role === 'assistant'){
         historyToSend = historyToSend.slice(1);
@@ -1274,13 +1274,6 @@ async function aiSend(text, isFirst){
     sessionHistory.push({role:'assistant', content:reply});
     addBubble('ai', reply);
     saveDraftSession();
-    if(text==='fine'&&reply.indexOf('WORKOUT LOG')>-1){
-      saveSessionLog(reply);
-      clearDraftSession();
-      if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
-      document.getElementById('sessionTimerGo').textContent='Start';
-      document.getElementById('sessionTimerNum').style.color='var(--text)';
-    }
   }catch(e){
     removeTyping(tid);
     addBubble('ai', 'Errore connessione. Riprova.');
@@ -2057,9 +2050,11 @@ async function showProgress(){
 
 function destroyChart(inst){ if(inst) inst.destroy(); return null; }
 
+function numOrNull(v){ return (typeof v === 'number' && !isNaN(v)) ? v : null; }
+
 function getExSets(ex){
-  if(Array.isArray(ex.sets)) return ex.sets.filter(function(s){ return s.reps > 0; }).map(function(s){ return { reps:s.reps, rir:s.rir||0, rpe:s.rpe||0, weight:s.weight||0, note:s.note||'' }; });
-  if(ex.reps > 0) return [{ reps: ex.reps, rir: ex.rir||0, rpe: ex.rpe||0, weight: ex.weight||0, note: '' }];
+  if(Array.isArray(ex.sets)) return ex.sets.filter(function(s){ return s.reps > 0; }).map(function(s){ return { reps:s.reps, rir:numOrNull(s.rir), rpe:numOrNull(s.rpe), weight:s.weight||0, note:s.note||'' }; });
+  if(ex.reps > 0) return [{ reps: ex.reps, rir: numOrNull(ex.rir), rpe: numOrNull(ex.rpe), weight: ex.weight||0, note: '' }];
   return [];
 }
 
