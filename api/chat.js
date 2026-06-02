@@ -23,6 +23,17 @@ export default async function handler(req, res) {
     if (!uRes.ok) return res.status(401).json({ error: 'Sessione non valida' });
     const u = await uRes.json();
     if (!u || !u.id) return res.status(401).json({ error: 'Sessione non valida' });
+    // --- Status gate (additivo, DOPO il gate JWT): solo i profili 'active' possono
+    // usare la chat AI. 'pending'/'inactive' -> 403. Stessa service role di admin.js,
+    // qui si legge profiles.status invece di profiles.role.
+    const pRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${u.id}&select=status`,
+      { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+    );
+    const rows = await pRes.json();
+    if (!Array.isArray(rows) || !rows[0] || rows[0].status !== 'active') {
+      return res.status(403).json({ error: 'account_not_active' });
+    }
   } catch (e) {
     return res.status(401).json({ error: 'Autenticazione fallita' });
   }

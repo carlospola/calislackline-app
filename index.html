@@ -1244,6 +1244,11 @@ async function aiSend(text, isFirst){
       addBubble('ai','Sessione scaduta. Esci e rientra per continuare.');
       return;
     }
+    if(res.status===403){
+      removeTyping(tid);
+      addBubble('ai','Il tuo account non \u00E8 ancora attivo. Contatta il coach.');
+      return;
+    }
     var data = await res.json();
     removeTyping(tid);
     var reply = (data.content&&data.content[0]&&data.content[0].text)||'Errore risposta.';
