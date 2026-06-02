@@ -24,6 +24,8 @@ Three layers, no framework:
 Data and auth go through **Supabase** directly from the browser using the anon key
 (`SUPABASE_ANON_KEY` in `index.html`, line ~824). PKCE OAuth flow. The browser talks to Supabase
 for all reads and athlete-scoped writes; privileged operations go through `/api/admin`.
+**RLS is enabled on every table** (see the table list below), so those browser-side reads/writes are
+constrained by per-row policies — the anon key alone grants nothing beyond what a policy allows.
 
 ### The serverless functions
 
@@ -32,12 +34,17 @@ for all reads and athlete-scoped writes; privileged operations go through `/api/
   thing standing between the browser and the model. Protected by an **auth gate**: before forwarding
   to Anthropic, the handler reads the caller's Supabase JWT from the `Authorization: Bearer <token>`
   header and verifies it via `GET /auth/v1/user` (same logic and `apikey`/header as `api/admin.js`,
-  but **without** the role check — any authenticated Supabase user is allowed; no `403`). It returns
-  `401` if the token is missing or invalid. CORS is still wide open (`*`), but `Allow-Headers` now
+  but **without** the role check). It returns `401` if the token is missing or invalid. **On top of
+  the JWT gate there is now a pending-gate**: the handler reads `profiles.status` with the service
+  role (same fetch pattern as `api/admin.js`, reading `status` instead of `role`) and requires
+  `status === 'active'` — otherwise it returns `403 { error: 'account_not_active' }`. (`inactive`
+  accounts are already blocked at login by the frontend; `pending` accounts can log in but cannot use
+  the chat.) CORS is still wide open (`*`), but `Allow-Headers` now
   includes `Authorization` and a valid **logged-in user token is required**. The frontend attaches
   the token in `aiSend()` (it pulls the current session's `access_token` from `sb.auth.getSession()`,
-  same source as `adminFetch()`); on a `401` it shows a visible "Sessione scaduta" message to the
-  athlete. This closes the previously-open proxy; **rate-limiting remains as a phase-2 follow-up.**
+  same source as `adminFetch()`); on a `401` it shows a visible "Sessione scaduta" message, and on a
+  `403` a dedicated "account non attivo" bubble, to the athlete. This closes the previously-open
+  proxy; **per-user rate-limiting remains as a phase-2 follow-up.**
   Reuses the existing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` env vars — no new
   variable.
 - **`api/admin.js`** — privileged Supabase operations using the **service-role key** (bypasses RLS).
@@ -52,7 +59,7 @@ for all reads and athlete-scoped writes; privileged operations go through `/api/
   `/api/admin` call. The service-role key still bypasses RLS, so keep this gate intact when editing.
 - **`api/callback.js`** — OAuth/recovery redirect handler; routes `type=recovery` to `/reset`.
 
-### Supabase tables (inferred from queries — there are no migration files)
+### Supabase tables (inferred from queries — there are no migration files in the repo)
 
 - `profiles` — one per user. `role` (`admin`/`athlete`), `status` (`pending`/`active`),
   plus a large set of athlete fields (`eta`, `peso`, `altezza`, `livello`, `obiettivo`,
@@ -62,7 +69,16 @@ for all reads and athlete-scoped writes; privileged operations go through `/api/
 - `sessions` — completed workout logs. `log_text` (human-readable) + `log_data` (structured JSON;
   drives all the progress charts).
 - `session_drafts` — one in-progress session per user (resume-after-leaving).
-- `exercises` — exercise library managed in the admin screen.
+- `exercises` — exercise library managed in the admin screen. `owner_id` (nullable) scopes ownership;
+  **global** exercises have `owner_id is null` (readable by all, writable only by admins).
+
+**Row-Level Security is enabled on all of these tables.** Policies scope rows to their owner via
+`auth.uid()`, with an `is_admin()` `SECURITY DEFINER` function granting admins full access (the
+`SECURITY DEFINER` wrapper avoids the infinite recursion you'd hit querying `profiles` from inside a
+`profiles` policy). **`api/admin.js` and `api/chat.js` use the service-role key and bypass RLS
+entirely — their JWT/role/status gates are the only protection on those endpoints and must stay
+intact.** The migration lives in the **Supabase SQL editor, not in this repo** (hence "no migration
+files" above: none are version-controlled here).
 
 ## The AI session flow (most important to understand)
 
@@ -109,7 +125,7 @@ When changing prompt assembly, the bracket-tag contract, or `LOG_DATA` shape, ke
 
 - `ANTHROPIC_API_KEY` — used by `api/chat.js`.
 - `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — used by `api/admin.js` **and now also
-  by `api/chat.js`** (for its JWT auth gate; reused, not new).
+  by `api/chat.js`** (for its JWT auth gate and pending-gate; reused, not new).
 - The frontend Supabase URL and anon key are hardcoded in `index.html` / `reset.html`.
 
 ## Regole di lavoro
@@ -131,6 +147,10 @@ These are mandatory working rules for this repository. Follow them on every chan
 5. **Session-screen input fields keep empty placeholders.** The reps/RIR/weight inputs on the
    session screen must have blank `placeholder` values (see `renderInputFields` / `inputFieldHTML`,
    ~line 1106) — do not add placeholder hint text.
+6. **Never disable Supabase RLS.** RLS is enabled on every table and is the real boundary for all
+   browser-side reads/writes (the anon key is public). Any new table — or any new browser query
+   against an existing one — must ship with its own policy. `api/admin.js` and `api/chat.js` use the
+   service-role key and bypass RLS, so their auth gates are not optional.
 
 ## Conventions
 
