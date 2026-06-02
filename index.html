@@ -325,7 +325,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       <div style="display:flex;gap:4px;">
         <button class="topbar-btn" onclick="showWorkoutList()">lista</button>
         <button class="topbar-btn" onclick="qSend('skip')">skip</button>
-        <button class="topbar-btn" onclick="qSend('recap')">recap</button>
       </div>
     </div>
   </div>
@@ -1244,15 +1243,13 @@ async function aiSend(text, isFirst){
   try{
     var athleteContext = isFirst ? buildAthleteContext(currentProfile) : '';
     var sessionContext = '';
-    var lowerText = (text || '').toLowerCase().trim();
     var systemPrompt = (currentProfile.coach_rules||currentProfile.ai_prompt||'')
       + (currentProfile.workout_csv ? '\n\nPROGRAMMA WORKOUT:\n'+currentProfile.workout_csv : '')
       + (currentProfile.ai_prompt && currentProfile.coach_rules ? '\n\nNOTE COACH:\n'+currentProfile.ai_prompt : '')
       + athleteContext + sessionContext;
     var MAX_HISTORY = 12; // ~6 scambi user+assistant
-    var keepFull = (lowerText === 'recap');
     var historyToSend = sessionHistory;
-    if(!keepFull && sessionHistory.length > MAX_HISTORY){
+    if(sessionHistory.length > MAX_HISTORY){
       historyToSend = sessionHistory.slice(-MAX_HISTORY);
       if(historyToSend[0] && historyToSend[0].role === 'assistant'){
         historyToSend = historyToSend.slice(1);
