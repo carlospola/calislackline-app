@@ -847,6 +847,7 @@ var athleteProgramsUserId = null;
 var infortuniVal = null;
 var currentSetState = null;
 var sessionLog = null, currentSessionId = null;
+var currentSetNum = null;
 var autosaveChain = Promise.resolve();
 
 var COACH_LOG_FORMAT = '\n\nDOPO IL WORKOUT LOG aggiungi OBBLIGATORIAMENTE questa riga (tutto su UNA SOLA RIGA, zero newline, zero spazi extra):\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":""},{"reps":7,"rir":3,"rpe":8,"weight":0,"note":"stanco"}]}]}]\nESEMPIO REALE con 2 esercizi (copia questo formato):\n[LOG_DATA:{"workout":"PULL","exercises":[{"name":"Weighted Pull-up","sets":[{"reps":8,"rir":0,"rpe":9,"weight":20,"note":""},{"reps":12,"rir":1,"rpe":8,"weight":15,"note":""}]},{"name":"Chinup","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":"tuck"}]}]}]\nREGOLE CRITICHE: 1) Includi TUTTI gli esercizi fatti. 2) Solo set con reps>0. 3) rir=dichiarato dall\x27atleta (0 se non detto). 4) rpe=fatica percepita dichiarata (0 se non detta). 5) weight=peso in kg dichiarato dall\x27atleta (0 se a corpo libero o non detto). 6) note=testo libero atleta o stringa vuota. 7) TUTTO SU UNA RIGA SOLA.';
@@ -864,7 +865,7 @@ function startDemoSession(){
   currentProfile = Object.assign({}, currentProfile, {ai_prompt:DEMO_PROMPT, _isDemo:true, _orig:orig});
   sessionWorkout = 'Sessione personalizzata';
   sessionHistory = []; selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = false;
-  sessionLog = {workout: sessionWorkout, exercises: []}; currentSessionId = null;
+  sessionLog = {workout: sessionWorkout, exercises: []}; currentSessionId = null; currentSetNum = null;
   document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
   var box = document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
@@ -1099,7 +1100,7 @@ function beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionT
   var displayName = chosenWorkout ? (programName+' \u2014 '+chosenWorkout) : programName;
   currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:csvToUse, ai_prompt:extraPrompt||'', session_type:sessionType||'bodyweight'});
   sessionWorkout = displayName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
-  sessionLog = {workout: displayName, exercises: []}; currentSessionId = null;
+  sessionLog = {workout: displayName, exercises: []}; currentSessionId = null; currentSetNum = null;
   if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
   sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
@@ -1206,12 +1207,12 @@ function sendMsg(){
   var weightVal = (wInput && wInput.value && currentProfile.session_type==='gym') ? parseFloat(wInput.value) : 0;
   var pendingSets = [];
   if(currentSetMode==='superset' && currentExercises.length>=2){
-    if(repsAv && parseInt(repsAv)>0) pendingSets.push({name:currentExercises[0], set:{reps:parseInt(repsAv), rir:rirAv?parseInt(rirAv):0, rpe:rpeVal, weight:weightVal, note:note||''}});
-    if(repsBv && parseInt(repsBv)>0) pendingSets.push({name:currentExercises[1], set:{reps:parseInt(repsBv), rir:rirBv?parseInt(rirBv):0, rpe:rpeVal, weight:weightVal, note:note||''}});
+    if(repsAv && parseInt(repsAv)>0) pendingSets.push({name:currentExercises[0], set:{reps:parseInt(repsAv), rir:rirAv?parseInt(rirAv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
+    if(repsBv && parseInt(repsBv)>0) pendingSets.push({name:currentExercises[1], set:{reps:parseInt(repsBv), rir:rirBv?parseInt(rirBv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
   } else {
     if(repsv && parseInt(repsv)>0){
       var setName = (currentExercises && currentExercises[0]) || currentSetState || 'Esercizio';
-      pendingSets.push({name:setName, set:{reps:parseInt(repsv), rir:rirv?parseInt(rirv):0, rpe:rpeVal, weight:weightVal, note:note||''}});
+      pendingSets.push({name:setName, set:{reps:parseInt(repsv), rir:rirv?parseInt(rirv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
     }
   }
   if(pendingSets.length) queueAutosave(pendingSets);
@@ -1302,7 +1303,11 @@ async function persistSets(pendingSets){
       var ex = null;
       for(var i=0;i<sessionLog.exercises.length;i++){ if(sessionLog.exercises[i].name===p.name){ ex=sessionLog.exercises[i]; break; } }
       if(!ex){ ex={name:p.name, sets:[]}; sessionLog.exercises.push(ex); }
-      ex.sets.push(p.set);
+      var idx = -1;
+      if(p.set.setNum != null){
+        for(var k=0;k<ex.sets.length;k++){ if(ex.sets[k].setNum === p.set.setNum){ idx=k; break; } }
+      }
+      if(idx > -1) ex.sets[idx] = p.set; else ex.sets.push(p.set);
     });
     if(currentSessionId === null){
       var ins = await sb.from('sessions').insert({user_id:currentUser.id, workout_name:sessionWorkout, log_data:sessionLog}).select('id').single();
@@ -1430,6 +1435,7 @@ function updateSetInfo(text){
   boxName.textContent = exerciseName || 'In attesa...';
   var setNumMatch = setLine.match(/Set\s+(\d+)\/(\d+)/i);
   boxNum.textContent = setNumMatch ? 'Set '+setNumMatch[1]+'/'+setNumMatch[2] : '';
+  if(setNumMatch) currentSetNum = parseInt(setNumMatch[1]);
 
   var parts = setLine.split('|');
   var repsMatch = null;
@@ -1882,10 +1888,28 @@ async function removeProgram(programId){
 }
 
 var currentLogSession = null;
+function buildLogSummary(ld){
+  if(!ld || !ld.exercises || !ld.exercises.length) return '';
+  var out = [];
+  ld.exercises.forEach(function(ex){
+    out.push(ex.name);
+    (ex.sets||[]).forEach(function(st, i){
+      var line = '  Set ' + (st.setNum || (i+1)) + ': ' + (st.reps!=null?st.reps:'-') + ' reps';
+      if(st.rir!=null && st.rir!=='') line += ' / RIR ' + st.rir;
+      if(st.rpe) line += ' / Fatica ' + st.rpe;
+      if(st.weight) line += ' / ' + st.weight + 'kg';
+      if(st.note) line += ' — ' + st.note;
+      out.push(line);
+    });
+  });
+  return out.join('\n');
+}
+
 function openLogModal(s){
   currentLogSession = s;
   document.getElementById('logModalTitle').textContent=(s.workout_name||'Sessione')+' - '+new Date(s.created_at).toLocaleDateString('it-IT');
-  document.getElementById('logModalContent').textContent=s.log_text||'Nessun log.';
+  var logText = (s.log_text && s.log_text.trim()) ? s.log_text : buildLogSummary(s.log_data);
+  document.getElementById('logModalContent').textContent = logText || 'Nessun log.';
   document.getElementById('logViewMode').style.display='block';
   document.getElementById('logEditMode').style.display='none';
   document.getElementById('logModal').classList.add('open');
@@ -2330,7 +2354,7 @@ function resumeDraftSession(draft){
   sessionWorkout = draft.workout_name;
   sessionHistory = draft.history || [];
   selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = true;
-  sessionLog = {workout: sessionWorkout, exercises: []}; currentSessionId = null;
+  sessionLog = {workout: sessionWorkout, exercises: []}; currentSessionId = null; currentSetNum = null;
   if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
   sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
