@@ -942,7 +942,7 @@ async function loadProfile(){
   }
 }
 
-async function loginGoogle(){await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://ailistenics.com/api/callback'}});}
+async function loginGoogle(){await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/api/callback'}});}
 
 async function doLogin(){
   var email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
