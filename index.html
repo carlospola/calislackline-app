@@ -1029,7 +1029,7 @@ async function showDash(){
       var item = document.createElement('div');
       item.className = 'program-item';
       item.innerHTML = '<div class="program-item-name">'+esc(prog.program_name)+'</div><button class="program-start-btn">Inizia &#8594;</button>';
-      item.querySelector('.program-start-btn').onclick = function(){startSessionWithPrompt(prog.program_name, prog.coach_rules, prog.workout_csv, prog.ai_prompt, prog.session_type);};
+      item.querySelector('.program-start-btn').onclick = function(){startSessionWithPrompt(prog.program_name, prog.coach_rules, prog.workout_csv, prog.ai_prompt, prog.session_type, prog.id);};
       list.appendChild(item);
     });
   }else{
@@ -1054,7 +1054,7 @@ async function showDash(){
   });
 }
 
-async function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt, sessionType){
+async function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt, sessionType, programId){
   if(!coachRules && !extraPrompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
   var draft = await checkDraftSession();
   if(draft && draft.workout_name === programName && draft.history && draft.history.length > 2){
@@ -1069,13 +1069,13 @@ async function startSessionWithPrompt(programName, coachRules, workoutCsv, extra
   // CSV multi-workout: fai scegliere quale workout e invia all'AI solo quel blocco.
   var parsed = parseWorkoutCsv(workoutCsv||'');
   if(parsed.orderedWorkouts.length >= 2){
-    showWorkoutPicker(programName, coachRules, workoutCsv, extraPrompt, sessionType, parsed);
+    showWorkoutPicker(programName, coachRules, workoutCsv, extraPrompt, sessionType, parsed, programId);
     return;
   }
-  beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, null);
+  beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, null, programId);
 }
 
-function showWorkoutPicker(programName, coachRules, workoutCsv, extraPrompt, sessionType, parsed){
+function showWorkoutPicker(programName, coachRules, workoutCsv, extraPrompt, sessionType, parsed, programId){
   var overlay = document.getElementById('workoutPickerOverlay');
   var body = document.getElementById('wpickBody');
   document.getElementById('wpickTitle').textContent = programName;
@@ -1087,7 +1087,7 @@ function showWorkoutPicker(programName, coachRules, workoutCsv, extraPrompt, ses
     btn.innerHTML = esc(wname)+'<div class="wpick-sub">'+n+(n===1?' esercizio':' esercizi')+'</div>';
     btn.onclick = function(){
       overlay.classList.remove('open');
-      beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, wname);
+      beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, wname, programId);
     };
     body.appendChild(btn);
   });
@@ -1098,12 +1098,12 @@ function closeWorkoutPicker(){
   document.getElementById('workoutPickerOverlay').classList.remove('open');
 }
 
-function beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, chosenWorkout){
+function beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionType, chosenWorkout, programId){
   var csvToUse = chosenWorkout ? buildFilteredCsv(workoutCsv||'', chosenWorkout) : (workoutCsv||'');
   var displayName = chosenWorkout ? (programName+' \u2014 '+chosenWorkout) : programName;
   currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:csvToUse, ai_prompt:extraPrompt||'', session_type:sessionType||'bodyweight'});
   sessionWorkout = displayName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
-  sessionLog = {workout: displayName, exercises: []}; currentSessionId = null; currentSetNum = null;
+  sessionLog = {workout: displayName, programId: programId||null, chosenWorkout: chosenWorkout||null, exercises: []}; currentSessionId = null; currentSetNum = null;
   if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
   sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
