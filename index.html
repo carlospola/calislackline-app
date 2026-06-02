@@ -223,6 +223,13 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
   </div>
   <div class="dash-body">
     <div><div class="dash-name" id="dashWelcome">Ciao!</div><div class="dash-sub">Pronto per allenarti oggi?</div></div>
+    <div id="resumePanel" style="display:none;">
+      <div class="program-card" style="border-color:var(--accent);">
+        <div class="section-label" style="margin-bottom:8px;">Riprendi allenamento</div>
+        <div id="resumeInfo" style="font-size:12px;color:var(--text2);margin-bottom:10px;"></div>
+        <button id="resumeBtn" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;">&#9654; Riprendi</button>
+      </div>
+    </div>
     <div>
       <div class="section-label">I tuoi programmi</div>
       <div class="program-card">
@@ -1039,6 +1046,25 @@ async function showDash(){
 
   var sr = await sb.from('sessions').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false});
   var sess = sr.data||[];
+  // Riquadro "Riprendi": solo la sessione piu' recente entro 24h, con programId noto e programma ancora esistente
+  var resumePanel = document.getElementById('resumePanel');
+  var mostRecent = sess[0];
+  var resumable = null, resumeProg = null;
+  if(mostRecent && mostRecent.log_data && mostRecent.log_data.programId){
+    resumeProg = (programs||[]).find(function(p){ return p.id === mostRecent.log_data.programId; });
+    var ageMs = Date.now() - new Date(mostRecent.created_at).getTime();
+    if(resumeProg && ageMs < 24*60*60*1000) resumable = mostRecent;
+  }
+  if(resumable){
+    var nSets = (resumable.log_data.exercises||[]).reduce(function(a,ex){ return a + ((ex.sets&&ex.sets.length)||0); }, 0);
+    var mins = Math.round((Date.now()-new Date(resumable.created_at).getTime())/60000);
+    var ageStr = mins<60 ? mins+' min fa' : Math.round(mins/60)+'h fa';
+    document.getElementById('resumeInfo').textContent = resumable.workout_name + ' — ' + nSets + (nSets===1?' serie registrata':' serie registrate') + ' · ' + ageStr;
+    document.getElementById('resumeBtn').onclick = function(){ resumeSession(resumable, resumeProg); };
+    resumePanel.style.display = 'block';
+  } else {
+    resumePanel.style.display = 'none';
+  }
   document.getElementById('statSessions').textContent = sess.length;
   var weekAgo = new Date(Date.now()-7*24*60*60*1000);
   document.getElementById('statWeek').textContent = sess.filter(function(s){return new Date(s.created_at)>weekAgo;}).length;
@@ -1056,16 +1082,6 @@ async function showDash(){
 
 async function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt, sessionType, programId){
   if(!coachRules && !extraPrompt){alert('Nessun programma AI configurato. Contatta il coach.'); return;}
-  var draft = await checkDraftSession();
-  if(draft && draft.workout_name === programName && draft.history && draft.history.length > 2){
-    var age = Math.round((Date.now() - new Date(draft.updated_at).getTime()) / 60000);
-    var ageStr = age < 60 ? age+' min fa' : Math.round(age/60)+'h fa';
-    if(confirm('Hai una sessione di '+programName+' non completata ('+ageStr+'). Vuoi riprendere?')){
-      resumeDraftSession(draft); return;
-    } else {
-      await clearDraftSession();
-    }
-  }
   // CSV multi-workout: fai scegliere quale workout e invia all'AI solo quel blocco.
   var parsed = parseWorkoutCsv(workoutCsv||'');
   if(parsed.orderedWorkouts.length >= 2){
@@ -1122,6 +1138,36 @@ function beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionT
   currentSetMode='single'; currentExercises=[];
   renderInputFields('single',[]);
   aiSend('Inizia sessione: '+displayName, true);
+}
+
+function resumeSession(sessionRow, program){
+  if(!program){ alert('Programma non disponibile.'); return; }
+  var ld = sessionRow.log_data || {exercises:[]};
+  var chosenWorkout = ld.chosenWorkout || null;
+  var csvToUse = chosenWorkout ? buildFilteredCsv(program.workout_csv||'', chosenWorkout) : (program.workout_csv||'');
+  currentProfile = Object.assign({}, currentProfile, {coach_rules:program.coach_rules||'', workout_csv:csvToUse, ai_prompt:program.ai_prompt||'', session_type:program.session_type||'bodyweight'});
+  sessionWorkout = sessionRow.workout_name; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=true;
+  sessionLog = ld; currentSessionId = sessionRow.id; currentSetNum = null;
+  if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
+  sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
+  showScreen('sessionScreen');
+  document.getElementById('sessionTitle').textContent = sessionWorkout;
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('sessionTimerNum').textContent='00:00';
+  document.getElementById('sessionTimerNum').style.color='var(--text)';
+  document.getElementById('sessionTimerGo').textContent='▶';
+  var wrow = document.getElementById('weightRow');
+  if(wrow) wrow.style.display = (currentProfile.session_type==='gym') ? 'block' : 'none';
+  var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
+  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
+  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
+  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='—';
+  document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
+  currentSetMode='single'; currentExercises=[];
+  renderInputFields('single',[]);
+  addBubble('ai', 'Bentornato! Riprendiamo da dove avevi lasciato.');
+  var brief = 'Riprendi questa sessione in corso. Serie GIA registrate (non ripeterle, non ricontarle):\n' + buildLogSummary(sessionLog) + '\n\nMostra SUBITO il prossimo set da fare e prosegui da qui. NON ripartire da capo.';
+  aiSend(brief, true);
 }
 
 function buildSkipMessage(){
