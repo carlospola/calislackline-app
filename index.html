@@ -1207,16 +1207,16 @@ function sendMsg(){
   if(wInput && wInput.value && currentProfile.session_type==='gym') parts.push('Peso: '+wInput.value+'kg');
   if(note) parts.push(note);
   // Tappa 1 — salvataggio permanente di ogni serie (stessa forma di log_data)
-  var rpeVal = (selectedRpe!==null) ? selectedRpe : 0;
+  var rpeVal = (selectedRpe!==null) ? selectedRpe : null;
   var weightVal = (wInput && wInput.value && currentProfile.session_type==='gym') ? parseFloat(wInput.value) : 0;
   var pendingSets = [];
   if(currentSetMode==='superset' && currentExercises.length>=2){
-    if(repsAv && parseInt(repsAv)>0) pendingSets.push({name:currentExercises[0], set:{reps:parseInt(repsAv), rir:rirAv?parseInt(rirAv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
-    if(repsBv && parseInt(repsBv)>0) pendingSets.push({name:currentExercises[1], set:{reps:parseInt(repsBv), rir:rirBv?parseInt(rirBv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
+    if(repsAv && parseInt(repsAv)>0) pendingSets.push({name:currentExercises[0], set:{reps:parseInt(repsAv), rir:rirAv?parseInt(rirAv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
+    if(repsBv && parseInt(repsBv)>0) pendingSets.push({name:currentExercises[1], set:{reps:parseInt(repsBv), rir:rirBv?parseInt(rirBv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
   } else {
     if(repsv && parseInt(repsv)>0){
       var setName = (currentExercises && currentExercises[0]) || currentSetState || 'Esercizio';
-      pendingSets.push({name:setName, set:{reps:parseInt(repsv), rir:rirv?parseInt(rirv):0, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
+      pendingSets.push({name:setName, set:{reps:parseInt(repsv), rir:rirv?parseInt(rirv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
     }
   }
   if(pendingSets.length) queueAutosave(pendingSets);
@@ -2053,9 +2053,11 @@ async function showProgress(){
 
 function destroyChart(inst){ if(inst) inst.destroy(); return null; }
 
+function numOrNull(v){ return (typeof v === 'number' && !isNaN(v)) ? v : null; }
+
 function getExSets(ex){
-  if(Array.isArray(ex.sets)) return ex.sets.filter(function(s){ return s.reps > 0; }).map(function(s){ return { reps:s.reps, rir:s.rir||0, rpe:s.rpe||0, weight:s.weight||0, note:s.note||'' }; });
-  if(ex.reps > 0) return [{ reps: ex.reps, rir: ex.rir||0, rpe: ex.rpe||0, weight: ex.weight||0, note: '' }];
+  if(Array.isArray(ex.sets)) return ex.sets.filter(function(s){ return s.reps > 0; }).map(function(s){ return { reps:s.reps, rir:numOrNull(s.rir), rpe:numOrNull(s.rpe), weight:s.weight||0, note:s.note||'' }; });
+  if(ex.reps > 0) return [{ reps: ex.reps, rir: numOrNull(ex.rir), rpe: numOrNull(ex.rpe), weight: ex.weight||0, note: '' }];
   return [];
 }
 
