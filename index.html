@@ -1319,7 +1319,6 @@ async function aiSend(text, isFirst){
     var reply = (data.content&&data.content[0]&&data.content[0].text)||'Errore risposta.';
     sessionHistory.push({role:'assistant', content:reply});
     addBubble('ai', reply);
-    saveDraftSession();
   }catch(e){
     removeTyping(tid);
     addBubble('ai', 'Errore connessione. Riprova.');
@@ -2353,71 +2352,6 @@ function renderHeatmapMonth(){
     }
     grid.appendChild(row);
   }
-}
-
-// ============================================================
-// SESSION DRAFT (resume in-progress sessions)
-// ============================================================
-async function saveDraftSession(){
-  if(!currentUser || !sessionWorkout || sessionHistory.length < 2) return;
-  if(currentProfile && currentProfile._isDemo) return;
-  try{
-    var draft = {
-      user_id: currentUser.id,
-      workout_name: sessionWorkout,
-      history: sessionHistory,
-      session_type: currentProfile && currentProfile.session_type || 'bodyweight',
-      updated_at: new Date().toISOString()
-    };
-    var existing = await sb.from('session_drafts').select('id').eq('user_id', currentUser.id).maybeSingle();
-    if(existing && existing.data && existing.data.id){
-      await sb.from('session_drafts').update(draft).eq('user_id', currentUser.id);
-    } else {
-      await sb.from('session_drafts').insert(draft);
-    }
-  }catch(e){ /* silent fail, draft is opzionale */ }
-}
-
-async function clearDraftSession(){
-  if(!currentUser) return;
-  try{ await sb.from('session_drafts').delete().eq('user_id', currentUser.id); }catch(e){}
-}
-
-async function checkDraftSession(){
-  if(!currentUser) return null;
-  try{
-    var r = await sb.from('session_drafts').select('*').eq('user_id', currentUser.id).maybeSingle();
-    return r && r.data ? r.data : null;
-  }catch(e){ return null; }
-}
-
-function resumeDraftSession(draft){
-  sessionWorkout = draft.workout_name;
-  sessionHistory = draft.history || [];
-  selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = true;
-  sessionLog = {workout: sessionWorkout, exercises: []}; currentSessionId = null; currentSetNum = null;
-  if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
-  sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
-  showScreen('sessionScreen');
-  document.getElementById('sessionTitle').textContent = sessionWorkout;
-  document.getElementById('messages').innerHTML = '';
-  document.getElementById('sessionTimerNum').textContent='00:00';
-  document.getElementById('sessionTimerNum').style.color='var(--text)';
-  document.getElementById('sessionTimerGo').textContent='\u25B6';
-  var wrow = document.getElementById('weightRow');
-  if(wrow) wrow.style.display = (draft.session_type==='gym') ? 'block' : 'none';
-  var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
-  var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='\u2014';
-  var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='\u2014';
-  var tm=document.getElementById('setTempoBox'); if(tm) tm.textContent='\u2014';
-  document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
-  currentSetMode='single'; currentExercises=[];
-  renderInputFields('single',[]);
-  // Replay history
-  sessionHistory.forEach(function(m){
-    if(m.role==='user') addBubble('user', m.content);
-    else addBubble('ai', m.content);
-  });
 }
 
 // ============================================================

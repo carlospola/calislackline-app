@@ -68,7 +68,9 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   `workout_csv`, `ai_prompt` (extra coach notes), `session_type` (`bodyweight` | `gym`).
 - `sessions` — completed workout logs. `log_text` (human-readable) + `log_data` (structured JSON;
   drives all the progress charts).
-- `session_drafts` — one in-progress session per user (resume-after-leaving).
+- `session_drafts` — legacy table, still present in the DB but **no longer used by the app**.
+  Session resume now runs off the most recent `sessions` row + its `log_data` (see
+  `resumeSession` / the dashboard "Riprendi" panel); the old chat-transcript draft mechanism was removed.
 - `exercises` — exercise library managed in the admin screen. `owner_id` (nullable) scopes ownership;
   **global** exercises have `owner_id is null` (readable by all, writable only by admins).
 
