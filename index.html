@@ -846,6 +846,8 @@ var allExercises = [];
 var athleteProgramsUserId = null;
 var infortuniVal = null;
 var currentSetState = null;
+var sessionLog = null, currentSessionId = null;
+var autosaveChain = Promise.resolve();
 
 var COACH_LOG_FORMAT = '\n\nDOPO IL WORKOUT LOG aggiungi OBBLIGATORIAMENTE questa riga (tutto su UNA SOLA RIGA, zero newline, zero spazi extra):\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":""},{"reps":7,"rir":3,"rpe":8,"weight":0,"note":"stanco"}]}]}]\nESEMPIO REALE con 2 esercizi (copia questo formato):\n[LOG_DATA:{"workout":"PULL","exercises":[{"name":"Weighted Pull-up","sets":[{"reps":8,"rir":0,"rpe":9,"weight":20,"note":""},{"reps":12,"rir":1,"rpe":8,"weight":15,"note":""}]},{"name":"Chinup","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":"tuck"}]}]}]\nREGOLE CRITICHE: 1) Includi TUTTI gli esercizi fatti. 2) Solo set con reps>0. 3) rir=dichiarato dall\x27atleta (0 se non detto). 4) rpe=fatica percepita dichiarata (0 se non detta). 5) weight=peso in kg dichiarato dall\x27atleta (0 se a corpo libero o non detto). 6) note=testo libero atleta o stringa vuota. 7) TUTTO SU UNA RIGA SOLA.';
 
@@ -862,6 +864,7 @@ function startDemoSession(){
   currentProfile = Object.assign({}, currentProfile, {ai_prompt:DEMO_PROMPT, _isDemo:true, _orig:orig});
   sessionWorkout = 'Sessione personalizzata';
   sessionHistory = []; selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = false;
+  sessionLog = {workout: sessionWorkout, exercises: []}; currentSessionId = null;
   document.getElementById('sessionTitle').textContent = 'Allenamento Personalizzato';
   document.getElementById('messages').innerHTML = '';
   var box = document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
@@ -1096,6 +1099,7 @@ function beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionT
   var displayName = chosenWorkout ? (programName+' \u2014 '+chosenWorkout) : programName;
   currentProfile = Object.assign({}, currentProfile, {coach_rules:coachRules||'', workout_csv:csvToUse, ai_prompt:extraPrompt||'', session_type:sessionType||'bodyweight'});
   sessionWorkout = displayName; sessionHistory=[]; selectedRpe=null; busy=false; currentSetState=null; sessionFirstSetDone=false;
+  sessionLog = {workout: displayName, exercises: []}; currentSessionId = null;
   if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
   sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
@@ -1197,6 +1201,20 @@ function sendMsg(){
   var wInput = document.getElementById('weightInput');
   if(wInput && wInput.value && currentProfile.session_type==='gym') parts.push('Peso: '+wInput.value+'kg');
   if(note) parts.push(note);
+  // Tappa 1 — salvataggio permanente di ogni serie (stessa forma di log_data)
+  var rpeVal = (selectedRpe!==null) ? selectedRpe : 0;
+  var weightVal = (wInput && wInput.value && currentProfile.session_type==='gym') ? parseFloat(wInput.value) : 0;
+  var pendingSets = [];
+  if(currentSetMode==='superset' && currentExercises.length>=2){
+    if(repsAv && parseInt(repsAv)>0) pendingSets.push({name:currentExercises[0], set:{reps:parseInt(repsAv), rir:rirAv?parseInt(rirAv):0, rpe:rpeVal, weight:weightVal, note:note||''}});
+    if(repsBv && parseInt(repsBv)>0) pendingSets.push({name:currentExercises[1], set:{reps:parseInt(repsBv), rir:rirBv?parseInt(rirBv):0, rpe:rpeVal, weight:weightVal, note:note||''}});
+  } else {
+    if(repsv && parseInt(repsv)>0){
+      var setName = (currentExercises && currentExercises[0]) || currentSetState || 'Esercizio';
+      pendingSets.push({name:setName, set:{reps:parseInt(repsv), rir:rirv?parseInt(rirv):0, rpe:rpeVal, weight:weightVal, note:note||''}});
+    }
+  }
+  if(pendingSets.length) queueAutosave(pendingSets);
   var txt = parts.join(' - ');
   if(n) n.value='';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
@@ -1271,6 +1289,30 @@ async function aiSend(text, isFirst){
   }
 }
 
+function queueAutosave(pendingSets){
+  autosaveChain = autosaveChain.then(function(){ return persistSets(pendingSets); }).catch(function(){});
+}
+
+async function persistSets(pendingSets){
+  if(!currentUser) return;
+  if(currentProfile && currentProfile._isDemo) return; // la demo non scrive su sessions
+  try{
+    if(!sessionLog) sessionLog = {workout: sessionWorkout, exercises: []};
+    pendingSets.forEach(function(p){
+      var ex = null;
+      for(var i=0;i<sessionLog.exercises.length;i++){ if(sessionLog.exercises[i].name===p.name){ ex=sessionLog.exercises[i]; break; } }
+      if(!ex){ ex={name:p.name, sets:[]}; sessionLog.exercises.push(ex); }
+      ex.sets.push(p.set);
+    });
+    if(currentSessionId === null){
+      var ins = await sb.from('sessions').insert({user_id:currentUser.id, workout_name:sessionWorkout, log_data:sessionLog}).select('id').single();
+      if(ins && ins.data && ins.data.id) currentSessionId = ins.data.id;
+    } else {
+      await sb.from('sessions').update({log_data:sessionLog}).eq('id', currentSessionId);
+    }
+  }catch(e){ /* best-effort: il prossimo set riscrive lo stato completo */ }
+}
+
 async function saveSessionLog(log){
   var logData = null;
   var tagStart = log.indexOf('[LOG_DATA:');
@@ -1304,12 +1346,15 @@ async function saveSessionLog(log){
     }
   }
 
-  var saveResult = await sb.from('sessions').insert({
-    user_id: currentUser.id,
-    workout_name: sessionWorkout,
-    log_text: cleanLog,
-    log_data: logData
-  });
+  // Tappa 1: log_data e' gia' stato scritto set-per-set durante la sessione.
+  // Qui aggiorniamo SOLO il riassunto testuale, senza toccare log_data.
+  var saveResult;
+  if(currentSessionId !== null){
+    saveResult = await sb.from('sessions').update({log_text: cleanLog}).eq('id', currentSessionId);
+  } else {
+    // nessuna serie salvata durante la sessione: creiamo comunque la riga col riassunto
+    saveResult = await sb.from('sessions').insert({user_id: currentUser.id, workout_name: sessionWorkout, log_text: cleanLog, log_data: null});
+  }
   if(saveResult.error){
     console.error('saveSessionLog error:', saveResult.error);
     alert('Errore salvataggio sessione: ' + saveResult.error.message);
@@ -2285,6 +2330,7 @@ function resumeDraftSession(draft){
   sessionWorkout = draft.workout_name;
   sessionHistory = draft.history || [];
   selectedRpe = null; busy = false; currentSetState = null; sessionFirstSetDone = true;
+  sessionLog = {workout: sessionWorkout, exercises: []}; currentSessionId = null;
   if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
   sessionTimerRunning=false; sessionTimerLeft=0; sessionTimerTotal=0;
   showScreen('sessionScreen');
