@@ -182,6 +182,8 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .wlist-group-name{font-family:var(--display);font-size:14px;font-weight:700;color:var(--accent);letter-spacing:.05em;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px;text-transform:uppercase;}
 .wlist-ex{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
 .wlist-ex:hover{border-color:var(--accent);}
+.wlist-ex-warmup{cursor:default;opacity:.55;}
+.wlist-ex-warmup:hover{border-color:var(--border);}
 .wlist-ex-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
 .wlist-ex-meta{font-size:12px;color:var(--muted);line-height:1.6;}
 .wlist-empty{text-align:center;font-size:12px;color:var(--muted);padding:40px 0;}
@@ -1785,9 +1787,16 @@ function showWorkoutList(){
       html += '<div class="wlist-group-name">'+esc(wname)+'</div>';
     }
     exercises.forEach(function(ex){
-      var exAttr = esc(ex.nome.replace(/'/g,"\\'"));
-      html += '<div class="wlist-ex" onclick="selectExercise(\''+exAttr+'\')">';
-      html += '<div class="wlist-ex-name">'+esc(ex.nome)+'</div>';
+      var isWarmup = ex.note && /riscald|warm/i.test(ex.note);
+      if(isWarmup){
+        html += '<div class="wlist-ex wlist-ex-warmup">';
+      } else {
+        var exAttr = esc(ex.nome.replace(/'/g,"\\'"));
+        html += '<div class="wlist-ex" onclick="selectExercise(\''+exAttr+'\')">';
+      }
+      html += '<div class="wlist-ex-name">'+esc(ex.nome);
+      if(isWarmup) html += ' <span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle;">Riscaldamento</span>';
+      html += '</div>';
       var meta = [];
       if(ex.sets && ex.reps) meta.push(esc(ex.sets)+' set \u00D7 '+esc(ex.reps)+' reps');
       else if(ex.sets) meta.push(esc(ex.sets)+' set');
