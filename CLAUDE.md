@@ -23,7 +23,12 @@ Three layers, no framework:
 - **`api/*.js`** — Vercel serverless functions (Node, `export default async function handler`).
 
 Data and auth go through **Supabase** directly from the browser using the anon key
-(`SUPABASE_ANON_KEY` in `index.html`, line ~842). PKCE OAuth flow. The browser talks to Supabase
+(`SUPABASE_ANON_KEY` in `index.html`, line ~842). **PKCE OAuth flow**: the Supabase client is
+created with `detectSessionInUrl:false` (both `index.html` ~line 847 and `reset.html`), so the
+`?code` returned to `/` (and `/reset`) is exchanged **once, manually**, via `exchangeCodeForSession`
+in `init()`. Leaving auto-detect on caused a double-exchange race against the single-use PKCE code
+that failed the first load ("Errore autenticazione. Riprova.") — **do not set it back to `true`.**
+The browser talks to Supabase
 for all reads and athlete-scoped writes; privileged operations go through `/api/admin`.
 **RLS is enabled on every table** (see the table list below), so those browser-side reads/writes are
 constrained by per-row policies — the anon key alone grants nothing beyond what a policy allows.
@@ -109,15 +114,33 @@ carries just that one workout instead of the whole program (**API-cost reduction
 2. History is **always** trimmed to `MAX_HISTORY = 12` messages (~line 1296). The old "keep full
    history on `fine`/`recap`" exception is gone (those buttons were removed).
 3. The model drives the UI through **bracket tags in its replies**:
-   - `[SET:ExerciseName]` / `[SUPERSET:A, B]` → `detectAndRenderInput()` (~line 1222) renders the
-     reps/RIR input fields, and `updateSetInfo()` (~line 1445) parses the `Set N/TOT` line, updates
-     the set-info box, and stores the current set number in `currentSetNum` (used for dedup below).
+   - `[SET:ExerciseName]` / `[SUPERSET:A, B]` → `detectAndRenderInput()` (~line 1195) renders the
+     reps/RIR input fields, and `updateSetInfo()` (~line 1433) updates the set-info box. The
+     displayed `Set N/TOT` is now **frontend-owned**: `N` comes from `nextSetNum()` (deterministic,
+     see below), **not** parsed from the AI's tag; only `TOT` is read from the CSV (with the AI tag's
+     `/TOT` as fallback). `currentSetNum` (used for dedup on write) is set from `nextSetNum`, never
+     from the model's number.
+
+**Tappable exercise list (free order).** The session topbar has two buttons — **← Torna** and
+**lista**. **lista** (`showWorkoutList()`, ~line 1733) opens an overlay listing every exercise from
+the program CSV (grouped by workout). Tapping a row calls `selectExercise(name)` (~line 1704), which
+prepares the single-exercise input **as if the AI had emitted `[SET:name]`** — without calling the
+model: it sets `currentExercises=[name]`, fills the set-info box (target reps/tempo from the CSV),
+calls `setInputLocked(false)`, and sets `currentSetNum = nextSetNum(name)`. This lets the athlete log
+exercises in **any order** instead of following the AI's sequence. **Warm-up rows are not tappable**:
+a row is treated as warm-up when its CSV **Note** field matches `/riscald|warm/i` — it renders with
+the `.wlist-ex-warmup` class and **no `onclick`**. (The old **skip** button and its
+`qSend`/`buildSkipMessage` helpers were removed — `lista` covers free-order navigation.)
 
 **Per-set persistence (no "fine" button).** There is no explicit "end session" action — every
 logged set is written to `sessions` immediately:
 
-- `sendMsg()` (~line 1229) builds the set(s) for the current input (both exercises for a superset)
-  for any field with `reps > 0`. **RIR is `null` when the field is blank; RPE/Fatica is `null` when
+- `sendMsg()` (~line 1202) builds the set(s) for the current input (both exercises for a superset)
+  for any field with `reps > 0`. In the **single-exercise branch** it prepends `Esercizio: <name>`
+  to the chat message so the model knows which exercise was logged (needed now that order is free).
+  Each set is stamped with `setNum: currentSetNum`, the **deterministic** number from `nextSetNum()`
+  (= sets already logged for that name + 1), owned by the frontend on **both** paths (tap and AI
+  `[SET:]` tag). **RIR is `null` when the field is blank; RPE/Fatica is `null` when
   no fatigue button is selected** — a *declared* `0` stays `0`. Charts treat `null` as "not declared"
   and exclude it, while `0` is a real value (see `getExSets` / `buildLogSummary` and the chart code).
 - It calls `queueAutosave()` → `persistSets()` (~line 1335), serialized through a promise chain so
@@ -141,7 +164,8 @@ from its `log_data`, rebuilds `currentProfile` from the program (re-filtering th
 so a resumed session stays one `sessions` row. **"Inizia"** always starts a brand-new session.
 
 When changing prompt assembly, the bracket-tag contract, the `log_data` shape, or the RIR/RPE `null`
-semantics, keep `detectAndRenderInput`/`updateSetInfo` (which feed `currentSetNum`), `persistSets`
+semantics, keep `detectAndRenderInput`/`updateSetInfo` and `selectExercise` (the two paths that
+prepare an input), `nextSetNum` (which owns the deterministic `currentSetNum`), `persistSets`
 (which writes `log_data`), `buildLogSummary`, and the chart code (which reads
 `log_data.exercises[].sets[]`) in sync — they form one implicit protocol.
 
@@ -183,6 +207,13 @@ These are mandatory working rules for this repository. Follow them on every chan
    browser-side reads/writes (the anon key is public). Any new table — or any new browser query
    against an existing one — must ship with its own policy. `api/admin.js` and `api/chat.js` use the
    service-role key and bypass RLS, so their auth gates are not optional.
+7. **Do not reintroduce removed/regressed behaviors.** Specifically: (a) the **skip** button is
+   gone — don't add it back (`qSend`/`buildSkipMessage` were removed; the tappable **lista** covers
+   free-order navigation); (b) never derive a set's `setNum` from the AI's `Set N/TOT` for logging —
+   `setNum` is frontend-owned via `nextSetNum` (the AI number is display-only); (c) never set the
+   Supabase client's `detectSessionInUrl` back to `true` (see the PKCE note above); (d) **the AI must
+   not police exercise order** — free order is enforced by the frontend (the athlete picks from
+   `lista`), not by `coach_rules`.
 
 ## Conventions
 
