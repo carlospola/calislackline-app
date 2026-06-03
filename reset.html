@@ -71,7 +71,7 @@ const SUPABASE_URL = 'https://efziohgwsvplqandzawz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_R-LAgce572sW0gzDAWyJlA_eXr6H0s7';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { flowType: 'pkce', autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
+  auth: { flowType: 'pkce', autoRefreshToken: true, detectSessionInUrl: false, persistSession: true }
 });
 
 function show(id) {

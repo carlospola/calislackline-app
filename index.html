@@ -845,7 +845,7 @@ var SUPABASE_URL = 'https://efziohgwsvplqandzawz.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_R-LAgce572sW0gzDAWyJlA_eXr6H0s7';
 var ADMIN_EMAIL = 'calislackline@gmail.com';
 var APPS_URL = 'https://script.google.com/macros/s/AKfycbwfbQO20H0vkbjrVBE-l-bSdGNoyWm10-viRaBQjvUgfDgfnPRQbamaeI0iTiXqoUEE/exec';
-var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{flowType:'pkce',autoRefreshToken:true,detectSessionInUrl:true,persistSession:true}});
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{flowType:'pkce',autoRefreshToken:true,detectSessionInUrl:false,persistSession:true}});
 var currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 var currentSetMode = 'single', currentExercises = [];
 var sessionFirstSetDone = false;
