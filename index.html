@@ -180,7 +180,8 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
 .wlist-body::-webkit-scrollbar-thumb{background:var(--border2);}
 .wlist-group{margin-bottom:24px;}
 .wlist-group-name{font-family:var(--display);font-size:14px;font-weight:700;color:var(--accent);letter-spacing:.05em;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px;text-transform:uppercase;}
-.wlist-ex{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
+.wlist-ex{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.wlist-ex:hover{border-color:var(--accent);}
 .wlist-ex-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
 .wlist-ex-meta{font-size:12px;color:var(--muted);line-height:1.6;}
 .wlist-empty{text-align:center;font-size:12px;color:var(--muted);padding:40px 0;}
@@ -1243,6 +1244,9 @@ function sendMsg(){
     var reps=document.getElementById('reps_a'), rir=document.getElementById('rir_a');
     var repsv=reps?reps.value.trim():'', rirv=rir?rir.value.trim():'';
     if(!repsv&&!note){if(n){n.style.borderColor='var(--accent)';setTimeout(function(){n.style.borderColor='';},800);} return;}
+    // Ordine libero: il messaggio nomina l'esercizio cosi' l'AI sa quale e' stato loggato.
+    var singleName = (currentExercises && currentExercises[0]) || currentSetState || '';
+    if(repsv && singleName) parts.push('Esercizio: '+singleName);
     if(repsv) parts.push('Reps: '+repsv);
     if(rirv) parts.push('RIR: '+rirv);
     if(reps) reps.value=''; if(rir) rir.value='';
@@ -1442,6 +1446,18 @@ function sessionTimerReset(){
   document.getElementById('sessionTimerGo').textContent='Start';
 }
 
+// Numerazione deterministica del set: conta i set gia' loggati per 'name'
+// in sessionLog e ritorna il prossimo numero. Funzione pura, nessun side effect.
+function nextSetNum(name){
+  if(!sessionLog || !sessionLog.exercises) return 1;
+  for(var i=0;i<sessionLog.exercises.length;i++){
+    if(sessionLog.exercises[i].name===name){
+      return (Array.isArray(sessionLog.exercises[i].sets) ? sessionLog.exercises[i].sets.length : 0) + 1;
+    }
+  }
+  return 1;
+}
+
 function updateSetInfo(text){
   var boxName = document.getElementById('setInfoBox');
   var boxNum = document.getElementById('setNumBox');
@@ -1471,9 +1487,38 @@ function updateSetInfo(text){
   }
 
   boxName.textContent = exerciseName || 'In attesa...';
+  // Numerazione deterministica: N dal log in memoria (nextSetNum), non dal tag AI.
   var setNumMatch = setLine.match(/Set\s+(\d+)\/(\d+)/i);
-  boxNum.textContent = setNumMatch ? 'Set '+setNumMatch[1]+'/'+setNumMatch[2] : '';
-  if(setNumMatch) currentSetNum = parseInt(setNumMatch[1]);
+  var logName = '';
+  if(supersetMatch){
+    var ssNames = supersetMatch[1].split(',').map(function(e){return e.trim();});
+    logName = ssNames[0] || '';
+  } else if(setMatch){
+    logName = exerciseName;
+  }
+  if(logName){
+    var nSet = nextSetNum(logName);
+    currentSetNum = nSet;
+    // TOT dal CSV (fieldsByWorkout, come showWorkoutList); fallback al TOT del tag.
+    var totSet = null;
+    var _csv = currentProfile && currentProfile.workout_csv ? currentProfile.workout_csv : '';
+    if(_csv.trim()){
+      var _p = parseWorkoutCsv(_csv);
+      for(var _w=0; _w<_p.orderedWorkouts.length && totSet==null; _w++){
+        var _fields = _p.fieldsByWorkout[_p.orderedWorkouts[_w]];
+        for(var _f=0; _f<_fields.length; _f++){
+          if(_fields[_f].nome===logName && _fields[_f].sets){
+            var _n = parseInt(_fields[_f].sets,10);
+            if(!isNaN(_n)){ totSet=_n; break; }
+          }
+        }
+      }
+    }
+    if(totSet==null && setNumMatch) totSet = parseInt(setNumMatch[2]);
+    boxNum.textContent = 'Set '+nSet+(totSet!=null ? '/'+totSet : '');
+  } else {
+    boxNum.textContent = '';
+  }
 
   var parts = setLine.split('|');
   var repsMatch = null;
@@ -1682,6 +1727,37 @@ function buildFilteredCsv(csv, workoutName){
   return parsed.headerLine + '\n' + parsed.rowsByWorkout[workoutName].join('\n');
 }
 
+// Lista tappabile / ordine libero: l'atleta sceglie l'esercizio dalla lista,
+// si prepara l'input single come se l'AI avesse emesso [SET:nome], senza chiamare l'AI.
+function selectExercise(name){
+  var overlay = document.getElementById('workoutListOverlay');
+  if(overlay) overlay.classList.remove('open');
+  currentSetNum = nextSetNum(name);
+  currentSetMode = 'single'; currentExercises = [name]; currentSetState = name;
+  renderInputFields('single',[name]);
+  setInputLocked(false);
+  // Target dal CSV (fieldsByWorkout, stesso accesso di showWorkoutList).
+  var field = null;
+  var csv = currentProfile && currentProfile.workout_csv ? currentProfile.workout_csv : '';
+  if(csv.trim()){
+    var parsed = parseWorkoutCsv(csv);
+    for(var w=0; w<parsed.orderedWorkouts.length && !field; w++){
+      var fields = parsed.fieldsByWorkout[parsed.orderedWorkouts[w]];
+      for(var f=0; f<fields.length; f++){ if(fields[f].nome===name){ field=fields[f]; break; } }
+    }
+  }
+  var boxName=document.getElementById('setInfoBox'), boxNum=document.getElementById('setNumBox');
+  var boxTarget=document.getElementById('setTargetBox'), boxTempo=document.getElementById('setTempoBox');
+  if(boxName) boxName.textContent = name;
+  if(boxNum){
+    var totSet=null;
+    if(field && field.sets){ var _n=parseInt(field.sets,10); if(!isNaN(_n)) totSet=_n; }
+    boxNum.textContent = 'Set '+currentSetNum+(totSet!=null?'/'+totSet:'');
+  }
+  if(boxTarget) boxTarget.textContent = (field && field.reps) ? field.reps : '—';
+  if(boxTempo) boxTempo.textContent = (field && field.tempo) ? field.tempo : '—';
+}
+
 function showWorkoutList(){
   var overlay = document.getElementById('workoutListOverlay');
   var body = document.getElementById('wlistBody');
@@ -1709,7 +1785,8 @@ function showWorkoutList(){
       html += '<div class="wlist-group-name">'+esc(wname)+'</div>';
     }
     exercises.forEach(function(ex){
-      html += '<div class="wlist-ex">';
+      var exAttr = esc(ex.nome.replace(/'/g,"\\'"));
+      html += '<div class="wlist-ex" onclick="selectExercise(\''+exAttr+'\')">';
       html += '<div class="wlist-ex-name">'+esc(ex.nome)+'</div>';
       var meta = [];
       if(ex.sets && ex.reps) meta.push(esc(ex.sets)+' set \u00D7 '+esc(ex.reps)+' reps');
