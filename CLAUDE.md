@@ -13,16 +13,17 @@ serverless functions. Deployed on Vercel at `ailistenics.com` (hardcoded in OAut
 
 Three layers, no framework:
 
-- **`index.html`** (~2350 lines) — the *entire* SPA: markup, CSS, and all JS in one file. Plain
+- **`index.html`** (~2480 lines) — the *entire* SPA: markup, CSS, and all JS in one file. Plain
   ES5-style `var`/`function`, no modules, no bundler. UI is a set of `.screen` divs toggled by
   `showScreen(id)`; only one is `.active` at a time (login, dash, profile, session, progress,
   admin, onboard). Global mutable state lives at the top of the `<script>` block
-  (`currentUser`, `currentProfile`, `sessionHistory`, etc., starting ~line 825).
+  (`currentUser`, `currentProfile`, `sessionHistory`, `sessionLog`, `currentSessionId`,
+  `currentSetNum`, etc., starting ~line 842).
 - **`reset.html`** — standalone password-reset page (served at `/reset` via `vercel.json` rewrite).
 - **`api/*.js`** — Vercel serverless functions (Node, `export default async function handler`).
 
 Data and auth go through **Supabase** directly from the browser using the anon key
-(`SUPABASE_ANON_KEY` in `index.html`, line ~824). PKCE OAuth flow. The browser talks to Supabase
+(`SUPABASE_ANON_KEY` in `index.html`, line ~842). PKCE OAuth flow. The browser talks to Supabase
 for all reads and athlete-scoped writes; privileged operations go through `/api/admin`.
 **RLS is enabled on every table** (see the table list below), so those browser-side reads/writes are
 constrained by per-row policies — the anon key alone grants nothing beyond what a policy allows.
@@ -63,14 +64,18 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
 
 - `profiles` — one per user. `role` (`admin`/`athlete`), `status` (`pending`/`active`),
   plus a large set of athlete fields (`eta`, `peso`, `altezza`, `livello`, `obiettivo`,
-  `discipline`, `infortuni`, etc.). Admin identified by `email === ADMIN_EMAIL` (line ~825).
+  `discipline`, `infortuni`, etc.). Admin identified by `email === ADMIN_EMAIL` (line ~843).
 - `programs` — many per user. Key fields: `coach_rules` (the AI system prompt for the program),
   `workout_csv`, `ai_prompt` (extra coach notes), `session_type` (`bodyweight` | `gym`).
-- `sessions` — completed workout logs. `log_text` (human-readable) + `log_data` (structured JSON;
-  drives all the progress charts).
-- `session_drafts` — legacy table, still present in the DB but **no longer used by the app**.
-  Session resume now runs off the most recent `sessions` row + its `log_data` (see
-  `resumeSession` / the dashboard "Riprendi" panel); the old chat-transcript draft mechanism was removed.
+- `sessions` — one row per training session, written **incrementally during the session** (not at
+  the end — there is no "fine"). `log_data` (structured JSON `{workout, programId, chosenWorkout,
+  exercises:[{name, sets:[{reps,rir,rpe,weight,note,setNum}]}]}`) is the source of truth and drives
+  all the progress charts; `programId`/`chosenWorkout` also make the session resumable. `log_text`
+  (human-readable summary) is **legacy/unused in the current flow** — the log modal renders its
+  summary from `log_data` via `buildLogSummary()`.
+- `session_drafts` — **legacy/abandoned.** The table still exists in the DB but the app no longer
+  reads or writes it (the `saveDraftSession`/`checkDraftSession`/`resumeDraftSession`/`clearDraftSession`
+  functions were removed). Resume now runs off the most recent `sessions` row (see the session flow below).
 - `exercises` — exercise library managed in the admin screen. `owner_id` (nullable) scopes ownership;
   **global** exercises have `owner_id is null` (readable by all, writable only by admins).
 
@@ -84,35 +89,60 @@ files" above: none are version-controlled here).
 
 ## The AI session flow (most important to understand)
 
-**Pre-chat workout picker.** Before the session opens, `startSessionWithPrompt()` (~line 1050)
-parses the program's `workout_csv` with `parseWorkoutCsv()` (~line 1539, groups rows by the
+**Pre-chat workout picker.** Before the session opens, `startSessionWithPrompt()` (~line 1083)
+parses the program's `workout_csv` with `parseWorkoutCsv()` (~line 1640, groups rows by the
 `workout` column). If the CSV defines **≥2 workouts**, it shows a picker overlay
 (`#workoutPickerOverlay` / `showWorkoutPicker`) so the athlete chooses which one to run; with
-0–1 workouts it skips straight to `beginSession()`. On confirm, `beginSession()` (~line 1094)
-calls `buildFilteredCsv()` (~line 1578) to rebuild the CSV with only the chosen workout's block
+0–1 workouts it skips straight to `beginSession()`. `beginSession()` (~line 1117) calls
+`buildFilteredCsv()` (~line 1679) to rebuild the CSV with only the chosen workout's block
 (header + its rows; falls back to the full CSV if the workout isn't found), so the system prompt
-carries just that one workout instead of the whole program (**API-cost reduction**). It also sets
-`sessionWorkout = "Programma — Workout"` (the display name shown in the session title and saved
-with the log).
+carries just that one workout instead of the whole program (**API-cost reduction**). It sets
+`sessionWorkout = "Programma — Workout"` (display name) and initializes the in-memory
+`sessionLog = {workout, programId, chosenWorkout, exercises:[]}` with `currentSessionId = null`
+— the `programId`/`chosenWorkout` are what make the session resumable later.
 
-This is the core loop and the trickiest part. In `aiSend()` (~line 1168):
+**The chat loop.** In `aiSend()` (~line 1284):
 
-1. The **system prompt** is assembled per-message from `coach_rules`/`ai_prompt` + `workout_csv` +
-   athlete context (`buildAthleteContext`, ~line 2233, only on the first message of a session).
-   Note that `workout_csv` here is already the **filtered** block for the chosen workout (see the
-   pre-chat picker above), not necessarily the program's full CSV.
-2. History is trimmed to `MAX_HISTORY = 12` messages, except when the user sends `fine` or `recap`
-   (then full history is kept).
-3. The model communicates back to the UI through **bracket tags embedded in its replies**:
-   - `[SET:ExerciseName]` and `[SUPERSET:A, B]` → `detectAndRenderInput()` renders the rep/RIR
-     input fields for that set.
-   - When the user types `fine` (end session), `COACH_LOG_FORMAT` (~line 837) is appended to the
-     system prompt, instructing the model to emit a `WORKOUT LOG` plus a single-line
-     `[LOG_DATA:{...}]` JSON blob. `saveSessionLog()` (~line 1214) parses that JSON with a
-     brace-depth scanner, strips the tag from the visible text, and inserts the row into `sessions`.
+1. The **system prompt** is assembled per-message from `coach_rules`/`ai_prompt` + the (already
+   **filtered**) `workout_csv` + athlete context (`buildAthleteContext`, ~line 2360, only on the
+   first message of a session).
+2. History is **always** trimmed to `MAX_HISTORY = 12` messages (~line 1296). The old "keep full
+   history on `fine`/`recap`" exception is gone (those buttons were removed).
+3. The model drives the UI through **bracket tags in its replies**:
+   - `[SET:ExerciseName]` / `[SUPERSET:A, B]` → `detectAndRenderInput()` (~line 1222) renders the
+     reps/RIR input fields, and `updateSetInfo()` (~line 1445) parses the `Set N/TOT` line, updates
+     the set-info box, and stores the current set number in `currentSetNum` (used for dedup below).
 
-When changing prompt assembly, the bracket-tag contract, or `LOG_DATA` shape, keep
-`COACH_LOG_FORMAT`, `detectAndRenderInput`, `saveSessionLog`, and the chart code (which reads
+**Per-set persistence (no "fine" button).** There is no explicit "end session" action — every
+logged set is written to `sessions` immediately:
+
+- `sendMsg()` (~line 1229) builds the set(s) for the current input (both exercises for a superset)
+  for any field with `reps > 0`. **RIR is `null` when the field is blank; RPE/Fatica is `null` when
+  no fatigue button is selected** — a *declared* `0` stays `0`. Charts treat `null` as "not declared"
+  and exclude it, while `0` is a real value (see `getExSets` / `buildLogSummary` and the chart code).
+- It calls `queueAutosave()` → `persistSets()` (~line 1335), serialized through a promise chain so
+  rapid sets never race. On the **first** set, `persistSets` **INSERTs** a new `sessions` row
+  (`{user_id, workout_name, log_data: sessionLog}`) and stores its id in `currentSessionId`; on every
+  later set it **UPDATEs** the full `log_data`, **overwriting the set with the same exercise name +
+  `setNum`** instead of appending (so re-sending a set — e.g. when the AI asks for a missing RIR —
+  does not duplicate it). **Demo sessions are not persisted.**
+- The athlete leaves with **← Torna** (`showDash`), which also stops the recovery timer. `log_text`
+  is never written here. `COACH_LOG_FORMAT` and `saveSessionLog()` still exist in the file but are
+  **dead/unused** — the old `WORKOUT LOG` + `[LOG_DATA:{…}]` end-of-session mechanism was removed.
+
+**Explicit resume.** Resuming is a dashboard action anchored on `sessions`/`log_data` (not on a chat
+transcript). `showDash()` (~line 1011) shows a **"Riprendi"** panel at the top of the dashboard when
+the most recent `sessions` row is **within 24h**, carries a `programId`, and that program still
+exists; the panel shows the workout name and how many sets were logged. **"Riprendi"** calls
+`resumeSession()` (~line 1143): it reattaches `currentSessionId` to that row, hydrates `sessionLog`
+from its `log_data`, rebuilds `currentProfile` from the program (re-filtering the CSV by the stored
+`chosenWorkout`), starts a **clean chat** with a "Bentornato" note plus a re-brief built from
+`buildLogSummary()` (it does **not** replay the old chat), and keeps logging into the **same** row —
+so a resumed session stays one `sessions` row. **"Inizia"** always starts a brand-new session.
+
+When changing prompt assembly, the bracket-tag contract, the `log_data` shape, or the RIR/RPE `null`
+semantics, keep `detectAndRenderInput`/`updateSetInfo` (which feed `currentSetNum`), `persistSets`
+(which writes `log_data`), `buildLogSummary`, and the chart code (which reads
 `log_data.exercises[].sets[]`) in sync — they form one implicit protocol.
 
 ## Running and deploying
@@ -134,7 +164,7 @@ When changing prompt assembly, the bracket-tag contract, or `LOG_DATA` shape, ke
 
 These are mandatory working rules for this repository. Follow them on every change.
 
-1. **Never rewrite `index.html` wholesale for small changes.** It is a single ~2350-line file;
+1. **Never rewrite `index.html` wholesale for small changes.** It is a single ~2480-line file;
    always make targeted, surgical edits to the specific block involved. Do not regenerate or
    re-emit the whole file to change a few lines.
 2. **Show the plan before writing code.** Present the intended approach and the exact spots you'll
@@ -148,7 +178,7 @@ These are mandatory working rules for this repository. Follow them on every chan
    `:root` (line ~12) rather than hardcoding colors or fonts.
 5. **Session-screen input fields keep empty placeholders.** The reps/RIR/weight inputs on the
    session screen must have blank `placeholder` values (see `renderInputFields` / `inputFieldHTML`,
-   ~line 1106) — do not add placeholder hint text.
+   ~line 1212) — do not add placeholder hint text.
 6. **Never disable Supabase RLS.** RLS is enabled on every table and is the real boundary for all
    browser-side reads/writes (the anon key is public). Any new table — or any new browser query
    against an existing one — must ship with its own policy. `api/admin.js` and `api/chat.js` use the
@@ -160,4 +190,4 @@ These are mandatory working rules for this repository. Follow them on every chan
 - Frontend code is ES5-flavored (`var`, function declarations, string concatenation for HTML,
   inline `onclick=` handlers). Match the surrounding style rather than introducing modern syntax
   or a framework.
-- User input rendered into HTML must go through `esc()` (~line 841) to avoid XSS.
+- User input rendered into HTML must go through `esc()` (~line 862) to avoid XSS.
