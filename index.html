@@ -334,7 +334,6 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
       </div>
       <div style="display:flex;gap:4px;">
         <button class="topbar-btn" onclick="showWorkoutList()">lista</button>
-        <button class="topbar-btn" onclick="qSend('skip')">skip</button>
       </div>
     </div>
   </div>
@@ -1171,35 +1170,6 @@ function resumeSession(sessionRow, program){
   addBubble('ai', 'Bentornato! Riprendiamo da dove avevi lasciato.');
   var brief = 'Riprendi questa sessione in corso. Serie GIA registrate (non ripeterle, non ricontarle):\n' + buildLogSummary(sessionLog) + '\n\nMostra SUBITO il prossimo set da fare e prosegui da qui. NON ripartire da capo.';
   aiSend(brief, true);
-}
-
-function buildSkipMessage(){
-  var nameBox = document.getElementById('setInfoBox');
-  var numBox = document.getElementById('setNumBox');
-  if(!nameBox || nameBox.textContent === 'In attesa...') return 'skip';
-  var exerciseName = nameBox.textContent.trim();
-  var numText = numBox ? numBox.textContent.trim() : '';
-  var setMatch = numText.match(/Set\s*(\d+)\/(\d+)/i);
-  if(!setMatch || !exerciseName) return 'skip';
-  var currentSet = parseInt(setMatch[1]);
-  var totalSets = parseInt(setMatch[2]);
-  if(currentSet < totalSets){
-    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' \u2014 mostra subito [SET:' + exerciseName + '] Set ' + (currentSet+1) + '/' + totalSets;
-  } else {
-    return 'skip Set ' + currentSet + '/' + totalSets + ' di ' + exerciseName + ' completato (ultimo set) \u2014 mostra subito il primo set dell\'esercizio successivo con [SET:NomeEsercizio]';
-  }
-}
-
-function qSend(t){
-  if(t === 'skip'){
-    var skipMsg = buildSkipMessage();
-    addBubble('user', 'skip');
-    sessionFirstSetDone = true;
-    aiSend(skipMsg, false);
-  } else {
-    addBubble('user', t);
-    aiSend(t, false);
-  }
 }
 
 function selRpe(btn, val){
