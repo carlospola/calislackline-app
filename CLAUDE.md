@@ -51,6 +51,21 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   same source as `adminFetch()`); on a `401` it shows a visible "Sessione scaduta" message, and on a
   `403` a dedicated "account non attivo" bubble, to the athlete. This closes the previously-open
   proxy; **per-user rate-limiting remains as a phase-2 follow-up.**
+
+  **Coach prompt engine (motore-prompt, ACTIVE).** After the auth/status gates and **before**
+  forwarding to Anthropic, the handler reads two rows from the new `settings` table (key/value)
+  with the service role: `coach_prompt_global` (the **common** coaching behavior shared by every
+  session) plus a per-type **delta** chosen by `body.session_type` — `coach_prompt_bodyweight`
+  or `coach_prompt_gym`. The `typeKey` is **hardcoded** to those two keys (never interpolated from
+  user input → **no injection**). It joins them (`motor = [global, delta].filter(p=>p).join('\n\n')`)
+  and **prepends** the result to `body.system` (`finalSystem = motor ? motor + '\n\n' + body.system
+  : body.system`), so the assembled order is **common → delta → program system**. The read is a
+  **non-blocking fallback**: if the query fails or both values are empty, `motor=''` and behavior is
+  unchanged (`finalSystem === body.system`). The frontend sends `session_type` in the POST body from
+  `aiSend()` (defaults to `'bodyweight'`). **When editing this file, keep the motor block intact and
+  keep the common→delta order.** The motor *text* is edited in `settings` (Supabase **Table Editor**),
+  **not in code**; the per-program **RIR target belongs in the program's `coach_rules`, not in the
+  motor** (the motor is shared across athletes/programs). Landed in commits `ab18084`, `f1d4245`.
   Reuses the existing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` env vars — no new
   variable.
 - **`api/admin.js`** — privileged Supabase operations using the **service-role key** (bypasses RLS).
@@ -70,8 +85,13 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
 - `profiles` — one per user. `role` (`admin`/`athlete`), `status` (`pending`/`active`),
   plus a large set of athlete fields (`eta`, `peso`, `altezza`, `livello`, `obiettivo`,
   `discipline`, `infortuni`, etc.). Admin identified by `email === ADMIN_EMAIL` (line ~843).
-- `programs` — many per user. Key fields: `coach_rules` (the AI system prompt for the program),
-  `workout_csv`, `ai_prompt` (extra coach notes), `session_type` (`bodyweight` | `gym`).
+- `programs` — many per user. Key fields: `coach_rules` (the AI system prompt for the program —
+  **now reduced to program-specific rules only**, since the common coaching behavior lives in the
+  `settings` motor; the per-program **RIR target stays here**), `workout_csv`, `ai_prompt` (extra
+  coach notes), `session_type` (`bodyweight` | `gym`). A placeholder is kept when there's nothing
+  specific, because the admin form currently **blocks saving an empty `coach_rules`** (a validation
+  worth removing — see open items). Migrated to the motor: **BBR, Petra, Cate**; **not** migrated:
+  **Muscle-Up Pro** (mixed + isometrics) and **New Workout** (max-out).
 - `sessions` — one row per training session, written **incrementally during the session** (not at
   the end — there is no "fine"). `log_data` (structured JSON `{workout, programId, chosenWorkout,
   exercises:[{name, sets:[{reps,rir,rpe,weight,note,setNum}]}]}`) is the source of truth and drives
@@ -83,6 +103,10 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   functions were removed). Resume now runs off the most recent `sessions` row (see the session flow below).
 - `exercises` — exercise library managed in the admin screen. `owner_id` (nullable) scopes ownership;
   **global** exercises have `owner_id is null` (readable by all, writable only by admins).
+- `settings` — key/value table backing the **coach prompt engine**, **read only server-side** by
+  `api/chat.js` with the service role (there is no browser query and no admin UI for it). Rows:
+  `coach_prompt_global` (common behavior) + `coach_prompt_bodyweight` / `coach_prompt_gym` (per-type
+  deltas). Edited via the Supabase **Table Editor**.
 
 **Row-Level Security is enabled on all of these tables.** Policies scope rows to their owner via
 `auth.uid()`, with an `is_admin()` `SECURITY DEFINER` function granting admins full access (the
@@ -110,7 +134,8 @@ carries just that one workout instead of the whole program (**API-cost reduction
 
 1. The **system prompt** is assembled per-message from `coach_rules`/`ai_prompt` + the (already
    **filtered**) `workout_csv` + athlete context (`buildAthleteContext`, ~line 2360, only on the
-   first message of a session).
+   first message of a session). This `body.system` is then **prefixed server-side** by the
+   `settings` motor (common → per-type delta) in `api/chat.js` — see the `api/chat.js` entry above.
 2. History is **always** trimmed to `MAX_HISTORY = 12` messages (~line 1296). The old "keep full
    history on `fine`/`recap`" exception is gone (those buttons were removed).
 3. The model drives the UI through **bracket tags in its replies**:
@@ -120,6 +145,10 @@ carries just that one workout instead of the whole program (**API-cost reduction
      see below), **not** parsed from the AI's tag; only `TOT` is read from the CSV (with the AI tag's
      `/TOT` as fallback). `currentSetNum` (used for dedup on write) is set from `nextSetNum`, never
      from the model's number.
+   - **Target box per session type:** in both `updateSetInfo()` (the `[SET:]` path) and
+     `selectExercise()` (the tap path), **gym** programs (`currentProfile.session_type==='gym'`)
+     show the target **weight** (CSV **Note** column) in the box under the reps **instead of the
+     Tempo**; bodyweight is unchanged. No per-row label, no element-ID change.
 
 **Tappable exercise list (free order).** The session topbar has two buttons — **← Torna** and
 **lista**. **lista** (`showWorkoutList()`, ~line 1733) opens an overlay listing every exercise from
@@ -183,6 +212,17 @@ prepare an input), `nextSetNum` (which owns the deterministic `currentSetNum`), 
 - `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — used by `api/admin.js` **and now also
   by `api/chat.js`** (for its JWT auth gate and pending-gate; reused, not new).
 - The frontend Supabase URL and anon key are hardcoded in `index.html` / `reset.html`.
+
+## Item aperti (TODO)
+
+- **Timer recupero in background:** the recovery timer stops when the tab is backgrounded
+  (interval throttling). Fix by computing elapsed time from a stored **timestamp** instead of
+  counting ticks.
+- **Validazione `coach_rules` non vuoto:** the admin form blocks saving an empty `coach_rules`.
+  Now that common behavior lives in the motor, this validation should be **removed** so a program
+  can carry only its specifics (or nothing).
+- **Leva 2 — prompt caching:** now enableable. The `settings` motor is a **static prefix** of the
+  system prompt, so it's a natural `cache_control` breakpoint to cut `api/chat.js` API cost.
 
 ## Regole di lavoro
 
