@@ -1468,6 +1468,7 @@ function updateSetInfo(text){
   } else if(setMatch){
     logName = exerciseName;
   }
+  var csvNote = '';
   if(logName){
     var nSet = nextSetNum(logName);
     currentSetNum = nSet;
@@ -1479,9 +1480,12 @@ function updateSetInfo(text){
       for(var _w=0; _w<_p.orderedWorkouts.length && totSet==null; _w++){
         var _fields = _p.fieldsByWorkout[_p.orderedWorkouts[_w]];
         for(var _f=0; _f<_fields.length; _f++){
-          if(_fields[_f].nome===logName && _fields[_f].sets){
-            var _n = parseInt(_fields[_f].sets,10);
-            if(!isNaN(_n)){ totSet=_n; break; }
+          if(_fields[_f].nome===logName){
+            if(_fields[_f].note && !csvNote) csvNote = _fields[_f].note;
+            if(_fields[_f].sets){
+              var _n = parseInt(_fields[_f].sets,10);
+              if(!isNaN(_n)){ totSet=_n; break; }
+            }
           }
         }
       }
@@ -1500,7 +1504,12 @@ function updateSetInfo(text){
   }
   var tempoMatch = setLine.match(/[Tt]empo:\s*([^\s|]+)/i);
   boxTarget.textContent = repsMatch ? repsMatch[0].trim() : '\u2014';
-  boxTempo.textContent = tempoMatch ? tempoMatch[1] : '\u2014';
+  // GYM: sotto le reps mostra il peso target (colonna Note del CSV) invece del Tempo.
+  if(currentProfile && currentProfile.session_type === 'gym'){
+    boxTempo.textContent = csvNote ? csvNote : '\u2014';
+  } else {
+    boxTempo.textContent = tempoMatch ? tempoMatch[1] : '\u2014';
+  }
 
   currentSetState = exerciseName;
 
@@ -1727,7 +1736,14 @@ function selectExercise(name){
     boxNum.textContent = 'Set '+currentSetNum+(totSet!=null?'/'+totSet:'');
   }
   if(boxTarget) boxTarget.textContent = (field && field.reps) ? field.reps : '—';
-  if(boxTempo) boxTempo.textContent = (field && field.tempo) ? field.tempo : '—';
+  // GYM: sotto le reps mostra il peso target (colonna Note del CSV) invece del Tempo.
+  if(boxTempo){
+    if(currentProfile && currentProfile.session_type === 'gym'){
+      boxTempo.textContent = (field && field.note) ? field.note : '—';
+    } else {
+      boxTempo.textContent = (field && field.tempo) ? field.tempo : '—';
+    }
+  }
 }
 
 function showWorkoutList(){
