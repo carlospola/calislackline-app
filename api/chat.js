@@ -38,10 +38,48 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Autenticazione fallita' });
   }
 
+  // session_type dal frontend ('bodyweight' | 'gym'), default 'bodyweight' se assente.
+  const sessionType = (req.body && typeof req.body.session_type === 'string')
+    ? req.body.session_type
+    : 'bodyweight';
+
+  // --- Motore prompt del coach (additivo, DOPO i gate auth/status, PRIMA di Anthropic) ---
+  // Legge da settings DUE righe con la service role (stessa dei gate sopra):
+  // il comune (coach_prompt_global) + il delta per tipo sessione
+  // (coach_prompt_gym | coach_prompt_bodyweight). typeKey e' hardcoded -> no injection.
+  // Se la query fallisce o i valori sono vuoti, motor resta '' e il comportamento
+  // e' invariato (finalSystem = body.system).
+  const typeKey = (sessionType === 'gym') ? 'coach_prompt_gym' : 'coach_prompt_bodyweight';
+  let motor = '';
+  try {
+    const sRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/settings?key=in.(coach_prompt_global,${typeKey})&select=key,value`,
+      { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+    );
+    const sRows = await sRes.json();
+    const map = {};
+    if (Array.isArray(sRows)) {
+      for (const row of sRows) {
+        if (row && typeof row.value === 'string') map[row.key] = row.value.trim();
+      }
+    }
+    motor = [map['coach_prompt_global'], map[typeKey]]
+      .filter(p => p)
+      .join('\n\n');
+  } catch (e) {
+    motor = '';
+  }
+
   try {
     const body = req.body;
     console.log('Request received, messages count:', body?.messages?.length);
     console.log('API Key present:', !!process.env.ANTHROPIC_API_KEY);
+
+    // system finale: motor (comune + delta tipo) in testa al system del frontend
+    // (se non vuoto), altrimenti il system del frontend invariato.
+    const finalSystem = motor
+      ? (motor + '\n\n' + body.system)
+      : body.system;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -53,7 +91,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 1000,
-        system: body.system,
+        system: finalSystem,
         messages: body.messages
       })
     });
