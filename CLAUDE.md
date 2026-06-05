@@ -149,6 +149,22 @@ carries just that one workout instead of the whole program (**API-cost reduction
      `selectExercise()` (the tap path), **gym** programs (`currentProfile.session_type==='gym'`)
      show the target **weight** (CSV **Note** column) in the box under the reps **instead of the
      Tempo**; bodyweight is unchanged. No per-row label, no element-ID change.
+   - **Inline input row (reps · RIR · weight).** The single-mode `renderInputFields()` output and the
+     `#weightRow` block live in **one flex wrapper** (`gap:8px`, `align-items:flex-end`), so the row
+     reads **[ Reps ] [ RIR ] [ Peso ]** with widths **1:1:1** (`#inputContainer` `flex:2` wrapping an
+     inner `1fr 1fr` grid for reps/RIR, + `#weightRow` `flex:1`). The weight (`#weightRow`) is
+     **appended on the right** and shown **only when `session_type==='gym'`** — keeping it last means
+     reps/RIR stay in a **fixed position in both modes** (**do not move the weight to the left** — it
+     breaks the bodyweight/gym consistency). The JS show/hide of the weight is **unchanged**
+     (`wrow.style.display = 'block'/'none'`; the inline `flex:1` survives because the JS only touches
+     `.display`). Each of the 3 box labels carries `min-height:30px` + `display:flex;
+     align-items:flex-end;justify-content:center;text-align:center;` so the 1- and 2-line labels
+     (e.g. "RIPETIZIONI" vs "RIPETIZIONI IN RISERVA") bottom-align and center over their box.
+     **Keyboards & anti-zoom:** reps/RIR (`#reps_a/b`, `#rir_a/b`) use
+     `inputmode="numeric" pattern="[0-9]*"`, the weight (`#weightInput`) uses `inputmode="decimal"`;
+     and a CSS rule **`#sessionScreen input, #sessionScreen textarea { font-size:16px !important; }`**
+     keeps every session input at 16px so iOS/Android don't zoom on tap (**don't drop session inputs
+     below 16px**).
 
 **Tappable exercise list (free order).** The session topbar has two buttons — **← Torna** and
 **lista**. **lista** (`showWorkoutList()`, ~line 1733) opens an overlay listing every exercise from
