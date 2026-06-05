@@ -75,11 +75,23 @@ export default async function handler(req, res) {
     console.log('Request received, messages count:', body?.messages?.length);
     console.log('API Key present:', !!process.env.ANTHROPIC_API_KEY);
 
-    // system finale: motor (comune + delta tipo) in testa al system del frontend
-    // (se non vuoto), altrimenti il system del frontend invariato.
-    const finalSystem = motor
-      ? (motor + '\n\n' + body.system)
-      : body.system;
+    // system finale: se il motor (prefisso statico comune+delta) e' non vuoto, lo
+    // mandiamo come ARRAY di blocchi text con un cache_control ephemeral (5 min) sul
+    // blocco motor, cosi' la porzione ripetuta del system prompt viene cachata
+    // (Leva 2 - prompt caching). Il system del frontend (variabile) resta un blocco
+    // separato SENZA cache_control. Se il motor e' vuoto, system resta ESATTAMENTE
+    // la stringa body.system di prima -> comportamento invariato (fallback).
+    let finalSystem;
+    if (motor) {
+      finalSystem = [
+        { type: 'text', text: motor, cache_control: { type: 'ephemeral' } }
+      ];
+      if (body.system) {
+        finalSystem.push({ type: 'text', text: body.system });
+      }
+    } else {
+      finalSystem = body.system;
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
