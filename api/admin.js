@@ -118,6 +118,38 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
+    if (action === 'addTemplate') {
+      const { program_name, workouts, coach_rules, workout_csv, ai_prompt, session_type } = req.body;
+      const r = await supabaseRequest('POST', 'program_templates', {
+        program_name,
+        workouts: workouts || JSON.stringify([]),
+        coach_rules: coach_rules || null,
+        workout_csv: workout_csv || null,
+        ai_prompt: ai_prompt || null,
+        session_type: session_type || 'bodyweight'
+      });
+      if (!r.ok) return res.status(400).json({ error: 'Errore aggiunta template' });
+      return res.status(200).json({ success: true });
+    }
+
+    if (action === 'editTemplate') {
+      const { templateId, program_name, workouts, coach_rules, workout_csv, ai_prompt, session_type } = req.body;
+      await supabaseRequest('PATCH', `program_templates?id=eq.${templateId}`, {
+        program_name, workouts,
+        coach_rules: coach_rules || null,
+        workout_csv: workout_csv || null,
+        ai_prompt: ai_prompt || null,
+        session_type: session_type || 'bodyweight'
+      });
+      return res.status(200).json({ success: true });
+    }
+
+    if (action === 'removeTemplate') {
+      const { templateId } = req.body;
+      await supabaseRequest('DELETE', `program_templates?id=eq.${templateId}`, undefined);
+      return res.status(200).json({ success: true });
+    }
+
     if (action === 'deleteUser') {
       const { userId } = req.body;
       await supabaseRequest('DELETE', `sessions?user_id=eq.${userId}`, undefined);
