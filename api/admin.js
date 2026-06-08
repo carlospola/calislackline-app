@@ -150,6 +150,41 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
+    if (action === 'assignTemplate') {
+      // Copia un template in una NUOVA riga programs per un atleta (snapshot).
+      // = addProgram + template_id + user_id dal body. Assegnare attiva l'atleta.
+      const { userId, templateId, program_name, workouts, coach_rules, workout_csv, ai_prompt, session_type } = req.body;
+      const r = await supabaseRequest('POST', 'programs', {
+        user_id: userId,
+        program_name,
+        workouts: workouts || JSON.stringify([]),
+        coach_rules: coach_rules || null,
+        workout_csv: workout_csv || null,
+        ai_prompt: ai_prompt || null,
+        session_type: session_type || 'bodyweight',
+        template_id: templateId
+      });
+      if (!r.ok) return res.status(400).json({ error: 'Errore assegnazione template' });
+      await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, { status: 'active' });
+      return res.status(200).json({ success: true });
+    }
+
+    if (action === 'repushTemplate') {
+      // "Applica a tutti gli assegnati": sovrascrive SOLO il contenuto di tutte
+      // le programs derivate da questo template. Niente user_id/template_id/id/
+      // created_at nel body -> restano intatti. 0 righe che matchano = ok.
+      const { templateId, program_name, workouts, coach_rules, workout_csv, ai_prompt, session_type } = req.body;
+      await supabaseRequest('PATCH', `programs?template_id=eq.${templateId}`, {
+        program_name,
+        workouts: workouts || JSON.stringify([]),
+        coach_rules: coach_rules || null,
+        workout_csv: workout_csv || null,
+        ai_prompt: ai_prompt || null,
+        session_type: session_type || 'bodyweight'
+      });
+      return res.status(200).json({ success: true });
+    }
+
     if (action === 'deleteUser') {
       const { userId } = req.body;
       await supabaseRequest('DELETE', `sessions?user_id=eq.${userId}`, undefined);
