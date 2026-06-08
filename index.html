@@ -868,6 +868,20 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
   </div>
 </div>
 
+<div class="modal-overlay" id="assignModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">Assegna template</div>
+    <div class="modal-field">
+      <div class="modal-label">Atleta</div>
+      <select class="modal-input" id="assignAthleteSelect" style="cursor:pointer;"></select>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('assignModal')">Annulla</button>
+      <button class="modal-save" onclick="confirmAssign()">Assegna</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="createUserModal">
   <div class="modal">
     <div class="modal-title">Crea Nuovo Atleta</div>
@@ -2058,9 +2072,11 @@ async function renderTemplates(){
     return '<div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;">'
       +'<div><div style="font-family:var(--display);font-size:13px;font-weight:700;">'+esc(t.program_name)+'</div>'
       +'<div style="font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.05em;">'+typeLabel+'</div></div>'
-      +'<div style="display:flex;gap:6px;flex-shrink:0;">'
+      +'<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">'
       +'<button class="action-btn primary" onclick="openTemplateForm(\''+t.id+'\')">Modifica</button>'
       +'<button class="action-btn danger" onclick="deleteTemplate(\''+t.id+'\')">Elimina</button>'
+      +'<button class="action-btn" onclick="openAssignModal(\''+t.id+'\')">Assegna</button>'
+      +'<button class="action-btn" onclick="applyToAll(\''+t.id+'\')">Applica a tutti</button>'
       +'</div></div>';
   }).join('');
 }
@@ -2103,6 +2119,46 @@ async function deleteTemplate(id){
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await renderTemplates();
+}
+
+var assigningTemplateId = null;
+
+async function openAssignModal(templateId){
+  assigningTemplateId=templateId;
+  var sel=document.getElementById('assignAthleteSelect');
+  sel.innerHTML='<option value="">Caricamento...</option>';
+  var r=await sb.from('profiles').select('id,name,email').eq('role','athlete').order('name',{ascending:true});
+  var athletes=r.data||[];
+  if(!athletes.length){
+    sel.innerHTML='<option value="">Nessun atleta disponibile</option>';
+  }else{
+    sel.innerHTML=athletes.map(function(a){
+      return '<option value="'+a.id+'">'+esc(a.name||a.email)+'</option>';
+    }).join('');
+  }
+  document.getElementById('assignModal').classList.add('open');
+}
+
+async function confirmAssign(){
+  var userId=document.getElementById('assignAthleteSelect').value;
+  if(!userId){alert('Seleziona un atleta.'); return;}
+  var t=window._templates?window._templates.find(function(x){return x.id===assigningTemplateId;}):null;
+  if(!t){alert('Template non trovato.'); return;}
+  var r=await adminFetch({action:'assignTemplate',userId:userId,templateId:assigningTemplateId,program_name:t.program_name,workouts:JSON.stringify([]),coach_rules:t.coach_rules,workout_csv:t.workout_csv,ai_prompt:t.ai_prompt,session_type:t.session_type});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  closeModal('assignModal');
+  alert('Template assegnato');
+}
+
+async function applyToAll(templateId){
+  if(!confirm('Sovrascrive il programma di tutti gli atleti a cui e\' assegnato questo template, inclusi eventuali ritocchi manuali. Procedere?')) return;
+  var t=window._templates?window._templates.find(function(x){return x.id===templateId;}):null;
+  if(!t){alert('Template non trovato.'); return;}
+  var r=await adminFetch({action:'repushTemplate',templateId:templateId,program_name:t.program_name,workouts:JSON.stringify([]),coach_rules:t.coach_rules,workout_csv:t.workout_csv,ai_prompt:t.ai_prompt,session_type:t.session_type});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  alert('Programmi aggiornati');
 }
 
 var currentLogSession = null;
