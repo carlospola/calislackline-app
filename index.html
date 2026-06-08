@@ -551,6 +551,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         <button class="atab active" onclick="switchTab('users',this)">Atleti</button>
         <button class="atab" onclick="switchTab('logs',this)">Sessioni</button>
         <button class="atab" onclick="switchTab('library',this)">Libreria</button>
+        <button class="atab" onclick="switchTab('templates',this)">Template</button>
       </div>
       <button onclick="openCreateUserModal()" style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-bottom:1px;">+ Nuovo atleta</button>
     </div>
@@ -579,6 +580,13 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         <thead><tr><th>Nome</th><th>Categoria</th><th>Muscoli</th><th>Attrezzi</th><th>Livello</th><th>Progressioni</th><th>Tipo</th><th>Azioni</th></tr></thead>
         <tbody id="libTableBody"><tr><td colspan="8" class="empty-table">Caricamento...</td></tr></tbody>
       </table>
+    </div>
+    <div class="admin-section" id="tab-templates">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;justify-content:space-between;">
+        <div style="font-size:10px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;">Libreria Template</div>
+        <button onclick="openTemplateForm(null)" style="padding:8px 16px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Nuovo template</button>
+      </div>
+      <div id="templateList" style="display:flex;flex-direction:column;gap:10px;"><div style="font-size:12px;color:var(--muted);padding:8px 0;">Caricamento...</div></div>
     </div>
   </div>
 </div>
@@ -826,6 +834,36 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('athleteProgramsModal')">Chiudi</button>
       <button class="modal-save" onclick="addProgram()">Aggiungi programma</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="templateFormModal">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-title" id="templateFormTitle">Nuovo template</div>
+    <div class="modal-field"><div class="modal-label">Nome template</div><input class="modal-input" id="tplName" placeholder="es. Body By Rings - Fase 1"></div>
+    <div class="modal-field">
+      <div class="modal-label">Tipo sessione</div>
+      <select class="modal-input" id="tplType" style="cursor:pointer;">
+        <option value="bodyweight">Bodyweight / Calisthenics</option>
+        <option value="gym">Palestra (con peso)</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Coach Rules</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Regole comportamentali AI</span></div>
+      <textarea class="modal-textarea" id="tplRules" style="min-height:130px;" placeholder="- Usa [SET:NomeEsercizio] prima di ogni esercizio&#10;- Feedback massimo 5 parole&#10;- Recupero formato mm:ss&#10;- Niente incoraggiamenti"></textarea>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Workout</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Esercizio, Set, Reps, RIR, Recupero</span></div>
+      <textarea class="modal-textarea" id="tplCsv" style="min-height:150px;font-size:11px;" placeholder="Esercizio, Set, Reps, RIR, Recupero&#10;Ring Dip, 4, 6-8, 2, 02:00&#10;Trazioni, 4, 5-7, 2, 02:00"></textarea>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Note extra</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">opzionali</span></div>
+      <textarea class="modal-textarea" id="tplPrompt" style="min-height:70px;" placeholder="Indicazioni aggiuntive per il coach AI..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('templateFormModal')">Annulla</button>
+      <button class="modal-save" onclick="saveTemplate()">Salva</button>
     </div>
   </div>
 </div>
@@ -1815,6 +1853,7 @@ function switchTab(tab, btn){
   btn.classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='library'&&!allExercises.length) loadLibrary();
+  if(tab==='templates') renderTemplates();
 }
 
 async function renderUserTable(){
@@ -1998,6 +2037,72 @@ async function removeProgram(programId){
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await renderAthletePrograms(); await renderUserTable();
+}
+
+// ============================================================
+// LIBRERIA TEMPLATE (program_templates)
+// Lettura diretta da Supabase (RLS: select consentito ad admin);
+// le SCRITTURE passano da adminFetch -> /api/admin (service role).
+// ============================================================
+var editingTemplateId = null;
+
+async function renderTemplates(){
+  var list=document.getElementById('templateList');
+  list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Caricamento...</div>';
+  var r=await sb.from('program_templates').select('*').order('created_at',{ascending:true});
+  var templates=r.data;
+  window._templates=templates||[];
+  if(!templates||!templates.length){list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Nessun template ancora. Creane uno con "+ Nuovo template".</div>'; return;}
+  list.innerHTML=templates.map(function(t){
+    var typeLabel=t.session_type==='gym'?'Palestra (con peso)':'Bodyweight / Calisthenics';
+    return '<div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;">'
+      +'<div><div style="font-family:var(--display);font-size:13px;font-weight:700;">'+esc(t.program_name)+'</div>'
+      +'<div style="font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.05em;">'+typeLabel+'</div></div>'
+      +'<div style="display:flex;gap:6px;flex-shrink:0;">'
+      +'<button class="action-btn primary" onclick="openTemplateForm(\''+t.id+'\')">Modifica</button>'
+      +'<button class="action-btn danger" onclick="deleteTemplate(\''+t.id+'\')">Elimina</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+function openTemplateForm(id){
+  editingTemplateId=id||null;
+  var t=(id&&window._templates)?window._templates.find(function(x){return x.id===id;}):null;
+  document.getElementById('templateFormTitle').textContent=t?'Modifica template':'Nuovo template';
+  document.getElementById('tplName').value=t?(t.program_name||''):'';
+  document.getElementById('tplType').value=(t&&t.session_type==='gym')?'gym':'bodyweight';
+  document.getElementById('tplRules').value=t?(t.coach_rules||''):'';
+  document.getElementById('tplCsv').value=t?(t.workout_csv||''):'';
+  document.getElementById('tplPrompt').value=t?(t.ai_prompt||''):'';
+  document.getElementById('templateFormModal').classList.add('open');
+}
+
+async function saveTemplate(){
+  var name=document.getElementById('tplName').value.trim();
+  var rules=document.getElementById('tplRules').value.trim();
+  var csv=document.getElementById('tplCsv').value.trim();
+  var prompt=document.getElementById('tplPrompt').value.trim();
+  var sType=document.getElementById('tplType').value||'bodyweight';
+  if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
+  var payload;
+  if(editingTemplateId){
+    payload={action:'editTemplate',templateId:editingTemplateId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType};
+  }else{
+    payload={action:'addTemplate',program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType};
+  }
+  var r=await adminFetch(payload);
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  closeModal('templateFormModal');
+  await renderTemplates();
+}
+
+async function deleteTemplate(id){
+  if(!confirm('Eliminare questo template? I programmi gia\' assegnati agli atleti restano invariati.')) return;
+  var r=await adminFetch({action:'removeTemplate',templateId:id});
+  var data=await r.json();
+  if(data.error){alert('Errore: '+data.error); return;}
+  await renderTemplates();
 }
 
 var currentLogSession = null;
