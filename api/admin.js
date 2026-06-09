@@ -176,7 +176,6 @@ export default async function handler(req, res) {
       const { templateId, program_name, workouts, coach_rules, workout_csv, ai_prompt, session_type } = req.body;
       await supabaseRequest('PATCH', `programs?template_id=eq.${templateId}`, {
         program_name,
-        workouts: workouts || JSON.stringify([]),
         coach_rules: coach_rules || null,
         workout_csv: workout_csv || null,
         ai_prompt: ai_prompt || null,
