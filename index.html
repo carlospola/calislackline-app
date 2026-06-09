@@ -551,7 +551,7 @@ html,body{height:100%;height:100svh;background:var(--bg);color:var(--text);font-
         <button class="atab active" onclick="switchTab('users',this)">Atleti</button>
         <button class="atab" onclick="switchTab('logs',this)">Sessioni</button>
         <button class="atab" onclick="switchTab('library',this)">Libreria</button>
-        <button class="atab" onclick="switchTab('templates',this)">Template</button>
+        <button class="atab" id="atabTemplates" onclick="switchTab('templates',this)">Template</button>
       </div>
       <button onclick="openCreateUserModal()" style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;margin-bottom:1px;">+ Nuovo atleta</button>
     </div>
@@ -911,6 +911,7 @@ var currentSetState = null;
 var sessionLog = null, currentSessionId = null;
 var currentSetNum = null;
 var autosaveChain = Promise.resolve();
+var testSession = false;
 
 var COACH_LOG_FORMAT = '\n\nDOPO IL WORKOUT LOG aggiungi OBBLIGATORIAMENTE questa riga (tutto su UNA SOLA RIGA, zero newline, zero spazi extra):\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":""},{"reps":7,"rir":3,"rpe":8,"weight":0,"note":"stanco"}]}]}]\nESEMPIO REALE con 2 esercizi (copia questo formato):\n[LOG_DATA:{"workout":"PULL","exercises":[{"name":"Weighted Pull-up","sets":[{"reps":8,"rir":0,"rpe":9,"weight":20,"note":""},{"reps":12,"rir":1,"rpe":8,"weight":15,"note":""}]},{"name":"Chinup","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":"tuck"}]}]}]\nREGOLE CRITICHE: 1) Includi TUTTI gli esercizi fatti. 2) Solo set con reps>0. 3) rir=dichiarato dall\x27atleta (0 se non detto). 4) rpe=fatica percepita dichiarata (0 se non detta). 5) weight=peso in kg dichiarato dall\x27atleta (0 se a corpo libero o non detto). 6) note=testo libero atleta o stringa vuota. 7) TUTTO SU UNA RIGA SOLA.';
 
@@ -1072,6 +1073,16 @@ async function showDash(){
   var stg=document.getElementById('sessionTimerGo'); if(stg) stg.textContent='Start';
   var stn=document.getElementById('sessionTimerNum'); if(stn) stn.style.color='var(--text)';
   if(currentProfile&&currentProfile._isDemo&&currentProfile._orig) currentProfile=currentProfile._orig;
+  if(testSession){
+    testSession=false;
+    showScreen('adminScreen');
+    document.querySelectorAll('.atab').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.admin-section').forEach(function(s){s.classList.remove('active');});
+    var _tb=document.getElementById('atabTemplates'); if(_tb) _tb.classList.add('active');
+    document.getElementById('tab-templates').classList.add('active');
+    renderTemplates();
+    return;
+  }
   showScreen('dashScreen');
   var name = (currentProfile&&currentProfile.name)||currentUser.email.split('@')[0];
   var dul = document.getElementById('dashUserLabel'); if(dul) dul.textContent = name;
@@ -2095,6 +2106,7 @@ async function renderTemplates(){
       +'<button class="action-btn primary" onclick="openTemplateForm(\''+t.id+'\')">Modifica</button>'
       +'<button class="action-btn danger" onclick="deleteTemplate(\''+t.id+'\')">Elimina</button>'
       +'<button class="action-btn" onclick="openAssignModal(\''+t.id+'\')">Assegna</button>'
+      +'<button class="action-btn" onclick="startTestSession(\''+t.id+'\')">Prova</button>'
       +'<button class="action-btn" onclick="applyToAll(\''+t.id+'\')">Applica a tutti</button>'
       +'</div></div>';
   }).join('');
@@ -2179,6 +2191,17 @@ async function applyToAll(templateId){
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   alert('Programmi aggiornati');
+}
+
+// Prova sessione dall'admin: avvia una sessione AI reale da un template, NON persistita.
+function startTestSession(templateId){
+  var t=window._templates?window._templates.find(function(x){return x.id===templateId;}):null;
+  if(!t){alert('Template non trovato.'); return;}
+  if(!t.workout_csv || !t.workout_csv.trim()){alert('Template senza esercizi (workout_csv vuoto)'); return;}
+  var orig=JSON.parse(JSON.stringify(currentProfile||{}));
+  currentProfile={_isDemo:true,_orig:orig};
+  testSession=true;
+  startSessionWithPrompt(t.program_name, t.coach_rules, t.workout_csv, t.ai_prompt, t.session_type, null);
 }
 
 var currentLogSession = null;
