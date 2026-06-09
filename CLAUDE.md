@@ -68,9 +68,20 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   motor** (the motor is shared across athletes/programs). Landed in commits `ab18084`, `f1d4245`.
   Reuses the existing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` env vars — no new
   variable.
+
+  **Leva 2 — prompt caching (ACTIVE, commit `ee173c7`).** When `motor` is non-empty the `system`
+  field sent to Anthropic is no longer a string but an **array of text blocks**: block 1 =
+  `{ type:'text', text: motor, cache_control:{ type:'ephemeral' } }` (the static motor, **cached**),
+  block 2 = `{ type:'text', text: body.system }` (only when present). When `motor` is empty, `system`
+  stays the plain `body.system` string (fallback unchanged). The cache only activates if the motor is
+  **≥ 1024 tokens** (claude-sonnet-4-5 minimum) and a hit lands within ~5 min (ephemeral). **Rule:
+  keep this block structure, do NOT remove `cache_control`, and keep the cached motor block FIRST
+  (do not invert the common→delta→program order).**
 - **`api/admin.js`** — privileged Supabase operations using the **service-role key** (bypasses RLS).
   Single endpoint dispatched by `req.body.action`: `createUser`, `deleteUser`, `updateProfile`,
-  `updateStatus`, `addProgram`/`editProgram`/`removeProgram`, `updateProgram`, `resetProgram`.
+  `updateStatus`, `addProgram`/`editProgram`/`removeProgram`, `updateProgram`, `resetProgram`, plus
+  the **template actions** `addTemplate`/`editTemplate`/`removeTemplate`, `assignTemplate`,
+  `repushTemplate` (see "Sistema template" below).
   Protected by an **auth gate**: the handler reads the caller's Supabase JWT from the
   `Authorization: Bearer <token>` header, verifies it via `GET /auth/v1/user`, then checks that the
   user's `profiles.role === 'admin'` — otherwise it returns `401` (missing/invalid token) or `403`
@@ -92,6 +103,17 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   specific, because the admin form currently **blocks saving an empty `coach_rules`** (a validation
   worth removing — see open items). Migrated to the motor: **BBR, Petra, Cate**; **not** migrated:
   **Muscle-Up Pro** (mixed + isometrics) and **New Workout** (max-out).
+  Now also carries **`template_id`** (FK → `program_templates`, `ON DELETE SET NULL`): when a program
+  is created by assigning a template, this links the copy back to its template (drives "Applica a
+  tutti"). **`programs.workouts` is a `TEXT` column and is vestigial/unused** — the source of truth
+  for exercises is `workout_csv`. **Rule: do not copy `workouts` between programs/templates and do
+  not reintroduce it into `repushTemplate`** (it caused a jsonb/text mismatch; removed in `74b72bd`).
+- `program_templates` — **source of truth for programs** (the template library). Same shape as
+  `programs` minus `user_id`: `id`, `program_name`, `workouts` (jsonb, **unused**, like
+  `programs.workouts`), `coach_rules`, `workout_csv`, `ai_prompt`, `session_type`, `created_at`.
+  Admin creates/edits templates and **assigns** them to athletes; each assignment is a `programs` row
+  carrying that `template_id`. Read **directly by the browser** via the Supabase SDK (admin RLS);
+  writes go through `api/admin.js`. See "Sistema template" below.
 - `sessions` — one row per training session, written **incrementally during the session** (not at
   the end — there is no "fine"). `log_data` (structured JSON `{workout, programId, chosenWorkout,
   exercises:[{name, sets:[{reps,rir,rpe,weight,note,setNum}]}]}`) is the source of truth and drives
@@ -111,7 +133,10 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
 **Row-Level Security is enabled on all of these tables.** Policies scope rows to their owner via
 `auth.uid()`, with an `is_admin()` `SECURITY DEFINER` function granting admins full access (the
 `SECURITY DEFINER` wrapper avoids the infinite recursion you'd hit querying `profiles` from inside a
-`profiles` policy). **`api/admin.js` and `api/chat.js` use the service-role key and bypass RLS
+`profiles` policy). `program_templates` carries **4 admin-only policies**
+(`templates_admin_select`/`insert`/`update`/`delete`, all via `is_admin()`) — no athlete-facing
+read; the browser's direct template reads work because the admin passes `is_admin()`.
+**`api/admin.js` and `api/chat.js` use the service-role key and bypass RLS
 entirely — their JWT/role/status gates are the only protection on those endpoints and must stay
 intact.** The migration lives in the **Supabase SQL editor, not in this repo** (hence "no migration
 files" above: none are version-controlled here).
@@ -214,6 +239,36 @@ prepare an input), `nextSetNum` (which owns the deterministic `currentSetNum`), 
 (which writes `log_data`), `buildLogSummary`, and the chart code (which reads
 `log_data.exercises[].sets[]`) in sync — they form one implicit protocol.
 
+## Sistema template (libreria programmi)
+
+The admin-side template library. **`program_templates` is the source of truth; `programs` rows are
+snapshots.** Model: **snapshot + repush**.
+
+- **Backend (`api/admin.js`).** `addTemplate`/`editTemplate`/`removeTemplate` are CRUD on
+  `program_templates` (modeled on `addProgram`/`editProgram`/`removeProgram`, but **no `user_id`** and
+  **no `profiles.status` patch**). `assignTemplate` creates a **new `programs` row** with the
+  template's content fields + `user_id` + `template_id`, then PATCHes `profiles.status='active'`.
+  `repushTemplate` ("Applica a tutti") PATCHes `programs?template_id=eq.{id}` rewriting **only the
+  content fields** — `program_name`, `coach_rules`, `workout_csv`, `ai_prompt`, `session_type` (NOT
+  `workouts`, NOT `user_id`/`template_id`/`id`/`created_at`).
+- **Reads** are done by the **frontend directly** via the Supabase SDK (admin RLS), not through
+  `api/admin.js`. Writes always go through `adminFetch()`.
+- **Semantics.** Linking a program (setting `template_id`) does **not** change its content; only
+  "Applica a tutti" realigns it. After an apply, **all copies under a template become identical**
+  (including `program_name`). Per-athlete manual tweaks are overwritten by a repush — that is the
+  intended trade-off.
+- **Frontend (`index.html`).** A dedicated **"Template" tab** (separate from the exercise "Libreria"
+  tab). Do not change these IDs: inputs `tplName`/`tplType`/`tplRules`/`tplCsv`/`tplPrompt`, modal
+  `#templateFormModal`, `#assignModal` + `#assignAthleteSelect`, var `assigningTemplateId`; functions
+  `renderTemplates`/`openTemplateForm`/`saveTemplate`/`deleteTemplate`/`openAssignModal`/
+  `confirmAssign`/`applyToAll`; the per-card **"Assegnato a:"** line (built from `programs` rows with a
+  `template_id`, joined to `profiles` client-side).
+- **RIR target per program** goes in the **template's `coach_rules`** (then "Applica a tutti"), **not
+  in the motor** (the motor is shared across athletes/programs). Reference numbers: gym/hypertrophy
+  ~3, BBR/rings ~2, max-out 0–1, Muscle-Up Pro mixed (rep sets ~2; isometric/time-based sets no RIR).
+- **Migration done.** Existing programs were linked to templates via SQL (`set template_id`),
+  preserving each program's `id`/history. **9 templates**; friends' programs + working copies attached.
+
 ## Running and deploying
 
 - **Local preview:** open `index.html` directly, but the `/api/*` functions won't run. Use
@@ -237,8 +292,28 @@ prepare an input), `nextSetNum` (which owns the deterministic `currentSetNum`), 
 - **Validazione `coach_rules` non vuoto:** the admin form blocks saving an empty `coach_rules`.
   Now that common behavior lives in the motor, this validation should be **removed** so a program
   can carry only its specifics (or nothing).
-- **Leva 2 — prompt caching:** now enableable. The `settings` motor is a **static prefix** of the
-  system prompt, so it's a natural `cache_control` breakpoint to cut `api/chat.js` API cost.
+- **Leva 2 — prompt caching: DONE** (commit `ee173c7`). The `settings` motor is sent as a cached
+  `cache_control:ephemeral` block — see the `api/chat.js` entry. Only effective once the motor is
+  ≥ 1024 tokens.
+
+## Task aperti rilevanti
+
+- **Refactor del monolite `index.html` — PRIORITARIO** (dopo i template). Analisi + opzioni prima del
+  codice: modularizzazione e/o anteprima testabile. Oggi un singolo errore di sintassi sbianca la
+  pagina, e l'anteprima Vercel non è usabile perché il login va in produzione.
+- **Test sessione AI Coach dall'account admin:** riusare il path "sessione demo" (non persistita) +
+  il picker template.
+- **Breathwork "Respirazione a cicli" — FRONTEND-ONLY** (niente backend/DB/API/motore/token). Nuovo
+  screen via `showScreen`, bolla `scale()`+`transition`, timer di ritenzione con `Date.now()` (NON
+  `setInterval`), disclaimer di sicurezza obbligatorio al primo uso, naming **"Breathwork"** (NON "Wim
+  Hof Method"). Player guidato da un oggetto-dati ("descrittore") per estendere a pranayama in futuro.
+  v2 (salvataggio tempi) separata.
+- **Timer-esercizio per esercizi a tempo** (plank/side plank/mountain climber): **incatenato** al fix
+  del timer recupero a `Date.now()` (motore-timer unico a timestamp, da fare **per primo**).
+  Rilevamento deterministico via regex sul campo Reps `/\d+\s*(sec|min)/i` (niente colonna/migration).
+  UX: "Avvia esercizio · Ns" → countdown lavoro (range = max) → beep/vibra → countdown recupero
+  incatenato; i secondi pre-compilano le reps. **Vincolo: niente timer-intervalli configurabile
+  completo.**
 
 ## Regole di lavoro
 
