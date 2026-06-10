@@ -45,7 +45,10 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   role (same fetch pattern as `api/admin.js`, reading `status` instead of `role`) and requires
   `status === 'active'` — otherwise it returns `403 { error: 'account_not_active' }`. (`inactive`
   accounts are already blocked at login by the frontend; `pending` accounts can log in but cannot use
-  the chat.) CORS is still wide open (`*`), but `Allow-Headers` now
+  the chat.) **The pending-gate applies to the admin too** — the admin's own `profiles.status`
+  must be `active` (e.g. the **admin "Prova" test session** hits `/api/chat`). Optional hardening:
+  relax the gate to `status === 'active' || role === 'admin'`. CORS is still wide open (`*`), but
+  `Allow-Headers` now
   includes `Authorization` and a valid **logged-in user token is required**. The frontend attaches
   the token in `aiSend()` (it pulls the current session's `access_token` from `sb.auth.getSession()`,
   same source as `adminFetch()`); on a `401` it shows a visible "Sessione scaduta" message, and on a
@@ -68,6 +71,15 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   motor** (the motor is shared across athletes/programs). Landed in commits `ab18084`, `f1d4245`.
   Reuses the existing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` env vars — no new
   variable.
+
+  **Motor behavioral contract (lives in `coach_prompt_global`, edited in `settings` — not code).**
+  (a) **Warm-up obbligatorio:** at every session start the coach describes a warm-up (from the CSV if
+  one is defined, otherwise generated) and closes it with **`[PRONTO]`**; it must **not** emit `[SET:]`
+  before the athlete confirms "pronto". **Exception: no warm-up on resume** (`resumeSession`). This is
+  **no longer optional**. (b) **Autoregolazione REATTIVA sì / progressione PROATTIVA no:** in-session
+  the coach may recalibrate the load to hit the target RIR/rep-range, but must **not** push proactive
+  increases "to progress" — that belongs to periodization, **between** sessions. **Per-program
+  exception** for max-out / mixed programs (their `coach_rules` override this).
 
   **Leva 2 — prompt caching (ACTIVE, commit `ee173c7`).** When `motor` is non-empty the `system`
   field sent to Anthropic is no longer a string but an **array of text blocks**: block 1 =
@@ -233,11 +245,41 @@ from its `log_data`, rebuilds `currentProfile` from the program (re-filtering th
 `buildLogSummary()` (it does **not** replay the old chat), and keeps logging into the **same** row —
 so a resumed session stays one `sessions` row. **"Inizia"** always starts a brand-new session.
 
+**Demo / non-persisted sessions (primitive: `_isDemo`).** A session can run **without touching the
+DB**: when `currentProfile._isDemo` is true, `persistSets()` returns early (no `sessions`
+INSERT/UPDATE, `currentSessionId` stays `null`) and `showDash()` restores the saved
+`currentProfile._orig` on exit. This primitive is **alive and shared by two flows** — the onboarding
+**"Prova un allenamento"** (`startDemoSession`) and the **admin "Prova" test session** (below).
+**Do not remove the `_isDemo` primitive (startDemoSession / `_orig` / the `persistSets` guard / the
+`showDash` restore) in any cleanup.**
+
+**Admin "Prova" test session.** A **"Prova"** button on each template card (`renderTemplates`) calls
+**`startTestSession(templateId)`**: it builds a **neutral profile** `{_isDemo:true, _orig:<admin
+profile>}` and calls `startSessionWithPrompt(program_name, coach_rules, workout_csv, ai_prompt,
+session_type, null)` — a **real** AI session (chat, timer, set box, RIR/RPE, weight if `gym`,
+multi-workout picker) but **non-persisted** via `_isDemo` (no `sessions`/`log_data`, no `programs`
+INSERT, `currentSessionId` null). The neutral profile makes `buildAthleteContext` return `''` (no
+admin-data leak). It **guards on `workout_csv`** (empty → alert "Template senza esercizi (workout_csv
+vuoto)"), **not** on `coach_rules` (a template can run on the motor alone). On exit, `showDash()`
+sees the global **`testSession`** flag, restores `_orig`, and returns to **`adminScreen` → Template
+tab** instead of the athlete dashboard. **New IDs/vars — do not rename: `atabTemplates` (id on the
+Template tab button), `testSession` (global).** Prereq: the admin's `profiles.status` must be
+`active` (the chat pending-gate applies to the admin — see `api/chat.js`).
+
 When changing prompt assembly, the bracket-tag contract, the `log_data` shape, or the RIR/RPE `null`
 semantics, keep `detectAndRenderInput`/`updateSetInfo` and `selectExercise` (the two paths that
 prepare an input), `nextSetNum` (which owns the deterministic `currentSetNum`), `persistSets`
 (which writes `log_data`), `buildLogSummary`, and the chart code (which reads
 `log_data.exercises[].sets[]`) in sync — they form one implicit protocol.
+
+### Convenzioni CSV workout
+
+- **Monolaterali = UN esercizio, non un superset.** A single-limb exercise is one CSV row / one
+  `[SET:]`, **never** a `[SUPERSET:]`. "**N per lato**" goes in the **Reps** column (e.g. `8 per
+  lato`), **not** in **Note** — in `gym` the **Note column is the target weight** (see the
+  target-box rule above).
+- **Rep range ~3 for hypertrophy programs** (e.g. 8–11): the coach's feedback reasons on "within
+  range / above / below" the target, so keep the spread meaningful.
 
 ## Sistema template (libreria programmi)
 
@@ -301,8 +343,9 @@ snapshots.** Model: **snapshot + repush**.
 - **Refactor del monolite `index.html` — PRIORITARIO** (dopo i template). Analisi + opzioni prima del
   codice: modularizzazione e/o anteprima testabile. Oggi un singolo errore di sintassi sbianca la
   pagina, e l'anteprima Vercel non è usabile perché il login va in produzione.
-- **Test sessione AI Coach dall'account admin:** riusare il path "sessione demo" (non persistita) +
-  il picker template.
+- **Test sessione AI Coach dall'account admin — DONE.** Shipped as the **"Prova" test session**
+  (template card → `startTestSession`, reusing the `_isDemo` demo primitive + the template picker)
+  — see "Admin "Prova" test session" in the AI session flow. Prereq: admin `status='active'`.
 - **Breathwork "Respirazione a cicli" — FRONTEND-ONLY** (niente backend/DB/API/motore/token). Nuovo
   screen via `showScreen`, bolla `scale()`+`transition`, timer di ritenzione con `Date.now()` (NON
   `setInterval`), disclaimer di sicurezza obbligatorio al primo uso, naming **"Breathwork"** (NON "Wim
@@ -314,6 +357,33 @@ snapshots.** Model: **snapshot + repush**.
   UX: "Avvia esercizio · Ns" → countdown lavoro (range = max) → beep/vibra → countdown recupero
   incatenato; i secondi pre-compilano le reps. **Vincolo: niente timer-intervalli configurabile
   completo.**
+
+## Roadmap (contesto — NON implementare finché non richiesto; i FORK restano aperti)
+
+Recorded so the model recognizes them when asked. **Do not implement now and do not resolve the
+open forks.**
+
+- **Descrittore per-esercizio.** A per-exercise descriptor `{metric:'reps'|'time', weighted, tempo,
+  recupero, target}` computed **from the CSV**, read by `renderInputFields` / the set box / logging
+  **instead of the session-level `session_type`** (handles **mixed** sessions + isometrics). **Do
+  NOT introduce a `session_type:'mixed'`.** Isometrics MVP: **seconds in the reps field** + relabel
+  on Progressi.
+- **Progressione programma** ("dove sono / prossimo"): `programProgress(program, sessions)` over
+  `orderedWorkouts` (= the workout order in the CSV) + `log_data.chosenWorkout`. **FORK OPEN:**
+  carichi-nel-CSV vs auto-progressione.
+- **Editor tabellare CSV ↔ tabella:** **lossless** round-trip (parse ↔ serialize), reusing
+  `parseWorkoutCsv` / `editProgram`. Prerequisite for applying periodization.
+- **Allenamento libero** (manual log, **no AI**): reuse `persistSets` / `log_data` / `nextSetNum`,
+  exercise name from a text field (library autocomplete). **No `programId` → not resumable.**
+  **Different from "Opzione 4"** (there the AI generates the workout).
+- **Periodizzazione attiva (GATED):** the AI **proposes** abstract changes → deterministic
+  **mapper** → **diff table** → coach **approves** → serializer rewrites `workout_csv` →
+  `editProgram`. Apply is **per-athlete** (on the copy, **not** the template). **Coach-in-the-loop
+  is mandatory — never automatic loads.** **FORK OPEN:** template-keeps-structure vs loads-on-copy.
+- **App-store distribution (GATED):** prereq = **PWA**; native value is the reminder **push**; Apple
+  **IAP** would impact Stripe.
+- **[BUG] admin:** deleting a session sends the UI to the **athlete dashboard** (the post-delete
+  path misses the `role==='admin'` re-check). **UI-only.**
 
 ## Regole di lavoro
 
