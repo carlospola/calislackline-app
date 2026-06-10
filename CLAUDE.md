@@ -326,6 +326,20 @@ snapshots.** Model: **snapshot + repush**.
   by `api/chat.js`** (for its JWT auth gate and pending-gate; reused, not new).
 - The frontend Supabase URL and anon key are hardcoded in `index.html` / `reset.html`.
 
+## Gate di sintassi pre-deploy (index.html)
+
+Prima di OGNI push che modifica index.html:
+1. Salva il file.
+2. Aprilo in Chrome in finestra INCOGNITO (estensioni off) con la console (F12) aperta.
+3. Verifica che NON compaia `Uncaught SyntaxError` (riga + messaggio). Ignora il rumore noto
+   (favicon 404, errori di estensioni — assenti in incognito).
+4. Nessun SyntaxError -> safe to push. Se c'e -> leggi riga/errore, correggi, ri-controlla.
+5. (Bonus) se compare la schermata di login, anche init e partito.
+Scope: elimina i syntax error (causa #1 della pagina bianca) + errori runtime al caricamento
+iniziale. Gli errori runtime dentro un flusso specifico restano da verificare in produzione.
+Vale per index.html (blocco <script> inline). I syntax error in api/*.js non sbiancano la
+pagina (danno 500) -> per quelli resta diff + verifica.
+
 ## Item aperti (TODO)
 
 - **Timer recupero in background:** the recovery timer stops when the tab is backgrounded
