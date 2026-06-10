@@ -13,12 +13,38 @@ serverless functions. Deployed on Vercel at `ailistenics.com` (hardcoded in OAut
 
 Three layers, no framework:
 
-- **`index.html`** (~2480 lines) — the *entire* SPA: markup, CSS, and all JS in one file. Plain
-  ES5-style `var`/`function`, no modules, no bundler. UI is a set of `.screen` divs toggled by
-  `showScreen(id)`; only one is `.active` at a time (login, dash, profile, session, progress,
-  admin, onboard). Global mutable state lives at the top of the `<script>` block
-  (`currentUser`, `currentProfile`, `sessionHistory`, `sessionLog`, `currentSessionId`,
-  `currentSetNum`, etc., starting ~line 842).
+- **The frontend is split across four files** (no framework, no bundler, no build step): one inline
+  `<script>` core plus three sibling assets, all **classic non-module scripts** — so every function
+  and `var` is **global**. Inline `onclick`/`onchange` handlers and cross-file calls depend on this;
+  **do not convert to ES modules.** Plain ES5-style `var`/`function`.
+  - **`index.html`** (~1929 lines) — markup + the **core JS**: auth/init, dashboard, the AI session
+    flow, CSV parsing/picker/`lista`, `setNum`/`log_data` persistence, recovery timer, chat
+    rendering, the **log modal**, onboarding, the exercise **libreria**, utilities (`esc`/
+    `showScreen`/`closeModal`/…), and the global-state `var` block (`currentUser`, `currentProfile`,
+    `sessionHistory`, `sessionLog`, `currentSessionId`, `currentSetNum`, `testSession`,
+    `allExercises`, …) at the top of the inline `<script>`. UI is a set of `.screen` divs toggled by
+    `showScreen(id)`; only one is `.active` at a time (login, dash, profile, session, progress,
+    admin, onboard).
+  - **`styles.css`** — all the CSS (the old inline `<style>`), linked from `<head>`.
+  - **`progress.js`** — the Progressi/charts area: its co-located state (`progressData`,
+    `CHART_DEFAULTS`, chart instances, `calCurrentMonth`, …) + 10 functions (`switchProgressTab`,
+    `showProgress`, `getExSets`, `numOrNull`, `destroyChart`, `makeBarOpts`, `renderProgressCharts`,
+    `calNavMonth`, `renderOverviewCharts`, `renderHeatmapMonth`).
+  - **`admin-ui.js`** (repo root — **NOT** `api/admin.js`, which is the serverless function) — the
+    admin panel (19 functions, `showAdmin`…`removeProgram`) + the template library (7 functions,
+    `renderTemplates`…`applyToAll`, plus the `editingTemplateId`/`assigningTemplateId` state) +
+    `startTestSession`.
+
+  **Load order — do not change.** `<link rel="stylesheet" href="styles.css">` in `<head>`; then at
+  the end of `<body>`, in this order: the inline `<script>` → `progress.js` → `admin-ui.js`. Each
+  later file relies on globals the inline core already defined, so the order is load-bearing.
+
+  **Cross-file contact points (all via global scope).** index.html → admin-ui.js: `handleSession`
+  → `showAdmin`; `showDash` → `renderTemplates` (test-session return: re-selects the `atabTemplates`
+  tab); `deleteLog` → `renderLogTable` (behind a `typeof … === 'function'` guard). admin-ui.js →
+  core: uses `esc`/`showScreen`/`closeModal`/`sb`/`loadLibrary`/`openLogModal`/`startSessionWithPrompt`
+  and reads/writes `currentProfile`/`testSession`/`allExercises`. progress.js → core: uses
+  `esc`/`showScreen`/`sb`/`Chart`.
 - **`reset.html`** — standalone password-reset page (served at `/reset` via `vercel.json` rewrite).
 - **`api/*.js`** — Vercel serverless functions (Node, `export default async function handler`).
 
@@ -313,10 +339,14 @@ snapshots.** Model: **snapshot + repush**.
 
 ## Running and deploying
 
-- **Local preview:** open `index.html` directly, but the `/api/*` functions won't run. Use
-  `vercel dev` (Vercel CLI) to exercise the serverless endpoints locally.
+- **Local preview:** open `index.html` directly — the sibling assets (`styles.css`, `progress.js`,
+  `admin-ui.js`) load via their relative paths over `file://` — but the `/api/*` functions won't
+  run. **`vercel dev` is not available** (Node is not installed on this machine), so the `/api/*`
+  endpoints are verified **in production after deploy** (propose the change as a diff + get
+  confirmation before pushing).
 - **Deploy:** push to the Vercel-connected branch (`main`). Recent history shows the workflow is
-  committing edits straight to `index.html`.
+  committing edits straight to the frontend files (`index.html` + `styles.css`/`progress.js`/
+  `admin-ui.js`).
 - There are **no tests, no linter, no build**. "Verifying a change" means running the app.
 
 ### Required environment variables (Vercel project settings)
@@ -326,19 +356,23 @@ snapshots.** Model: **snapshot + repush**.
   by `api/chat.js`** (for its JWT auth gate and pending-gate; reused, not new).
 - The frontend Supabase URL and anon key are hardcoded in `index.html` / `reset.html`.
 
-## Gate di sintassi pre-deploy (index.html)
+## Gate di sintassi pre-deploy (frontend)
 
-Prima di OGNI push che modifica index.html:
+Prima di OGNI push che modifica un file frontend (index.html, styles.css, progress.js, admin-ui.js):
 1. Salva il file.
-2. Aprilo in Chrome in finestra INCOGNITO (estensioni off) con la console (F12) aperta.
+2. Apri index.html in Chrome in finestra INCOGNITO (estensioni off) con la console (F12) aperta.
 3. Verifica che NON compaia `Uncaught SyntaxError` (riga + messaggio). Ignora il rumore noto
    (favicon 404, errori di estensioni — assenti in incognito).
 4. Nessun SyntaxError -> safe to push. Se c'e -> leggi riga/errore, correggi, ri-controlla.
 5. (Bonus) se compare la schermata di login, anche init e partito.
 Scope: elimina i syntax error (causa #1 della pagina bianca) + errori runtime al caricamento
 iniziale. Gli errori runtime dentro un flusso specifico restano da verificare in produzione.
-Vale per index.html (blocco <script> inline). I syntax error in api/*.js non sbiancano la
-pagina (danno 500) -> per quelli resta diff + verifica.
+Vale per TUTTI i file frontend: i syntax error vivono nel blocco <script> inline di index.html e in
+progress.js/admin-ui.js (un errore in un .js esterno rompe le sue funzioni globali -> onclick/handler
+morti, non per forza pagina bianca). In console controlla anche la rete: styles.css/progress.js/
+admin-ui.js devono caricare senza 404 (un 404 = stile assente, oppure funzioni grafici/admin non
+definite). I syntax error in api/*.js non sbiancano la pagina (danno 500) -> per quelli resta diff +
+verifica.
 
 ## Item aperti (TODO)
 
@@ -354,9 +388,13 @@ pagina (danno 500) -> per quelli resta diff + verifica.
 
 ## Task aperti rilevanti
 
-- **Refactor del monolite `index.html` — PRIORITARIO** (dopo i template). Analisi + opzioni prima del
-  codice: modularizzazione e/o anteprima testabile. Oggi un singolo errore di sintassi sbianca la
-  pagina, e l'anteprima Vercel non è usabile perché il login va in produzione.
+- **Refactor del monolite `index.html` — FASE 1 FATTA, poi FERMATO per decisione** (giugno 2026).
+  Estratti in file separati: `styles.css` (tutto il CSS), `progress.js` (Progressi/grafici),
+  `admin-ui.js` (admin panel + template + test session) — vedi "Architecture". index.html è passato
+  da ~2480 a ~1929 righe. **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
+  estrazioni future (log modal, onboarding, libreria) **solo su richiesta**, e **sempre con una recon
+  delle dipendenze prima** (chiamanti esterni, funzioni cross-area interposte, var globali condivise),
+  come fatto per progress.js/admin-ui.js.
 - **Test sessione AI Coach dall'account admin — DONE.** Shipped as the **"Prova" test session**
   (template card → `startTestSession`, reusing the `_isDemo` demo primitive + the template picker)
   — see "Admin "Prova" test session" in the AI session flow. Prereq: admin `status='active'`.
@@ -401,11 +439,13 @@ open forks.**
 
 ## Regole di lavoro
 
-These are mandatory working rules for this repository. Follow them on every change.
+These are mandatory working rules for this repository. Follow them on every change. They apply to
+**every frontend file** — `index.html`, `styles.css`, `progress.js`, `admin-ui.js` — not just
+`index.html` (the `var`/no-backtick/no-localStorage/`esc()`/unchanged-IDs/16px rules included).
 
-1. **Never rewrite `index.html` wholesale for small changes.** It is a single ~2480-line file;
-   always make targeted, surgical edits to the specific block involved. Do not regenerate or
-   re-emit the whole file to change a few lines.
+1. **Never rewrite `index.html` (or `progress.js`/`admin-ui.js`/`styles.css`) wholesale for small
+   changes.** `index.html` is still a large file (~1929 lines); always make targeted, surgical edits
+   to the specific block involved. Do not regenerate or re-emit a whole file to change a few lines.
 2. **Show the plan before writing code.** Present the intended approach and the exact spots you'll
    touch, then implement only after that's laid out.
 3. **Do not modify `api/chat.js`, the database schema, or anything auth-related without first
@@ -414,7 +454,7 @@ These are mandatory working rules for this repository. Follow them on every chan
    change as a diff and wait for explicit approval before applying it.
 4. **Dark theme is mandatory.** Keep accent `#c8f060` (`--accent`), fonts **Syne** (display,
    `--display`) and **DM Mono** (body/mono, `--mono`). Use the existing CSS variables in
-   `:root` (line ~12) rather than hardcoding colors or fonts.
+   `:root` (now in `styles.css`) rather than hardcoding colors or fonts.
 5. **Session-screen input fields keep empty placeholders.** The reps/RIR/weight inputs on the
    session screen must have blank `placeholder` values (see `renderInputFields` / `inputFieldHTML`,
    ~line 1212) — do not add placeholder hint text.
