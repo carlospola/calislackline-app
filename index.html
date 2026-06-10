@@ -1745,8 +1745,13 @@ async function deleteLog(){
   if(r.error){alert('Errore eliminazione: '+r.error.message); return;}
   closeModal('logModal');
   currentLogSession=null;
-  if(typeof showDash === 'function') showDash();
-  if(typeof renderLogTable === 'function') renderLogTable();
+  // Admin: resta nel pannello admin e ri-renderizza la tabella log.
+  // Atleta: aggiorna la propria dashboard.
+  if(currentProfile && currentProfile.role==='admin'){
+    if(typeof renderLogTable === 'function') renderLogTable();
+  } else {
+    if(typeof showDash === 'function') showDash();
+  }
 }
 
 document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o) o.classList.remove('open');});});
