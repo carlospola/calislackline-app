@@ -17,7 +17,7 @@ Three layers, no framework:
   `<script>` core plus three sibling assets, all **classic non-module scripts** — so every function
   and `var` is **global**. Inline `onclick`/`onchange` handlers and cross-file calls depend on this;
   **do not convert to ES modules.** Plain ES5-style `var`/`function`.
-  - **`index.html`** (~1929 lines) — markup + the **core JS**: auth/init, dashboard, the AI session
+  - **`index.html`** (~1934 lines) — markup + the **core JS**: auth/init, dashboard, the AI session
     flow, CSV parsing/picker/`lista`, `setNum`/`log_data` persistence, recovery timer, chat
     rendering, the **log modal**, onboarding, the exercise **libreria**, utilities (`esc`/
     `showScreen`/`closeModal`/…), and the global-state `var` block (`currentUser`, `currentProfile`,
@@ -133,7 +133,8 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   `/api/admin` call. The service-role key still bypasses RLS, so keep this gate intact when editing.
 - **`api/callback.js`** — OAuth/recovery redirect handler; routes `type=recovery` to `/reset`.
 
-### Supabase tables (inferred from queries — there are no migration files in the repo)
+### Supabase tables (inferred from queries — no applied migrations are version-controlled here; the
+only SQL artifact in the repo is the `db/policies.sql` snapshot, see "Repo `db/` directory" below)
 
 - `profiles` — one per user. `role` (`admin`/`athlete`), `status` (`pending`/`active`),
   plus a large set of athlete fields (`eta`, `peso`, `altezza`, `livello`, `obiettivo`,
@@ -184,8 +185,20 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
 read; the browser's direct template reads work because the admin passes `is_admin()`.
 **`api/admin.js` and `api/chat.js` use the service-role key and bypass RLS
 entirely — their JWT/role/status gates are the only protection on those endpoints and must stay
-intact.** The migration lives in the **Supabase SQL editor, not in this repo** (hence "no migration
-files" above: none are version-controlled here).
+intact.** The migration lives in the **Supabase SQL editor, not in this repo** — the repo holds **no
+applied migration files**; the one version-controlled SQL artifact is **`db/policies.sql`**, a
+partial *snapshot* of the RLS hardening (see "Repo `db/` directory" below), not a runnable migration.
+
+### Repo `db/` directory
+
+The repo carries a single SQL file: **`db/policies.sql`** — a *snapshot* (dated **2026-06-02**) of the
+RLS hardening applied to `profiles` (constraining `role`/`status` so an athlete can't self-promote to
+`admin` or set a non-default `status` at registration/update). It is **documentation, not an applied
+migration**: the source of truth for schema/policies stays in the **Supabase SQL Editor**, where
+migrations are run — **not from the repo**. **Open security TODO at `policies.sql:33`:** add a
+`BEFORE UPDATE` trigger that forces `role`/`status` back to their `OLD` values for non-`service_role`
+callers, so an athlete can no longer change **`profiles.status`** from the browser (today the policies
+block self-promotion to `admin` but **not** a `status` change).
 
 ## The AI session flow (most important to understand)
 
@@ -392,6 +405,12 @@ verifica.
 - **Validazione `coach_rules` non vuoto:** the admin form blocks saving an empty `coach_rules`.
   Now that common behavior lives in the motor, this validation should be **removed** so a program
   can carry only its specifics (or nothing).
+- **`console.log` da rimuovere in `api/chat.js`:** restano 4 log (righe ~75/76/112/117) — in
+  particolare **riga 112** logga la **risposta del modello** (primi 200 char). Vanno rimossi **nel
+  prossimo intervento su `chat.js`** (gate trial + hardening admin), non con un push a sé.
+- **Cleanup `workouts` in `api/admin.js`:** a riga ~176 `workouts` è ancora **destrutturato** da
+  `req.body` in `repushTemplate` (inutilizzato, innocuo — non entra nella PATCH). Da togliere col
+  cleanup `workouts` (vestigiale, come `programs.workouts`).
 - **Leva 2 — prompt caching: DONE** (commit `ee173c7`). The `settings` motor is sent as a cached
   `cache_control:ephemeral` block — see the `api/chat.js` entry. Only effective once the motor is
   ≥ 1024 tokens.
@@ -401,7 +420,7 @@ verifica.
 - **Refactor del monolite `index.html` — FASE 1 FATTA, poi FERMATO per decisione** (giugno 2026).
   Estratti in file separati: `styles.css` (tutto il CSS), `progress.js` (Progressi/grafici),
   `admin-ui.js` (admin panel + template + test session) — vedi "Architecture". index.html è passato
-  da ~2757 (pre-refactor) a ~1929 righe (fase 1). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
+  da ~2757 (pre-refactor) a ~1929 righe (fase 1; oggi ~1934). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
   estrazioni future (log modal, onboarding, libreria) **solo su richiesta**, e **sempre con una recon
   delle dipendenze prima** (chiamanti esterni, funzioni cross-area interposte, var globali condivise),
   come fatto per progress.js/admin-ui.js.
@@ -452,7 +471,7 @@ These are mandatory working rules for this repository. Follow them on every chan
 `index.html` (the `var`/no-backtick/no-localStorage/`esc()`/unchanged-IDs/16px rules included).
 
 1. **Never rewrite `index.html` (or `progress.js`/`admin-ui.js`/`styles.css`) wholesale for small
-   changes.** `index.html` is still a large file (~1929 lines); always make targeted, surgical edits
+   changes.** `index.html` is still a large file (~1934 lines); always make targeted, surgical edits
    to the specific block involved. Do not regenerate or re-emit a whole file to change a few lines.
 2. **Show the plan before writing code.** Present the intended approach and the exact spots you'll
    touch, then implement only after that's laid out.
@@ -476,7 +495,10 @@ These are mandatory working rules for this repository. Follow them on every chan
    `setNum` is frontend-owned via `nextSetNum` (the AI number is display-only); (c) never set the
    Supabase client's `detectSessionInUrl` back to `true` (see the PKCE note above); (d) **the AI must
    not police exercise order** — free order is enforced by the frontend (the athlete picks from
-   `lista`), not by `coach_rules`.
+   `lista`), not by `coach_rules`; (e) the legacy **`[CUE:]`** bracket tag is **no longer emitted**
+   by the AI — do not reintroduce it into prompts/`coach_rules`, but the **defensive strip** of
+   `[CUE:]` in `fmtText()` (~line 1525) is **intentional — leave it in place** (it only guards a
+   stray legacy tag).
 
 ## Conventions
 
