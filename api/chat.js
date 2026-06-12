@@ -42,20 +42,24 @@ export default async function handler(req, res) {
       // VERIFICATO DAL JWT (u.id), con la service role, count exact via HEAD
       // (nessuna colonna nuova, nessun filtro sul contenuto, mai valori dal client).
       const cRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${u.id}&select=id`,
+        `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${u.id}&select=created_at&order=created_at.desc`,
         {
-          method: 'HEAD',
           headers: {
             'apikey': SERVICE_KEY,
-            'Authorization': `Bearer ${SERVICE_KEY}`,
-            'Prefer': 'count=exact'
+            'Authorization': `Bearer ${SERVICE_KEY}`
           }
         }
       );
-      const cr = cRes.headers.get('content-range') || '';
-      const used = parseInt(cr.split('/')[1], 10);
-      // passa SOLO se il conteggio e' un numero < TRIAL_SESSIONS
-      // (fail-closed: conteggio indeterminato -> trial_exhausted).
+      let used = NaN;
+      if (cRes.ok) {
+        const rows = await cRes.json();
+        if (Array.isArray(rows)) {
+          used = rows.length;
+          if (used > 0 && (Date.now() - new Date(rows[0].created_at).getTime()) < 24 * 60 * 60 * 1000) {
+            used -= 1; // la sessione piu' recente e' "in corso" (finestra Riprendi): non si conta
+          }
+        }
+      }
       if (!(Number.isFinite(used) && used < TRIAL_SESSIONS)) {
         return res.status(403).json({ error: 'trial_exhausted' });
       }
