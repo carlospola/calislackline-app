@@ -1,3 +1,5 @@
+const TRIAL_SESSIONS = 3;
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -31,7 +33,35 @@ export default async function handler(req, res) {
       { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
     );
     const rows = await pRes.json();
-    if (!Array.isArray(rows) || !rows[0] || rows[0].status !== 'active') {
+    const status = (Array.isArray(rows) && rows[0]) ? rows[0].status : null;
+    if (status === 'active') {
+      // profilo attivo -> passa (invariato)
+    } else if (status === 'pending') {
+      // --- Gate trial: un profilo 'pending' puo' usare la chat per le prime
+      // TRIAL_SESSIONS sessioni. Conta le righe di `sessions` dell'utente
+      // VERIFICATO DAL JWT (u.id), con la service role, count exact via HEAD
+      // (nessuna colonna nuova, nessun filtro sul contenuto, mai valori dal client).
+      const cRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${u.id}&select=id`,
+        {
+          method: 'HEAD',
+          headers: {
+            'apikey': SERVICE_KEY,
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'Prefer': 'count=exact'
+          }
+        }
+      );
+      const cr = cRes.headers.get('content-range') || '';
+      const used = parseInt(cr.split('/')[1], 10);
+      // passa SOLO se il conteggio e' un numero < TRIAL_SESSIONS
+      // (fail-closed: conteggio indeterminato -> trial_exhausted).
+      if (!(Number.isFinite(used) && used < TRIAL_SESSIONS)) {
+        return res.status(403).json({ error: 'trial_exhausted' });
+      }
+      // entro la soglia -> passa
+    } else {
+      // 'inactive' o status sconosciuto -> 403 generico invariato
       return res.status(403).json({ error: 'account_not_active' });
     }
   } catch (e) {
@@ -72,8 +102,6 @@ export default async function handler(req, res) {
 
   try {
     const body = req.body;
-    console.log('Request received, messages count:', body?.messages?.length);
-    console.log('API Key present:', !!process.env.ANTHROPIC_API_KEY);
 
     // system finale: se il motor (prefisso statico comune+delta) e' non vuoto, lo
     // mandiamo come ARRAY di blocchi text con un cache_control ephemeral (5 min) sul
@@ -109,8 +137,6 @@ export default async function handler(req, res) {
     });
 
     const text = await response.text();
-    console.log('Anthropic raw response:', text.substring(0, 200));
-    
     return res.status(200).json(JSON.parse(text));
 
   } catch(err) {
