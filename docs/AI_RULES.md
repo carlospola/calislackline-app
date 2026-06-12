@@ -80,7 +80,7 @@
 
 \- `/api/admin.js` ha un \*\*auth gate\*\*: JWT + `profiles.role === 'admin'` — 401/403 altrimenti. Ogni chiamata frontend passa per `adminFetch`. Mantieni il gate (la service-role bypassa RLS)
 
-\- `/api/chat.js` ha un \*\*auth gate\*\* (JWT -> 401) + un \*\*pending-gate\*\* (`status === 'active'`, altrimenti 403 `account\_not\_active`). Frontend: `aiSend` allega l'access token; gestisce 401 e 403 separatamente. Rate-limit per-utente ancora da fare (Fase 2). \*\*(PIANIFICATO trial funnel 1A):\*\* il pending-gate si estenderà allo stato trial con count(`sessions`) < N server-side + 403 dedicato → diff + conferma; fare nello stesso giro l'hardening admin
+\- `/api/chat.js` ha un \*\*auth gate\*\* (JWT -> 401) + un \*\*gate status\*\*. \*\*✅ Gate trial ATTIVO (12/06):\*\* `TRIAL\_SESSIONS=3` in cima al file; `active` → passa; `pending` = TRIALIST → passa se count(`sessions` per `u.id` del JWT, service role, `HEAD` + `Prefer count=exact`) < 3, altrimenti 403 `trial\_exhausted`; fail-closed (count indeterminato → trial\_exhausted; la count include le sessioni "Allenamento libero", MVP); `inactive`/sconosciuto → 403 `account\_not\_active`. \*\*Hardening verificato:\*\* decisione solo su `u.id` del JWT + profilo via service role, nessun campo del body. Frontend: `aiSend` allega l'access token; gestisce 401 e 403 (sul 403 mostra ancora il messaggio generico — CTA `trial\_exhausted` dedicata = prossimo intervento frontend 1A). Rate-limit per-utente ancora da fare (Fase 2). \*\*Modello `claude-sonnet-4-5` invariato; non rimuovere il gate trial.\*\*
 
 \- \*\*⚠️ PREREQUISITO ADMIN per `/api/chat.js`:\*\* il pending-gate vale ANCHE per l'admin. L'admin deve avere `profiles.status='active'` o le sue chiamate (es. la test session "Prova") prendono 403 `account\_not\_active`. Risolto con `update profiles set status='active' where role='admin'`. \*\*Hardening opzionale (task 🟢):\*\* gate = `status==='active' || role==='admin'` (tocca `chat.js` → diff + conferma + deploy).
 
@@ -318,7 +318,7 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- `profiles.role`: solo `'admin'` o `'athlete'`
 
-\- `profiles.status`: solo `'active'`, `'pending'`, `'inactive'`. \*\*L'admin deve essere `'active'`\*\* (vedi prerequisito chat.js sopra). \*\*(PIANIFICATO trial 1A):\*\* terzo stato logico trial (`'trial'` o riuso `'pending'` — DA DECIDERE, migration/semantica con conferma)
+\- `profiles.status`: solo `'active'`, `'pending'`, `'inactive'`. \*\*L'admin deve essere `'active'`\*\* (vedi gate chat.js sopra). \*\*✅ Trial 1A (DECISO 12/06):\*\* stato trial = RIUSO di `'pending'` (nessun valore nuovo): `pending` = trialist (logga + chatta fino a N=3), conversione admin → `'active'`. \*\*`status`/`role` READ-ONLY ai non-admin\*\* via trigger `trg\_protect\_profile\_fields` (vedi sotto).
 
 \- `programs.session\_type` / `program\_templates.session\_type`: solo `'bodyweight'` o `'gym'` (NON introdurre `'mixed'` — il caso misto si gestisce col descrittore per-esercizio)
 
@@ -334,13 +334,13 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- \*\*Ogni nuova tabella o query dal browser va con la sua policy.\*\*
 
-\- \*\*Due livelli di blocco account\*\*: `inactive` fermato al login (frontend); `pending` logga ma è bloccato dal pending-gate di `chat.js`
+\- \*\*Due livelli di blocco account\*\*: `inactive` fermato al login (frontend); `pending` = TRIALIST → logga E CHATTA fino a `TRIAL\_SESSIONS=3` sessioni, poi 403 `trial\_exhausted` dal gate di `chat.js` (12/06)
 
 \- La tabella `session\_drafts` è stata RIMOSSA — non reintrodurla
 
 \- \*\*Sessioni "Allenamento libero":\*\* INSERT in `sessions` via client + RLS owner (`auth.uid() = user\_id`); niente `programId`.
 
-\- \*\*PREREQUISITO trial funnel 1A\*\* (era TODO 🟢): trigger BEFORE UPDATE per la self-activation gap (in `policies.sql:33`, non ancora applicato). Un trialist che si auto-imposta `status='active'` dal browser salterebbe il gate N → va fatto PRIMA o NELLO STESSO intervento di 1A. SQL-only (SQL Editor), zero deploy.
+\- \*\*✅ Self-activation gap CHIUSA (12/06, era il TODO `policies.sql:33`):\*\* trigger `trg\_protect\_profile\_fields` + function `protect\_profile\_fields` (SECURITY DEFINER, search\_path=public) su `public.profiles`, BEFORE UPDATE: `status`/`role` READ-ONLY ai non-admin (`is distinct from` → `raise exception`); service role e SQL Editor passano (`auth.uid()` null), admin da browser passa. Applicato via SQL Editor e VERIFICATO in produzione (P0001 da atleta; update profilo normale OK; cambio status da admin OK). NON rimuovere il trigger.
 
 \## Cosa NON fare mai
 

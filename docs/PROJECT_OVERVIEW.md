@@ -52,7 +52,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 &#x20; Vedi "Funnel trial self-serve" in TASKS (🔴; fork aperti: valore N, semantica "consumata").
 
-&#x20; \*\*⚠️ Prerequisito 1A (era TODO 🟢):\*\* trigger BEFORE UPDATE sulla self-activation gap (`policies.sql:33`) — senza, un trialist può auto-impostarsi `status='active'` dal browser e saltare il gate N. SQL-only (SQL Editor), zero deploy; PRIMA o NELLO STESSO intervento di 1A.
+&#x20; \*\*✅ Self-activation gap CHIUSA (12/06):\*\* trigger `trg\_protect\_profile\_fields` su `profiles` (BEFORE UPDATE: `status`/`role` read-only ai non-admin) applicato e verificato in produzione. \*\*Parte SERVER di 1A FATTA\*\* (trigger + gate trial `chat.js` `TRIAL\_SESSIONS=3` + hardening + log puliti); restano template di prova + frontend (CTA + auto-assegnazione) + Test C live.
 
 \- \*\*Estensione del fossato (periodizzazione):\*\* i RIR/RPE raccolti in tempo reale possono alimentare
 
@@ -90,7 +90,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Sicurezza `/api/admin.js`\*\*: auth gate (JWT + `role==='admin'`); frontend via `adminFetch`
 
-\- \*\*Sicurezza `/api/chat.js`\*\*: auth gate (JWT) + pending-gate (solo `status==='active'`); manca il rate-limit (Fase 2). \*\*NB: il pending-gate vale anche per l'admin\*\* → l'admin deve avere `status='active'` (altrimenti 403 sulle sue sessioni di test). Risolto via SQL `update profiles set status='active' where role='admin'`
+\- \*\*Sicurezza `/api/chat.js`\*\*: auth gate (JWT) + gate status. \*\*Gate trial ATTIVO (12/06):\*\* `active` → passa; `pending` = trialist → passa per le prime `TRIAL\_SESSIONS=3` sessioni (count `sessions` per `u.id` del JWT, service role), oltre → `403 trial\_exhausted`; `inactive` → `403 account\_not\_active`. Hardening verificato (decisione solo su `u.id` del JWT + profilo service role). Manca il rate-limit (Fase 2). \*\*NB: il gate vale anche per l'admin\*\* → l'admin deve avere `status='active'` (altrimenti 403 sulle sessioni di test). Risolto via SQL `update profiles set status='active' where role='admin'`
 
 \- \*\*RLS Supabase\*\*: abilitata su tutte le tabelle; `admin.js`/`chat.js` (service role) la bypassano
 
@@ -132,7 +132,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*✅ Motore-prompt — migrazione COMPLETA (giugno 2026).\*\* Anche maxout/misto, via PRECEDENZA + override nei coach\_rules. Chiuso
 
-\- \*\*Prerequisito/hardening admin per `/api/chat.js`:\*\* oggi l'admin deve avere `status='active'` (fix dati applicato). Hardening opzionale: gate `status==='active' || role==='admin'` — da fare NELLO STESSO intervento del gate trial (TASKS 1A)
+\- \*\*Prerequisito/hardening admin per `/api/chat.js`:\*\* oggi l'admin deve avere `status='active'` (fix dati applicato). Hardening opzionale ANCORA APERTO: gate `status==='active' || role==='admin'` (il gate trial 1A è ora implementato; questo bypass admin resta separato e non urgente, il fix dati basta)
 
 \- \*\*Sessioni miste (bodyweight + gym) non gestite per-esercizio LATO UI\*\* → descrittore per-esercizio (peso/isometrici dal CSV). Il lato PROMPT del misto è già coperto (filosofia MUP). Vedi TASKS
 
@@ -154,7 +154,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*FORK APERTI (da decidere, NON ancora risolti):\*\*
 
-&#x20; - Trial funnel: valore di N; semantica "sessione consumata" (MVP = riga in `sessions`)
+&#x20; - \_(✅ CHIUSO 12/06: N=3; "sessione consumata" = riga in `sessions`; stato trial = riuso 'pending')\_
 
 &#x20; - Progressione programma: carichi scritti dal coach nel CSV (default MVP) \*\*vs\*\* app che suggerisce i carichi (= periodizzazione AI)
 

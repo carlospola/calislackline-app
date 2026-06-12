@@ -36,9 +36,9 @@
 
 \- \*\*Runtime:\*\* Vercel Serverless Functions (Node.js)
 
-\- \*\*`/api/chat.js`\*\* — proxy verso Anthropic (`claude-sonnet-4-5`, max\_tokens 1000). Riceve `{system, messages, session\_type}`, restituisce la risposta AI completa (la `usage` torna al frontend → utile per i token di cache in Network). \*\*Auth gate\*\*: verifica il JWT Supabase (`GET /auth/v1/user`), altrimenti 401. \*\*Pending-gate\*\*: dopo il JWT, legge `profiles.status` con la service role -> solo `status === 'active'` passa; `pending`/`inactive` -> 403 `{ error: 'account\_not\_active' }`. CORS aperto (`\*`) ma token + status active obbligatori. Frontend: `aiSend` allega l'access token; su 401 bubble "Sessione scaduta", su 403 bubble "account non ancora attivo". Manca ancora il rate-limit per-utente (Fase 2).
+\- \*\*`/api/chat.js`\*\* — proxy verso Anthropic (`claude-sonnet-4-5`, max\_tokens 1000). Riceve `{system, messages, session\_type}`, restituisce la risposta AI completa (la `usage` torna al frontend → utile per i token di cache in Network). \*\*Auth gate\*\*: verifica il JWT Supabase (`GET /auth/v1/user`), altrimenti 401. \*\*Gate status (ATTIVO, 12/06):\*\* dopo il JWT, legge `profiles.status` con la service role → `active` passa; `pending` = TRIALIST → passa per le prime `TRIAL\_SESSIONS=3` sessioni (count `sessions` per `u.id` del JWT, service role, `HEAD` + `Prefer count=exact` via `Content-Range`), oltre → 403 `{ error: 'trial\_exhausted' }` (fail-closed: count indeterminato → trial\_exhausted; la count include le sessioni "Allenamento libero", semplificazione MVP); `inactive`/sconosciuto/assente → 403 `{ error: 'account\_not\_active' }` invariato. \*\*Hardening verificato:\*\* la decisione si basa solo su `u.id` del JWT + profilo via service role, nessun campo del body la influenza. CORS aperto (`\*`) ma token + status obbligatori. Frontend: `aiSend` allega l'access token; su 401 bubble "Sessione scaduta", su 403 bubble "account non ancora attivo". Manca ancora il rate-limit per-utente (Fase 2).
 
-&#x20; - \*\*⚠️ PREREQUISITO ADMIN:\*\* il pending-gate vale ANCHE per l'admin. La test session "Prova" parte dall'account admin, quindi l'admin DEVE avere `profiles.status='active'` (sennò 403). Risolto via `update profiles set status='active' where role='admin'`. Hardening opzionale (TASKS 🟢): gate = `status==='active' || role==='admin'` — da fare NELLO STESSO intervento del gate trial (sotto).
+&#x20; - \*\*⚠️ PREREQUISITO ADMIN:\*\* il pending-gate vale ANCHE per l'admin. La test session "Prova" parte dall'account admin, quindi l'admin DEVE avere `profiles.status='active'` (sennò 403). Risolto via `update profiles set status='active' where role='admin'`. Hardening opzionale ANCORA APERTO (TASKS 🟢): gate = `status==='active' || role==='admin'` (il gate trial 1A è ora implementato — vedi sotto; questo bypass admin resta separato e non urgente, il fix dati basta).
 
 &#x20; - \*\*✅ MOTORE-PROMPT (ATTIVO — COMPLETO, giugno 2026):\*\* `chat.js`, DOPO i gate e PRIMA di Anthropic, legge da `settings` (service role): comune `coach\_prompt\_global` + delta per tipo (`coach\_prompt\_gym` | `coach\_prompt\_bodyweight`) scelto da `body.session\_type` (typeKey HARDCODED -> no injection). `motor = \[global, delta].filter(p=>p).join('\\n\\n')`. Fallback non bloccante (`motor=''`). Il MOTORE include: il \*\*WARM-UP OBBLIGATORIO\*\*, il blocco \*\*"PRECEDENZA — FILOSOFIA DI PROGRAMMA"\*\* (i coach\_rules che dichiarano una filosofia propria — maxout, mista — prevalgono sui punti in conflitto; il resto resta regolato dal motore) e il blocco \*\*"VALUTAZIONE DEL RANGE"\*\* + anti-fotocopia (estremi inclusi; tetto del range = SUCCESSO; "sopra" = solo oltre il tetto; gli schemi feedback sono esempi di contenuto, vietata la frase identica su esercizi/set diversi). \*\*NOTA (correzione doc):\*\* la regola "autoregolazione reattiva sì / progressione proattiva no" NON è un blocco dedicato — è espressa NEGLI SCHEMI FEEDBACK (global + delta). TUTTI i 9 programmi girano sul motore; New Workout (maxout) e Muscle-Up Pro (misto) hanno coach\_rules snelli con override di filosofia (vedi AI\_RULES).
 
@@ -92,9 +92,15 @@ profiles
 
 &#x20; status ('active'|'pending'|'inactive')  <-- l'ADMIN deve essere 'active' (pending-gate chat.js)
 
-&#x20;                                         <-- (PIANIFICATO trial funnel: terzo stato logico,
+&#x20;                                         <-- trial funnel 1A (12/06): 'pending' = TRIALIST
 
-&#x20;                                              es. 'trial' o riuso 'pending' — DA DECIDERE)
+&#x20;                                              (logga + chatta fino a N=3); conversione admin
+
+&#x20;                                              -> 'active'. NESSUN valore nuovo. status/role
+
+&#x20;                                              READ-ONLY ai non-admin via trigger
+
+&#x20;                                              trg_protect_profile_fields (vedi RLS sotto).
 
 &#x20; eta, sesso, peso, altezza, livello, frequenza, discipline, skill,
 
@@ -296,7 +302,7 @@ Card template -> "Prova" -> startTestSession(templateId):
 
 &#x20;
 
-\## (PIANIFICATO) Funnel trial self-serve (Google) — accesso + conversione
+\## Funnel trial self-serve (Google) — accesso + conversione (PARTE SERVER FATTA 12/06; resta frontend)
 
 > Voce TASKS 🔴 (1A). DECISIONE: ibrido — entrata self-serve, approvazione admin alla CONVERSIONE
 
@@ -308,15 +314,19 @@ Card template -> "Prova" -> startTestSession(templateId):
 
 &#x20;   (i Progressi popolati = parte del wow + dati che l'admin vede all'approvazione).
 
-&#x20;   Serve un terzo stato logico (status='trial' o riuso 'pending' con semantica trial — DA DECIDERE).
+&#x20;   Stato trial = RIUSO di 'pending' (DECISO 12/06, nessun valore nuovo): pending = trialist (logga+chatta fino a N), conversione admin -> active.
 
-(2) GATE N SERVER-SIDE nel pending-gate di chat.js:
+(2) GATE N SERVER-SIDE nel gate di chat.js — ✅ FATTO (12/06): TRIAL_SESSIONS=3.
 
-&#x20;   active -> passa; trial -> passa SE count(sessions per user\_id) < N, altrimenti 403 dedicato
+&#x20;   active -> passa; pending -> passa SE count(sessions per u.id del JWT, service role, HEAD +
 
-&#x20;   -> il frontend mostra CTA "Richiedi il coaching". Conteggio = query su sessions, NESSUNA
+&#x20;   Prefer count=exact via Content-Range) < 3, altrimenti 403 {"error":"trial_exhausted"};
 
-&#x20;   colonna nuova. ⚠️ Tocca chat.js -> diff + conferma; fare l'hardening admin nello stesso giro.
+&#x20;   fail-closed (count indeterminato -> trial_exhausted; include le sessioni "Allenamento libero",
+
+&#x20;   MVP). Hardening verificato (decisione solo su u.id del JWT + profilo service role). La CTA
+
+&#x20;   "Richiedi il coaching" sul 403 resta da fare lato frontend.
 
 (3) TEMPLATE DI PROVA = template NORMALE della libreria (corpo libero, zero attrezzi, 1 workout ->
 
@@ -324,9 +334,13 @@ Card template -> "Prova" -> startTestSession(templateId):
 
 &#x20;   assegnazione di default). Contenuto a cura di Carlo.
 
-FORK APERTI (NON risolti): valore di N; "sessione consumata" — MVP = riga creata in sessions;
+FORK CHIUSI (12/06): N=3 (TRIAL_SESSIONS); "sessione consumata" = riga in sessions (nasce al primo
 
-&#x20;   variante "completata" gated dietro "Fine sessione chiara".
+&#x20;   persistSets; chat senza log non consuma, edge MVP); stato trial = riuso 'pending'. Variante
+
+&#x20;   "completata" resta gated dietro "Fine sessione chiara". RESTA: template di prova (contenuto) +
+
+&#x20;   frontend (CTA trial_exhausted + auto-assegnazione al primo login pending) + Test C live.
 
 ```
 
@@ -410,7 +424,7 @@ as $$ select exists (select 1 from public.profiles where id = auth.uid() and rol
 
 \- `program\_templates` — SELECT/INSERT/UPDATE/DELETE tutte `is\_admin()`.
 
-> Migration nel SQL editor, NON nel repo. \*\*PREREQUISITO trial funnel 1A\*\* (era TODO): trigger BEFORE UPDATE per la self-activation gap (`policies.sql:33`) — un trialist che si auto-imposta `status='active'` dal browser salterebbe il gate N. SQL-only, zero deploy; PRIMA o NELLO STESSO intervento di 1A.
+> Migration nel SQL editor, NON nel repo. \*\*✅ Self-activation gap CHIUSA (12/06):\*\* trigger `trg\_protect\_profile\_fields` + function `protect\_profile\_fields` (SECURITY DEFINER, search\_path=public) su `public.profiles`, BEFORE UPDATE: `status`/`role` READ-ONLY ai non-admin (`is distinct from` → `raise exception`); service role/SQL Editor (`auth.uid()` null) e admin da browser passano. Applicato + verificato in produzione (P0001 da atleta; update normale OK; cambio status da admin OK). `policies.sql` (riga 33) documenta ancora solo lo snapshot 2026-06-02.
 
 &#x20;
 

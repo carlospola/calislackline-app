@@ -79,11 +79,18 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   but **without** the role check). It returns `401` if the token is missing or invalid. **On top of
   the JWT gate there is now a pending-gate**: the handler reads `profiles.status` with the service
   role (same fetch pattern as `api/admin.js`, reading `status` instead of `role`) and requires
-  `status === 'active'` — otherwise it returns `403 { error: 'account_not_active' }`. (`inactive`
-  accounts are already blocked at login by the frontend; `pending` accounts can log in but cannot use
-  the chat.) **The pending-gate applies to the admin too** — the admin's own `profiles.status`
-  must be `active` (e.g. the **admin "Prova" test session** hits `/api/chat`). Optional hardening:
-  relax the gate to `status === 'active' || role === 'admin'`. CORS is still wide open (`*`), but
+  `status === 'active'` — otherwise it returns `403 { error: 'account_not_active' }`. **Trial gate
+  (ACTIVE, 12 giugno 2026):** `pending` is now the **trialist** status — a `pending` user can log in
+  AND use the chat for the first **`TRIAL_SESSIONS = 3`** sessions: the handler counts that user's
+  rows in `sessions` (service role, `HEAD` + `Prefer: count=exact`, filtered **only** on the
+  JWT-verified `u.id`) and passes while the count is `< 3`, else returns `403 { error:
+  'trial_exhausted' }` (fail-closed: an indeterminate count → `trial_exhausted`; the count includes
+  "Allenamento libero" sessions — MVP simplification). `inactive`/unknown/missing → the unchanged
+  `403 account_not_active`. **The gate applies to the admin too** — the admin's own `profiles.status`
+  must be `active` (e.g. the **admin "Prova" test session** hits `/api/chat`). **Gate trust (verified
+  12 giugno):** the decision relies solely on `u.id` from the verified JWT + the service-role profile
+  read — no `req.body` field influences it. Optional further hardening (admin bypass, still 🟢):
+  `status === 'active' || role === 'admin'`. CORS is still wide open (`*`), but
   `Allow-Headers` now
   includes `Authorization` and a valid **logged-in user token is required**. The frontend attaches
   the token in `aiSend()` (it pulls the current session's `access_token` from `sb.auth.getSession()`,
@@ -205,10 +212,14 @@ The repo carries a single SQL file: **`db/policies.sql`** — a *snapshot* (date
 RLS hardening applied to `profiles` (constraining `role`/`status` so an athlete can't self-promote to
 `admin` or set a non-default `status` at registration/update). It is **documentation, not an applied
 migration**: the source of truth for schema/policies stays in the **Supabase SQL Editor**, where
-migrations are run — **not from the repo**. **Open security TODO at `policies.sql:33`:** add a
-`BEFORE UPDATE` trigger that forces `role`/`status` back to their `OLD` values for non-`service_role`
-callers, so an athlete can no longer change **`profiles.status`** from the browser (today the policies
-block self-promotion to `admin` but **not** a `status` change).
+migrations are run — **not from the repo**. **Self-activation gap CLOSED (12 giugno 2026, was the
+`policies.sql:33` TODO):** a `BEFORE UPDATE` trigger `trg_protect_profile_fields` + function
+`protect_profile_fields` (`SECURITY DEFINER`, `search_path=public`) on `public.profiles` make
+`status`/`role` **read-only for non-admins** (`is distinct from` → `raise exception`); the service
+role and SQL Editor pass (`auth.uid()` null) and an admin from the browser passes. Applied via the
+SQL Editor and verified in production 12/06 (P0001 on a status change by an athlete; normal profile
+update OK; status change from the admin panel OK). `db/policies.sql` still version-controls only the
+2026-06-02 RLS snapshot, not this trigger.
 
 ## The AI session flow (most important to understand)
 
@@ -415,9 +426,9 @@ verifica.
 - **Validazione `coach_rules` non vuoto:** the admin form blocks saving an empty `coach_rules`.
   Now that common behavior lives in the motor, this validation should be **removed** so a program
   can carry only its specifics (or nothing).
-- **`console.log` da rimuovere in `api/chat.js`:** restano 4 log (righe ~75/76/112/117) — in
-  particolare **riga 112** logga la **risposta del modello** (primi 200 char). Vanno rimossi **nel
-  prossimo intervento su `chat.js`** (gate trial + hardening admin), non con un push a sé.
+- **`console.log` in `api/chat.js`: PULITI (12 giugno 2026).** Rimossi i 3 log con dati
+  conversazione/profilo (request/messages count, API-key-present, risposta del modello a riga ~112);
+  resta solo `console.log('Error:', err.message)` (errore tecnico).
 - **Cleanup `workouts` in `api/admin.js`:** a riga ~176 `workouts` è ancora **destrutturato** da
   `req.body` in `repushTemplate` (inutilizzato, innocuo — non entra nella PATCH). Da togliere col
   cleanup `workouts` (vestigiale, come `programs.workouts`).
