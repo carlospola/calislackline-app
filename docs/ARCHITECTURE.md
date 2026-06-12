@@ -1,0 +1,854 @@
+\# Architecture
+
+&#x20;
+
+\## Frontend
+
+\- \*\*Framework:\*\* Nessuno — HTML/CSS/JS vanilla. \*\*MULTI-FILE dal refactor fase 1 (giugno 2026):\*\*
+
+&#x20; - `index.html` (\~1934 righe; pre-refactor 2757) — markup + core JS: auth/init, dashboard, sessione AI (avvio/chat/aiSend/sendMsg), parsing CSV + picker + lista, setNum + persistenza `log\_data`, timer, chat rendering, log modal, onboarding, libreria esercizi, utility comuni (`esc`/`showScreen`/`closeModal`), client `sb`, var globali in testa allo `<script>`
+
+&#x20; - `styles.css` — tutto il CSS (ex blocco `<style>`), `<link>` nel `<head>`
+
+&#x20; - `progress.js` — schermata Progressi/grafici: stato co-locato + 10 funzioni (switchProgressTab, showProgress, destroyChart, numOrNull, getExSets, makeBarOpts, renderProgressCharts, calNavMonth, renderOverviewCharts, renderHeatmapMonth)
+
+&#x20; - `admin-ui.js` — admin panel (19 funzioni showAdmin…removeProgram) + template (renderTemplates…applyToAll + `editingTemplateId`/`assigningTemplateId`) + `startTestSession`. \*\*⚠️ NON confondere con `api/admin.js` (serverless)\*\*
+
+\- \*\*Ordine di caricamento (NON cambiare):\*\* `<link styles.css>` nel `<head>`; in coda al `<body>`: `<script>` inline → `<script src="progress.js">` → `<script src="admin-ui.js">`. Script \*\*CLASSICI non-module\*\*: funzioni e var restano GLOBALI — gli onclick/onchange inline e le chiamate cross-file ci contano. NON convertire in ES modules.
+
+\- \*\*Punti di contatto cross-file (via global scope):\*\* `handleSession→showAdmin`; `showDash→renderTemplates` (ritorno test session, tab `atabTemplates`); `deleteLog→renderLogTable` (con guard `typeof`); `admin-ui.js` → `esc`/`showScreen`/`closeModal`/`sb`/`loadLibrary`/`openLogModal`/`startSessionWithPrompt` + R/W su `currentProfile`/`testSession`/`allExercises`; `progress.js` → `esc`/`showScreen`/`sb`/`Chart`.
+
+\- \*\*Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO\*\* (protocollo implicito sendMsg→nextSetNum→persistSets→reader): non estrarlo.
+
+\- \*\*Styling:\*\* CSS custom in `styles.css` (variabili CSS, dark theme, mobile-first)
+
+\- \*\*Font:\*\* DM Mono + Syne (Google Fonts)
+
+\- \*\*Routing:\*\* nessuno — single-page app con `showScreen(id)` che mostra/nasconde div
+
+\- \*\*Stato globale:\*\* variabili mutabili in cima allo `<script>` (`currentUser`, `currentProfile`, `sessionHistory`, `sessionLog`, `currentSessionId`, `currentSetNum`, `currentSetMode`, `currentExercises`, `currentSetState`, `assigningTemplateId`, `testSession`, ecc.)
+
+\- \*\*Supabase SDK:\*\* `@supabase/supabase-js@2` via CDN
+
+\- \*\*Chart.js:\*\* `chart.js@4.4.0` via CDN (grafici progressi)
+
+\## Backend
+
+\- \*\*Runtime:\*\* Vercel Serverless Functions (Node.js)
+
+\- \*\*`/api/chat.js`\*\* — proxy verso Anthropic (`claude-sonnet-4-5`, max\_tokens 1000). Riceve `{system, messages, session\_type}`, restituisce la risposta AI completa (la `usage` torna al frontend → utile per i token di cache in Network). \*\*Auth gate\*\*: verifica il JWT Supabase (`GET /auth/v1/user`), altrimenti 401. \*\*Pending-gate\*\*: dopo il JWT, legge `profiles.status` con la service role -> solo `status === 'active'` passa; `pending`/`inactive` -> 403 `{ error: 'account\_not\_active' }`. CORS aperto (`\*`) ma token + status active obbligatori. Frontend: `aiSend` allega l'access token; su 401 bubble "Sessione scaduta", su 403 bubble "account non ancora attivo". Manca ancora il rate-limit per-utente (Fase 2).
+
+&#x20; - \*\*⚠️ PREREQUISITO ADMIN:\*\* il pending-gate vale ANCHE per l'admin. La test session "Prova" parte dall'account admin, quindi l'admin DEVE avere `profiles.status='active'` (sennò 403). Risolto via `update profiles set status='active' where role='admin'`. Hardening opzionale (TASKS 🟢): gate = `status==='active' || role==='admin'` — da fare NELLO STESSO intervento del gate trial (sotto).
+
+&#x20; - \*\*✅ MOTORE-PROMPT (ATTIVO — COMPLETO, giugno 2026):\*\* `chat.js`, DOPO i gate e PRIMA di Anthropic, legge da `settings` (service role): comune `coach\_prompt\_global` + delta per tipo (`coach\_prompt\_gym` | `coach\_prompt\_bodyweight`) scelto da `body.session\_type` (typeKey HARDCODED -> no injection). `motor = \[global, delta].filter(p=>p).join('\\n\\n')`. Fallback non bloccante (`motor=''`). Il MOTORE include: il \*\*WARM-UP OBBLIGATORIO\*\*, il blocco \*\*"PRECEDENZA — FILOSOFIA DI PROGRAMMA"\*\* (i coach\_rules che dichiarano una filosofia propria — maxout, mista — prevalgono sui punti in conflitto; il resto resta regolato dal motore) e il blocco \*\*"VALUTAZIONE DEL RANGE"\*\* + anti-fotocopia (estremi inclusi; tetto del range = SUCCESSO; "sopra" = solo oltre il tetto; gli schemi feedback sono esempi di contenuto, vietata la frase identica su esercizi/set diversi). \*\*NOTA (correzione doc):\*\* la regola "autoregolazione reattiva sì / progressione proattiva no" NON è un blocco dedicato — è espressa NEGLI SCHEMI FEEDBACK (global + delta). TUTTI i 9 programmi girano sul motore; New Workout (maxout) e Muscle-Up Pro (misto) hanno coach\_rules snelli con override di filosofia (vedi AI\_RULES).
+
+&#x20; - \*\*✅ LEVA 2 — PROMPT CACHING (ATTIVO):\*\* `system` = ARRAY di blocchi quando `motor` non vuoto:
+
+&#x20;   ```js
+
+&#x20;   { type: 'text', text: motor, cache\_control: { type: 'ephemeral' } } // motore cachato
+
+&#x20;   { type: 'text', text: body.system }                                  // solo se presente
+
+&#x20;   ```
+
+&#x20;   Se `motor` vuoto, `system` = stringa `body.system` (fallback). Motore \~1.900 token > minimo 1.024 (cresciuto di \~250 con precedenza + valutazione range, ma nel blocco CACHATO \~10% del prezzo). \~90% di taglio sulla porzione statica. Commit `ee173c7`.
+
+&#x20; - \*\*Composizione finale:\*\* `\[ motor (cached) , system\_del\_frontend ]`, dove `system\_del\_frontend` = `coach\_rules`/`ai\_prompt` + `workout\_csv` (filtrato) + `athleteContext` (SOLO primo turno). NON rompere ordine/struttura.
+
+\- \*\*`/api/admin.js`\*\* — operazioni protette DB (service role, bypassa RLS). \*\*Auth gate\*\*: JWT + `profiles.role === 'admin'`, altrimenti 401/403. Frontend via `adminFetch()` (`{action, ...}`).
+
+&#x20; - \*\*Action atleti/programmi:\*\* updateProfile, updateProgram, updateStatus, resetProgram, addProgram, editProgram, removeProgram, deleteUser, createUser. \_(updateProgram/resetProgram legacy/dead.)\_
+
+&#x20; - \*\*✅ Action template:\*\* `addTemplate`, `editTemplate`, `removeTemplate`, `assignTemplate`, `repushTemplate` ("Applica a tutti" — riscrive SOLO `program\_name`/`coach\_rules`/`workout\_csv`/`ai\_prompt`/`session\_type`; `workouts` RIMOSSO, `74b72bd`). Le LETTURE le fa il frontend via SDK.
+
+&#x20; - \*\*Futuro — apply periodizzazione:\*\* l'apply dei carichi suggeriti dall'AI passa da `editProgram` sulla riga `programs` del SINGOLO atleta (NON dal template). Vedi sezione Periodizzazione.
+
+\- \*\*`/api/callback.js`\*\* — redirect OAuth (PKCE): `type=recovery` → `/reset?code=`, altrimenti `/?code=`.
+
+\## Auth (OAuth PKCE)
+
+\- Client Supabase: `{ auth: { flowType:'pkce', autoRefreshToken:true, detectSessionInUrl:false, persistSession:true } }` (index.html \~848, reset.html \~74).
+
+\- \*\*`detectSessionInUrl: false` è CRITICO:\*\* il codice PKCE è MONOUSO; con `true` race tra lo scambio in background e `exchangeCodeForSession(code)` manuale → "Errore autenticazione". NON rimettere `true`.
+
+\- `callback.js`: login `?code` -> `/?code=`; recovery -> `/reset?code=`.
+
+\- \*\*⚠️ RESET PASSWORD ROTTO (correzione di stato, giugno 2026):\*\* il flusso recovery oggi NON funziona. Fix legato al percorso email/password (TASKS 🟡 1B): Supabase ha `inviteUserByEmail` (link → set password) e il recovery di `/reset` — "crea password al primo accesso" e "reset" sono LO STESSO MECCANISMO → un solo lavoro.
+
+\## Database
+
+\- \*\*Tipo:\*\* Supabase PostgreSQL · \*\*URL:\*\* `https://efziohgwsvplqandzawz.supabase.co`
+
+\- \*\*RLS:\*\* ABILITATO su tutte le tabelle. Policy owner via `auth.uid()` + `is\_admin()` (SECURITY DEFINER). `admin.js`/`chat.js` (service role) BYPASSANO la RLS.
+
+\### Tabelle principali:
+
+```
+
+profiles
+
+&#x20; id uuid (FK auth.users), email, name, role ('athlete'|'admin'),
+
+&#x20; status ('active'|'pending'|'inactive')  <-- l'ADMIN deve essere 'active' (pending-gate chat.js)
+
+&#x20;                                         <-- (PIANIFICATO trial funnel: terzo stato logico,
+
+&#x20;                                              es. 'trial' o riuso 'pending' — DA DECIDERE)
+
+&#x20; eta, sesso, peso, altezza, livello, frequenza, discipline, skill,
+
+&#x20; obiettivo, obiettivo3m, disponibilita, luogo, attrezzatura,
+
+&#x20; infortuni, limitazioni, stile, sonno, motivazione, note\_libere, created\_at
+
+&#x20;
+
+programs
+
+&#x20; id uuid, user\_id uuid (FK profiles)  <-- SINGOLO atleta
+
+&#x20; template\_id uuid (FK program\_templates, ON DELETE SET NULL)  <-- aggancio al template
+
+&#x20; program\_name text, workouts text (VESTIGIALE), ai\_prompt text,
+
+&#x20; coach\_rules text (solo gli specifici per-programma; qui anche il RIR target e gli
+
+&#x20;   override di FILOSOFIA — maxout/misto — che il motore rispetta via blocco PRECEDENZA),
+
+&#x20; workout\_csv text, session\_type text ('bodyweight'|'gym'), created\_at
+
+&#x20;
+
+program\_templates   <-- SOURCE OF TRUTH (libreria template riassegnabili)
+
+&#x20; id uuid, program\_name text NOT NULL, workouts jsonb (inutilizzato),
+
+&#x20; coach\_rules, workout\_csv, ai\_prompt, session\_type (default 'bodyweight'), created\_at
+
+&#x20;
+
+sessions
+
+&#x20; id uuid, user\_id uuid (FK profiles), workout\_name text,
+
+&#x20; log\_text text (LEGACY), 
+
+&#x20; log\_data jsonb  SOURCE OF TRUTH, scritta INCREMENTALMENTE:
+
+&#x20;   { workout, programId, chosenWorkout,
+
+&#x20;     exercises:\[{ name, sets:\[{reps,rir,rpe,weight,note,setNum}] }] }
+
+&#x20; created\_at
+
+&#x20;
+
+exercises
+
+&#x20; id, name, category, muscles, equipment, level, progressions, cue,
+
+&#x20; default\_rest, notes, owner\_id (null = globale), created\_at
+
+&#x20;
+
+settings
+
+&#x20; key text (PK): 'coach\_prompt\_global' | 'coach\_prompt\_bodyweight' | 'coach\_prompt\_gym'
+
+&#x20; value text  testo del MOTORE; '' = riga vuota
+
+&#x20; -- letta SOLO dal backend (chat.js, service role); si modifica dal Table Editor, NON dal codice
+
+&#x20; -- 'coach\_prompt\_global' contiene ora: warm-up OBBLIGATORIO (+ eccezione ripresa),
+
+&#x20; --  blocco PRECEDENZA — FILOSOFIA DI PROGRAMMA, blocco VALUTAZIONE DEL RANGE + anti-fotocopia.
+
+&#x20; --  La regola reattiva/proattiva vive NEGLI SCHEMI FEEDBACK (global + delta), non come blocco.
+
+```
+
+> session\_drafts: tabella RIMOSSA — non reintrodurla.
+
+&#x20;
+
+\## Sessione demo / non-persistita (VIVA — base della test session admin)
+
+> NB: la sessione demo NON è stata rimossa. È VIVA e ci si appoggia la test session admin.
+
+> ⚠️ Il FUTURO trial funnel NON la usa: le sessioni trial PERSISTONO (vedi sezione dedicata).
+
+```
+
+Flag:    currentProfile.\_isDemo (bool) + currentProfile.\_orig (deep copy del profilo da ripristinare)
+
+Attivata da:
+
+&#x20; - startDemoSession()  -> onboarding / dashboard atleta ("prova")
+
+&#x20; - startTestSession(templateId)  -> test session admin (vedi sotto)
+
+Non-persistenza:  persistSets() ha la guardia  if(currentProfile \&\& currentProfile.\_isDemo) return;
+
+&#x20;                 -> nessun INSERT/UPDATE su sessions, currentSessionId resta null.
+
+&#x20;                 queueAutosave chiama comunque persistSets, che esce subito.
+
+Ripristino:       showDash() -> if(\_isDemo \&\& \_orig) currentProfile = \_orig;
+
+```
+
+> La test session si aggancia alla PRIMITIVA (`\_isDemo` + restore), NON al flow onboarding: anche
+
+> rimuovendo l'ingresso demo dell'onboarding, la test session sopravvive finché resta la guardia.
+
+&#x20;
+
+\## Sistema template (libreria programmi) — modello
+
+```
+
+Modello: SNAPSHOT + REPUSH. Il template = source of truth. Le copie (programs.template\_id) sono
+
+snapshot; il contenuto si riallinea SOLO con un "Applica a tutti" deliberato.
+
+&#x20;
+
+CREA   -> addTemplate          EDITA -> editTemplate          ELIMINA -> removeTemplate (FK SET NULL)
+
+ASSEGNA-> assignTemplate (INSERT programs con template\_id + user\_id; status=active)
+
+APPLICA A TUTTI -> repushTemplate (PATCH programs?template\_id=eq.{id}, SOLI campi contenuto)
+
+LISTA  -> frontend diretto via SDK (RLS admin)
+
+&#x20;
+
+REGOLE CHIAVE
+
+\- Collegare (set template\_id) NON cambia il contenuto.
+
+\- "Applica a tutti" sovrascrive program\_name + tutti i campi contenuto di OGNI copia (incl. nome) ->
+
+&#x20; sotto UN template solo programmi che devono diventare lo STESSO programma.
+
+\- workouts NON propagato. Migrazione FATTA (9 template; amici + copie agganciati).
+
+\- ⚠️ Carichi/progressioni PER-ATLETA vivono sulla COPIA (editProgram), NON sul template -> dopo
+
+&#x20; una personalizzazione quel programma DIVERGE dal template (fork aperto, vedi Periodizzazione).
+
+&#x20;
+
+UI (tab "Template" admin)
+
+\- #tab-templates + #templateList (renderTemplates via SDK)
+
+\- modal #templateFormModal (tplName/tplType/tplRules/tplCsv/tplPrompt)
+
+\- per card: "Modifica" / "Elimina" / "Assegna" (#assignModal + #assignAthleteSelect -> confirmAssign)
+
+&#x20; / "Prova" (test session, vedi sotto) / "Applica a tutti" (applyToAll -> repushTemplate)
+
+\- riga "Assegnato a: X, Y"; hook switchTab: if(tab==='templates') renderTemplates();
+
+\- bottone tab: id "atabTemplates" (usato dal ritorno della test session)
+
+```
+
+&#x20;
+
+\## ✅ Test sessione admin ("Prova") — flusso
+
+```
+
+Card template -> "Prova" -> startTestSession(templateId):
+
+&#x20; t = window.\_templates.find(id)
+
+&#x20; guard: se !t.workout\_csv -> alert("Template senza esercizi (workout\_csv vuoto)"); return
+
+&#x20; orig = deep copy di currentProfile
+
+&#x20; currentProfile = { \_isDemo:true, \_orig:orig }   <-- profilo NEUTRO (athleteContext vuoto -> no leak)
+
+&#x20; testSession = true
+
+&#x20; startSessionWithPrompt(t.program\_name, t.coach\_rules, t.workout\_csv, t.ai\_prompt, t.session\_type, null)
+
+&#x20;
+
+\-> da qui è una sessione AI REALE (picker multi-workout, chat, box, timer, RIR/RPE, peso se gym,
+
+&#x20;  warm-up obbligatorio) ma NON persistita (\_isDemo -> persistSets esce -> niente sessions/log\_data;
+
+&#x20;  niente INSERT programs; currentSessionId null).
+
+"← Torna" -> showDash:
+
+&#x20; ripristina \_orig (profilo admin) e, se testSession, -> showScreen('adminScreen') + attiva tab
+
+&#x20; Template (atabTemplates / #tab-templates) + renderTemplates(); return (NON la dashboard atleta).
+
+```
+
+> Niente nuovo endpoint/DB. Solo `index.html`/`admin-ui.js`. ID/VAR: `atabTemplates`, `testSession`.
+
+&#x20;
+
+\## (PIANIFICATO) Funnel trial self-serve (Google) — accesso + conversione
+
+> Voce TASKS 🔴 (1A). DECISIONE: ibrido — entrata self-serve, approvazione admin alla CONVERSIONE
+
+> (richiesta di coaching). Lancio SOLO-GOOGLE (email verificata; niente mail di conferma/password).
+
+```
+
+(1) PERSISTENZA: le sessioni trial scrivono normalmente su sessions/log\_data — NON usano \_isDemo
+
+&#x20;   (i Progressi popolati = parte del wow + dati che l'admin vede all'approvazione).
+
+&#x20;   Serve un terzo stato logico (status='trial' o riuso 'pending' con semantica trial — DA DECIDERE).
+
+(2) GATE N SERVER-SIDE nel pending-gate di chat.js:
+
+&#x20;   active -> passa; trial -> passa SE count(sessions per user\_id) < N, altrimenti 403 dedicato
+
+&#x20;   -> il frontend mostra CTA "Richiedi il coaching". Conteggio = query su sessions, NESSUNA
+
+&#x20;   colonna nuova. ⚠️ Tocca chat.js -> diff + conferma; fare l'hardening admin nello stesso giro.
+
+(3) TEMPLATE DI PROVA = template NORMALE della libreria (corpo libero, zero attrezzi, 1 workout ->
+
+&#x20;   niente picker), auto-assegnato al signup/primo login (riuso assignTemplate lato server o
+
+&#x20;   assegnazione di default). Contenuto a cura di Carlo.
+
+FORK APERTI (NON risolti): valore di N; "sessione consumata" — MVP = riga creata in sessions;
+
+&#x20;   variante "completata" gated dietro "Fine sessione chiara".
+
+```
+
+&#x20;
+
+\## (PIANIFICATO) Mail resoconto AI settimanale + scheduler unico
+
+> Voce TASKS 🟡. Retention: l'AI legge i log e manda un recap in linguaggio coach.
+
+```
+
+SCHEDULER: VERCEL CRON su nuovo endpoint api/ (gratuito) — UNICO, CONDIVISO col reminder
+
+&#x20; allenamento (🔴): per ogni atleta decide -> allenato = candidato resoconto; fermo da X giorni =
+
+&#x20; candidato reminder. Due mail, una infrastruttura.
+
+DATI: AGGREGATORE JS deterministico (1 riga/esercizio: miglior set, RIR medio/trend, volume vs
+
+&#x20; settimana prima) — CONDIVISO con "Analisi AI progressioni" (si costruisce UNA volta). La mail è
+
+&#x20; il banco di prova a basso rischio della periodizzazione: l'AI COMUNICA soltanto, niente apply,
+
+&#x20; niente coach-in-the-loop obbligatorio, niente editor tabellare come prerequisito.
+
+GRAFICI: Chart.js NON gira nelle email. MVP = NIENTE immagini: resoconto testuale (3-4 frasi) +
+
+&#x20; numeri chiave + LINK "Vedi i grafici" -> schermata Progressi (riporta l'atleta in app).
+
+&#x20; Avanzato: PNG via QuickChart (renderizza config Chart.js via URL — i config sono in progress.js).
+
+CANALE: provider transazionale futuro (vedi "Dominio email", gated rebranding) — NON Apps Script
+
+&#x20; (in smontaggio). Costo: \~1-2 cent/atleta/settimana.
+
+```
+
+&#x20;
+
+\## (PIANIFICATO) Logo/icona home screen — PASSO 1 della PWA
+
+> Voce TASKS 🟡. Indipendente dal service worker (che resta PASSO 2, prerequisito store).
+
+```
+
+manifest.json minimo (nome, icone 192/512px, theme scuro, display:standalone)  -> Android/Chrome
+
+<link rel="apple-touch-icon">                                                   -> iOS/Safari
+
+favicon.ico                                                                     -> chiude il 404 noto
+
+= TRE file statici + due righe nel <head> di index.html. Zero JS, zero rischio sintassi.
+
+Prerequisito: asset logo quadrato \~1024px. Rebranding NON bloccante (rifare 3 icone è irrisorio).
+
+```
+
+&#x20;
+
+\## RLS (Row Level Security)
+
+Abilitata su tutte le tabelle. Browser (anon key + JWT) filtrato dalle policy; service role bypassa.
+
+```sql
+
+create function public.is\_admin() returns boolean
+
+&#x20; language sql stable security definer set search\_path = public
+
+as $$ select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'); $$;
+
+```
+
+\- `profiles` — select/update: `auth.uid()=id OR is\_admin()`; insert: `auth.uid()=id` (role='athlete', status='pending'); update atleta vincolato a role='athlete'.
+
+\- `sessions` — select/insert/update/delete owner-or-admin. (Le "Allenamento libero" usano lo stesso insert owner.)
+
+\- `programs` — select owner-or-admin; write `is\_admin()`.
+
+\- `exercises` — select `owner\_id is null OR owner\_id=auth.uid() OR is\_admin()`; write `is\_admin()`.
+
+\- `program\_templates` — SELECT/INSERT/UPDATE/DELETE tutte `is\_admin()`.
+
+> Migration nel SQL editor, NON nel repo. \*\*PREREQUISITO trial funnel 1A\*\* (era TODO): trigger BEFORE UPDATE per la self-activation gap (`policies.sql:33`) — un trialist che si auto-imposta `status='active'` dal browser salterebbe il gate N. SQL-only, zero deploy; PRIMA o NELLO STESSO intervento di 1A.
+
+&#x20;
+
+\## Picker workout + filtro CSV (Leva 1)
+
+```
+
+parseWorkoutCsv(csv)        -> { headerLine, orderedWorkouts, rowsByWorkout, fieldsByWorkout }
+
+buildFilteredCsv(csv, nome) -> header + righe del solo workout scelto (fallback: CSV intero)
+
+startSessionWithPrompt(...): se orderedWorkouts.length >= 2 -> showWorkoutPicker, altrimenti beginSession
+
+beginSession(..., chosenWorkout):
+
+&#x20; csvToUse -> currentProfile.workout\_csv (solo questo nel system)
+
+&#x20; sessionLog = { workout, programId, chosenWorkout, exercises:\[] }; currentSessionId = null
+
+&#x20; aiSend('Inizia sessione: '+displayName, isFirst=true)
+
+```
+
+> `orderedWorkouts` (l'ORDINE dei workout nel CSV) è la base di "Progressione programma" (sotto).
+
+&#x20;
+
+\## Lista tappabile + setNum deterministico (Stage 2)
+
+```
+
+nextSetNum(name): conta i set già loggati per `name` in sessionLog.exercises + 1.
+
+&#x20; IL FRONTEND POSSIEDE IL setNum su tap E tag AI. NON parsare la "Set N/TOT" dell'AI per il LOGGING.
+
+selectExercise(name): chiude overlay; currentSetNum=nextSetNum; mode='single'; renderInputFields;
+
+&#x20; setInputLocked(false); popola i 4 box dal CSV. TARGET BOX PER TIPO (Tempo bodyweight / Peso gym).
+
+updateSetInfo(text): currentSetNum=nextSetNum(logName); N da nextSetNum + TOT dal CSV.
+
+sendMsg (single): antepone "Esercizio: <nome>".
+
+Warm-up non-tappabile: /riscald|warm/i sulla Note -> .wlist-ex-warmup (no onclick).
+
+```
+
+&#x20;
+
+\## Session Screen — Architettura UI
+
+```
+
+TOPBAR: <- Torna | Titolo | LIVE | lista
+
+INFO BOX (3): \[Esercizio / Set N/TOT] | \[Target reps / TEMPO(bw) o PESO(gym) — es. "12-15 per lato"] | \[RECUPERO / Timer / Start]
+
+CHAT: bubble AI (solo feedback testuale)
+
+OVERLAY #workoutPickerOverlay (scelta workout pre-chat) / #workoutListOverlay (esercizi tappabili)
+
+INPUT: \[#inputContainer 1fr 1fr: Reps | RIR] \[#weightRow: Peso kg, solo gym, a destra]
+
+&#x20;      \[RPE/Fatica 1-10 opzionali] \[note + send]
+
+ANTI-ZOOM: #sessionScreen input,textarea { font-size:16px !important; }
+
+```
+
+> Topbar SOLO "Torna" + "lista". Chiusura con "Torna".
+
+> (FUTURO) la visibilità del peso e il tipo di box passeranno a un DESCRITTORE PER-ESERCIZIO (sotto).
+
+> Quirk noto: in New Workout la Note = varianti (non peso) -> il box gym mostra quel testo (accettato).
+
+&#x20;
+
+\## Session Data Flow
+
+```
+
+Atleta -> Dashboard -> "Inizia" -> startSessionWithPrompt() (picker se multi-workout) -> beginSession
+
+Atleta -> "Riprendi" (sessione < 24h, programId) -> resumeSession(sessionRow, program)
+
+Admin  -> tab Template -> "Prova" -> startTestSession (demo non-persist)
+
+&#x20;
+
+aiSend (per messaggio):
+
+&#x20; system\_frontend = coach\_rules/ai\_prompt + workout\_csv (filtrato) + athleteContext (SOLO 1° turno)
+
+&#x20; body.session\_type (per il motore); chat.js antepone il MOTORE come BLOCCO CACHATO (Leva 2)
+
+&#x20; messages = history troncata a 12; allega access token
+
+&#x20; updateSetInfo -> 3 box + currentSetNum; fmtText rimuove tag; addBubble (quick-options, \[PRONTO], set)
+
+&#x20;
+
+Logging PER-SERIE (niente "fine"):
+
+&#x20; sendMsg costruisce i set con reps>0; RIR/RPE null se non dichiarati; setNum=currentSetNum
+
+&#x20; queueAutosave -> persistSets (INSERT 1ª serie -> currentSessionId; poi UPDATE con dedup nome+setNum)
+
+&#x20; SESSIONI DEMO/TEST NON persistite (guardia \_isDemo)
+
+&#x20;
+
+Chiusura "← Torna" -> showDash: ferma timer; ripristina \_orig se demo; se testSession -> torna ad admin.
+
+deleteLog (fix 7f8315d): role==='admin' -> solo renderLogTable() (resta su adminScreen);
+
+&#x20; atleta -> showDash().
+
+```
+
+&#x20;
+
+\## (PIANIFICATO) Descrittore per-esercizio — sessioni miste + isometrici
+
+> Voci TASKS "Peso per-esercizio" e "Logging isometrici". Frontend-only, no migration.
+
+> Il lato PROMPT del misto è GIÀ coperto (coach\_rules MUP); qui resta il lato UI.
+
+```
+
+Oggi: session\_type decide A LIVELLO DI SESSIONE peso (#weightRow) e tipo box. Le sessioni MISTE
+
+(Muscle-Up Pro: corpo libero + zavorrato) non sono gestite lato UI.
+
+Futuro: descrittore calcolato DAL CSV per OGNI esercizio:
+
+&#x20; { metric:'reps'|'time', weighted:bool, tempo, recupero, target }
+
+&#x20; - weighted = (session\_type==='gym') || /\\d+\\s\*kg/i nella Note
+
+&#x20; - metric   = /\\d+\\s\*(sec|min)/i sulle Reps ? 'time' : 'reps'
+
+renderInputFields / box / logging leggono il descrittore al posto del session-wide session\_type.
+
+metric='time': label "Secondi", NIENTE RIR, RPE opzionale, peso se weighted.
+
+MVP isometrici: secondi nel campo `reps` (+ relabel Progressi). Avanzato: campo `seconds` (jsonb).
+
+Il MOTORE resta separato (stile di coaching della sessione, non tipo del singolo esercizio).
+
+NON introdurre session\_type 'mixed'.
+
+(FUTURO 💡 elastici: estensione del descrittore con load:'kg'|'band'|none — parcheggiata in TASKS.)
+
+```
+
+&#x20;
+
+\## (PIANIFICATO) Progressione programma — sequenza "dove sono / prossimo"
+
+> Voce TASKS (SPINA DORSALE). Frontend-only, no migration. Deterministico.
+
+```
+
+Concetto: il programma è una PLAYLIST ORDINATA (mesociclo = settimane × allenamenti/sett come lo
+
+scrive il coach). L'atleta avanza completando i workout IN ORDINE, scollegato dal calendario.
+
+Dati: parseWorkoutCsv.orderedWorkouts (= sequenza) + log\_data.chosenWorkout/timestamp per programId.
+
+Convenzione nome workout: "S1 · Push", "S1 · Pull", "S2 · Push"… (parse leggero estrae "Sett. N").
+
+programProgress(program, sessions) -> { fatti/totali (6/24), settimana corrente, prossimo workout }.
+
+"Prossimo" = primo workout in ordine NON ancora completato (calcolato al volo, niente colonna).
+
+Dashboard: "Programma X — Sett. 2/4 · Prossimo: Pull" + barra + CTA che avvia quel workout.
+
+"Completato" = "Fine sessione chiara" (tutti gli esercizi con serie loggate); interim = ≥1 sessione.
+
+Carichi: MVP li scrive il coach nel CSV (Sett. 2 più alti). FORK APERTO: CSV-coach vs auto-progressione (#7).
+
+Target: programmi FINITI/ORDINATI (BBR, Muscle-Up Pro); per PPL infinito basta il picker.
+
+È la spina dorsale di "Multi-fase", "Sblocco skill ad albero", "Fine sessione chiara".
+
+```
+
+&#x20;
+
+\## (PIANIFICATO) Periodizzazione attiva — Analisi AI progressioni + deload (GATED)
+
+> Voce TASKS (Avanzato/GATED). Tocca chat.js + editProgram + semantica template.
+
+```
+
+L'AI legge i risultati loggati e SUGGERISCE progressione carichi + deload. ON-DEMAND (fine
+
+settimana/mesociclo), NON real-time -> centesimi.
+
+Design: core DETERMINISTICO in JS a ZERO token (double progression: top range + RIR≥target -> +carico;
+
+deload se RIR crolla/reps calano a parità di carico; deload ogni N settimane) + AI SOTTILE solo per
+
+giudizio/comunicazione (trend rumorosi, "perché" in linguaggio coach).
+
+Leva dati: input COMPATTI pre-aggregati (1 riga/esercizio: miglior set, RIR medio/trend, volume vs
+
+settimana prima), NON log\_data grezzo (-5/10×). Cache prompt-template (stile Leva 2).
+
+L'AGGREGATORE è CONDIVISO con la "Mail resoconto AI settimanale" (che ne è il banco di prova).
+
+APPLY (semi-automatico DI PROPOSITO):
+
+&#x20; AI propone cambi ASTRATTI ("+2,5kg"/"tieni"/"deload -10%" + motivo), NON CSV
+
+&#x20; -> MAPPER deterministico -> numeri formattati secondo le regole CSV
+
+&#x20; -> TABELLA (editor tabellare) come DIFF -> coach approva -> SERIALIZER riscrive workout\_csv -> editProgram
+
+&#x20; Il CSV cambia SOLO all'approvazione.
+
+DIPENDENZA: il round-trip parse<->serialize dell'EDITOR TABELLARE è la superficie di apply sicura.
+
+TARGET DI APPLY = PER-ATLETA (editProgram sulla riga programs della copia), NON sul template.
+
+&#x20; FORK APERTO: il programma DIVERGE dal template -> "Applica a tutti" sovrascriverebbe i carichi
+
+&#x20; personalizzati. Regola futura: template tiene la STRUTTURA, carichi personalizzati sulla COPIA.
+
+⚠️ SICUREZZA: coach-in-the-loop OBBLIGATORIO (mai salti di carico automatici). MVP = tutto approvato.
+
+TIE-IN: estende il fossato dal "durante" al "tra" le sessioni (RIR/RPE già raccolti real-time).
+
+GATED dietro: Progressione sequenziale (MVP) + "Fine sessione chiara" + dati + paganti.
+
+```
+
+&#x20;
+
+\## (PIANIFICATO) Editor tabellare programmi (admin, CSV↔tabella)
+
+> Voce TASKS (ALZATA: prereq dell'apply periodizzazione). Frontend-only.
+
+```
+
+Due viste dello STESSO dato: textarea CSV (RESTA, per incollare da Claude) + tabella editabile.
+
+parse: parseWorkoutCsv -> 1 riga/esercizio (raggruppate per workout, 1 cella = 1 input)
+
+salva: ricostruisci CSV -> editProgram (adminFetch)
+
+MVP: toggle "CSV grezzo ↔ Tabella"; editing celle; serializzatore conforme alle regole CSV.
+
+Dopo: aggiungi/elimina/riordina righe; dropdown nome dalla LIBRERIA (risolve naming-match).
+
+RISCHIO CHIAVE: round-trip LOSSLESS (parse -> tabella -> CSV deve ridare lo STESSO CSV: virgole nelle
+
+&#x20; Note, celle vuote, warm-up, multi-workout). Test: ri-serializzare un CSV non modificato = identico.
+
+```
+
+&#x20;
+
+\## (PIANIFICATO) Allenamento libero (log manuale, no AI)
+
+> Voce TASKS. Frontend-only. ≠ Opzione 4 "Workout improvvisato" (lì l'AI GENERA).
+
+```
+
+Sessione SENZA programma: l'atleta scrive il nome esercizio e logga sets/reps/RIR/peso/RPE.
+
+Riuso: persistSets/log\_data/nextSetNum/riga input. Come selectExercise ma nome da CAMPO TESTO
+
+(autocomplete LIBRERIA + fallback testo libero -> grafici Progressi coerenti). INSERT sessions via
+
+client + RLS owner. Niente picker/lista CSV, niente \[SET:] dall'AI. Senza programId -> NON riprendibile.
+
+```
+
+&#x20;
+
+\## Hosting \& distribuzione
+
+\- \*\*Frontend + API:\*\* Vercel (deploy automatico da GitHub, branch main)
+
+\- \*\*Repo:\*\* `calislackline/calislackline-app` · \*\*Dominio:\*\* `ailistenics.com` (reset: `/reset` -> `reset.html`)
+
+\- \*\*⚠️ Lezione OPS DNS (10-11/06):\*\* le mail Namecheap di verifica ICANN hanno deadline reale (sospensione → parking). A riattivazione avvenuta, la cache DNS del resolver locale può servire ancora l'IP di parking (198.54.117.x) fino a scadenza TTL → `ERR\_CONNECTION\_REFUSED` a dominio sano. Diagnosi: doppio `nslookup` (locale vs `8.8.8.8`). Bypass sempre disponibile: URL `\*.vercel.app`.
+
+\- \*\*(PIANIFICATO) App store (GATED):\*\* impacchettare l'app web in un guscio nativo.
+
+&#x20; - \*\*PASSO 1 (anticipato, 🟡):\*\* manifest + icone + favicon (vedi sezione Logo/icona). \*\*PASSO 2:\*\* PWA completa (service worker, installabilità, Lighthouse) = prerequisito store.
+
+&#x20; - Google Play: TWA (PWABuilder/Bubblewrap), requisiti = manifest + service worker + HTTPS + Lighthouse ≥80 + Digital Asset Links; \~25$ una tantum; da Windows.
+
+&#x20; - App Store: serve Mac/cloud-build + valore nativo (Guideline 4.2; un wrapper nudo viene rifiutato) → le NOTIFICHE PUSH del reminder sono il biglietto d'ingresso. \~99$/anno.
+
+&#x20; - ⚠️ IAP Apple (3.1.1): sub in-app iOS via in-app purchase (15-30%); Stripe libero su web/Android → impatta il flusso pagamenti.
+
+\## Ottimizzazioni costi API (attive)
+
+\- Filtro CSV (Leva 1); troncamento history a 12; niente storico; athleteContext solo primo turno (incl. infortuni — sicurezza).
+
+\- \*\*✅ Leva 2 — Prompt caching:\*\* `cache\_control: ephemeral` sul blocco motore in `chat.js` (\~90% taglio). Il motore è cresciuto di \~250 token (precedenza + valutazione range) ma nel blocco cachato; i coach\_rules MUP/NW dimagriti riducono il blocco NON cachato → sessioni più economiche.
+
+\## Tag AI riconosciuti dal parser
+
+```
+
+\[SET:NomeEsercizio]     -> updateSetInfo + detectAndRenderInput, timer recupero
+
+\[SUPERSET:Nome1,Nome2]  -> superset (per due esercizi DIVERSI; i monolaterali NON sono superset)
+
+\[PRONTO]                -> fine warm-up: checklist come testo + bottone "Pronto" (warm-up OBBLIGATORIO)
+
+```
+
+> \[CUE:] RIMOSSO come feature, ma `fmtText` (~riga 1525) ne mantiene la strip DIFENSIVA (intenzionale, lasciarla). \[LOG\_DATA:] NON generato dall'AI. extractOptions ignora \[SET:]/\[SUPERSET:]/\[PRONTO].
+
+&#x20;
+
+\## COACH\_LOG\_FORMAT — LEGACY/dead
+
+`COACH\_LOG\_FORMAT` e `saveSessionLog()` esistono ma sono morti. Rimovibili in un cleanup.
+
+> I protocolli "REGOLA FINE"/"WORKOUT LOG" sono stati RIMOSSI anche dai coach\_rules (zombie) — non reintrodurli.
+
+&#x20;
+
+\## Progressi — tracking peso
+
+`renderProgressCharts` rileva set con `weight > 0`:
+
+\- Con peso: PESO MAX / MEDIO / VOLUME; grafico "Peso massimo (kg)" (pLblPR/pLblAvg/pLblTot/pChartRepsTitle)
+
+\- A corpo libero: MASSIMALE / MEDIA / TOT REPS; grafico "Media reps per set"
+
+\- RIR/RPE `null` esclusi (`numOrNull`); 0 dichiarato valido.
+
+> (FUTURO) per gli isometrici (secondi in `reps`): relabel per-esercizio della stat/grafico.
+
+&#x20;
+
+\## log\_data — due formati (backward compatible)
+
+```
+
+Nuovo: exercises\[].sets = \[{reps, rir, rpe, weight, note, setNum}]
+
+Vecchio: exercises\[].reps/rir/sets (number)
+
+Isometrici (MVP): secondi nel campo reps (+ relabel Progressi); avanzato: campo seconds dedicato.
+
+```
+
+&#x20;
+
+\## (PIANIFICATO) Timer unico a timestamp
+
+> Il fix del "timer recupero in background" (da `setInterval` decrementale a `Date.now()`) diventa il
+
+> MOTORE-TIMER unico, base sia del recupero sia del timer-esercizio a tempo (plank ecc.), anche in
+
+> background. INCATENATO a "Logging isometrici" (stessa regex, secondi -> reps). Stessa lezione del
+
+> timer della Breathwork.
+
+&#x20;
+
+\## (PIANIFICATO) Breathwork — Respirazione a cicli (frontend-only)
+
+> Nuovo screen full-screen via `showScreen(id)`, ingresso da una card. NIENTE backend/DB/API/token.
+
+> Bolla (scale + transition ease-in-out della durata della fase), timer ritenzione con `Date.now()`.
+
+> Protocollo come oggetto-dati ("descrittore": fasi/durate/hold/cue) per aggiungere tecniche senza
+
+> riscrivere il player. Disclaimer di sicurezza al primo uso. v2 (salvataggio tempi) = migration dopo.
+
+&#x20;
+
+\## Sviluppo (workflow)
+
+\- Repo: `\~/Desktop/calislackline-app` (Windows `C:\\Users\\39327\\Desktop\\calislackline-app`)
+
+\- Windows PowerShell — NIENTE `\&\&` (un comando per riga). `node` NON installato → niente `vercel dev`.
+
+\- \*\*GATE DI SINTASSI PRE-DEPLOY (dettagli in CLAUDE.md):\*\* prima di OGNI push frontend, aprire `index.html` locale in Chrome INCOGNITO con console (F12): nessun `Uncaught SyntaxError`, nessun 404 su `styles.css`/`progress.js`/`admin-ui.js`, login visibile → safe to push. Poi verifica finale in produzione (Ctrl+F5; rollback Vercel 1-click se serve). Copre i syntax error (causa #1 pagina bianca) + errori runtime al load; i flussi specifici si verificano in produzione.
+
+\- \*\*CLAUDE.md\*\* nel repo guida Claude Code — tienilo allineato.
+
+\- Ciclo: descrivi -> piano/diff -> edit chirurgici -> GATE -> commit + push -> verifica produzione.
+
+\- Backend (`api/\*.js`) e doc su `main`. Frontend (`index.html`/`styles.css`/`progress.js`/`admin-ui.js`) anche su `main` col gate prima e verifica Ctrl+F5 dopo.
+
+\- I 4 .md (PROJECT\_OVERVIEW/ARCHITECTURE/TASKS/AI\_RULES) vivono nel Project (Claude.ai); CLAUDE.md li sostituisce per Claude Code.
+
+\- I prompt (coach\_rules dei template) e il MOTORE (`settings`) vivono in Supabase: modificarli NON richiede commit/deploy.
+
+\## External Services
+
+\- \*\*Supabase\*\* — Auth (Google OAuth PKCE + email/password), PostgreSQL
+
+\- \*\*Anthropic API\*\* — Claude (`claude-sonnet-4-5`) via `/api/chat.js`
+
+\- \*\*Google Apps Script\*\* — email conferma onboarding + mail richiesta coaching. \*\*⚠️ Usa la GEMINI API per generare il messaggio\*\* (dipendenza prima NON documentata). Sistema in OVERHAUL (vedi TASKS 🟡): non costruirci sopra; candidato sostituzione Gemini → Anthropic (un vendor, una chiave); parti del flusso spariranno se l'accesso passa dalle mail Supabase (1A/1B)
+
+\- \*\*Google Fonts\*\* — DM Mono, Syne | \*\*Chart.js\*\* — grafici (CDN)
+
+\- \*\*(FUTURO)\*\* Provider email transazionale (Resend/Postmark/SES) — gated rebranding; condiviso tra mail auth Supabase (SMTP custom) e mail resoconto/reminder. \*\*QuickChart\*\* — eventuali grafici PNG nelle email (avanzato)
+
+\## Variabili d'ambiente (Vercel)
+
+```
+
+ANTHROPIC\_API\_KEY            = sk-ant-...
+
+NEXT\_PUBLIC\_SUPABASE\_URL     = https://efziohgwsvplqandzawz.supabase.co
+
+SUPABASE\_SERVICE\_ROLE\_KEY    = eyJ...  (service role — solo backend)
+
+```
+
+&#x20;
+
+\## Costanti / config frontend (pubbliche)
+
+```
+
+SUPABASE client auth opts = { flowType:'pkce', autoRefreshToken:true, detectSessionInUrl:false, persistSession:true }
+
+SUPABASE\_ANON\_KEY = sb\_publishable\_...   (index.html \~842 — pubblica per design, protetta da RLS)
+
+ADMIN\_EMAIL       = calislackline@gmail.com   (index.html \~843)
+
+APPS\_URL          = https://script.google.com/macros/s/.../exec
+
+```
+
+&#x20;
+

@@ -9,6 +9,16 @@ training sessions in a chat UI driven by Claude; a coach/admin assigns programs 
 logs. There is **no build step and no package.json** — it's a static frontend plus three Vercel
 serverless functions. Deployed on Vercel at `ailistenics.com` (hardcoded in OAuth/reset redirect URLs).
 
+## Documentazione di progetto (/docs)
+
+I 4 doc di progetto vivono in /docs e sono la source of truth condivisa col Project claude.ai
+(connector GitHub); aggiornali tu a fine task con edit chirurgici.
+
+@docs/PROJECT_OVERVIEW.md
+@docs/ARCHITECTURE.md
+@docs/TASKS.md
+@docs/AI_RULES.md
+
 ## Architecture
 
 Three layers, no framework:
