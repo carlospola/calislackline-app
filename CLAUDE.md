@@ -106,6 +106,10 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   the coach may recalibrate the load to hit the target RIR/rep-range, but must **not** push proactive
   increases "to progress" — that belongs to periodization, **between** sessions. **Per-program
   exception** for max-out / mixed programs (their `coach_rules` override this).
+  (c) **PRECEDENZA — FILOSOFIA DI PROGRAMMA:** when a program's `coach_rules` declare an explicit
+  training philosophy, those rules **prevail over the motor on any conflict**. (d) **VALUTAZIONE DEL
+  RANGE:** the **top of the rep range = success** (not the floor); the feedback schemes in the motor
+  are **examples only**, and emitting a verbatim/boilerplate copy-paste phrase is **forbidden**.
 
   **Leva 2 — prompt caching (ACTIVE, commit `ee173c7`).** When `motor` is non-empty the `system`
   field sent to Anthropic is no longer a string but an **array of text blocks**: block 1 =
@@ -139,8 +143,12 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   `settings` motor; the per-program **RIR target stays here**), `workout_csv`, `ai_prompt` (extra
   coach notes), `session_type` (`bodyweight` | `gym`). A placeholder is kept when there's nothing
   specific, because the admin form currently **blocks saving an empty `coach_rules`** (a validation
-  worth removing — see open items). Migrated to the motor: **BBR, Petra, Cate**; **not** migrated:
-  **Muscle-Up Pro** (mixed + isometrics) and **New Workout** (max-out).
+  worth removing — see open items). **Motor migration COMPLETE: all 9 programs migrated** — common
+  coaching behavior lives in the `settings` motor and each `coach_rules` carries only program
+  specifics. **New Workout** (max-out) and **Muscle-Up Pro** (mixed + isometrics) now carry **lean
+  `coach_rules`** too (their per-program exceptions override the motor — see the Motor behavioral
+  contract). **Zombie protocols removed — do NOT reintroduce: `REGOLA FINE` and `WORKOUT LOG`**
+  (the old end-of-session mechanism).
   Now also carries **`template_id`** (FK → `program_templates`, `ON DELETE SET NULL`): when a program
   is created by assigning a template, this links the copy back to its template (drives "Applica a
   tutti"). **`programs.workouts` is a `TEXT` column and is vestigial/unused** — the source of truth
@@ -379,6 +387,8 @@ verifica.
 - **Timer recupero in background:** the recovery timer stops when the tab is backgrounded
   (interval throttling). Fix by computing elapsed time from a stored **timestamp** instead of
   counting ticks.
+- **Reset password NON funzionante:** the password-reset flow (`reset.html` / `/reset`, recovery
+  redirect) **does not currently work** — earlier assumed OK, now confirmed broken. Da diagnosticare.
 - **Validazione `coach_rules` non vuoto:** the admin form blocks saving an empty `coach_rules`.
   Now that common behavior lives in the motor, this validation should be **removed** so a program
   can carry only its specifics (or nothing).
@@ -391,7 +401,7 @@ verifica.
 - **Refactor del monolite `index.html` — FASE 1 FATTA, poi FERMATO per decisione** (giugno 2026).
   Estratti in file separati: `styles.css` (tutto il CSS), `progress.js` (Progressi/grafici),
   `admin-ui.js` (admin panel + template + test session) — vedi "Architecture". index.html è passato
-  da ~2480 a ~1929 righe. **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
+  da ~2757 (pre-refactor) a ~1929 righe (fase 1). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
   estrazioni future (log modal, onboarding, libreria) **solo su richiesta**, e **sempre con una recon
   delle dipendenze prima** (chiamanti esterni, funzioni cross-area interposte, var globali condivise),
   come fatto per progress.js/admin-ui.js.
@@ -434,8 +444,6 @@ open forks.**
   is mandatory — never automatic loads.** **FORK OPEN:** template-keeps-structure vs loads-on-copy.
 - **App-store distribution (GATED):** prereq = **PWA**; native value is the reminder **push**; Apple
   **IAP** would impact Stripe.
-- **[BUG] admin:** deleting a session sends the UI to the **athlete dashboard** (the post-delete
-  path misses the `role==='admin'` re-check). **UI-only.**
 
 ## Regole di lavoro
 
