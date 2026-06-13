@@ -1,0 +1,11 @@
+#!/bin/sh
+# Pre-commit: blocca il commit se il syntax-check fallisce.
+# Funziona su Windows con Git Bash.
+node scripts/syntax-check.js
+status=$?
+if [ "$status" -ne 0 ]; then
+  echo ""
+  echo "Commit bloccato: errori di sintassi (vedi sopra)."
+  exit 1
+fi
+exit 0
