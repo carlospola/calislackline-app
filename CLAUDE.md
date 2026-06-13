@@ -82,8 +82,10 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   `status === 'active'` — otherwise it returns `403 { error: 'account_not_active' }`. **Trial gate
   (ACTIVE, 12 giugno 2026):** `pending` is now the **trialist** status — a `pending` user can log in
   AND use the chat for the first **`TRIAL_SESSIONS = 3`** sessions: the handler counts that user's
-  rows in `sessions` (service role, `HEAD` + `Prefer: count=exact`, filtered **only** on the
-  JWT-verified `u.id`) and passes while the count is `< 3`, else returns `403 { error:
+  rows in `sessions` via a service-role **GET** (`select=created_at&order=created_at.desc`, filtered
+  **only** on the JWT-verified `u.id`); if the most recent session is `< 24h` old it is subtracted
+  (the "Riprendi"/in-progress window must not consume a trial) — commit `21b25ff`. It passes while the
+  resulting count is `< 3`, else returns `403 { error:
   'trial_exhausted' }` (fail-closed: an indeterminate count → `trial_exhausted`; the count includes
   "Allenamento libero" sessions — MVP simplification). `inactive`/unknown/missing → the unchanged
   `403 account_not_active`. **The gate applies to the admin too** — the admin's own `profiles.status`
@@ -94,9 +96,11 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   `Allow-Headers` now
   includes `Authorization` and a valid **logged-in user token is required**. The frontend attaches
   the token in `aiSend()` (it pulls the current session's `access_token` from `sb.auth.getSession()`,
-  same source as `adminFetch()`); on a `401` it shows a visible "Sessione scaduta" message, and on a
-  `403` a dedicated "account non attivo" bubble, to the athlete. This closes the previously-open
-  proxy; **per-user rate-limiting remains as a phase-2 follow-up.**
+  same source as `adminFetch()`); on a `401` it shows a visible "Sessione scaduta" message, on a
+  `403 account_not_active` a dedicated "account non attivo" bubble, and on a `403 trial_exhausted` the
+  **"Richiedi il coaching" CTA** (mailto to `calislackline@gmail.com` with name+email, commit
+  `5323bd3`). This closes the previously-open proxy; **per-user rate-limiting remains as a phase-2
+  follow-up.**
 
   **Coach prompt engine (motore-prompt, ACTIVE).** After the auth/status gates and **before**
   forwarding to Anthropic, the handler reads two rows from the new `settings` table (key/value)
@@ -383,9 +387,11 @@ snapshots.** Model: **snapshot + repush**.
 
 - **Local preview:** open `index.html` directly — the sibling assets (`styles.css`, `progress.js`,
   `admin-ui.js`) load via their relative paths over `file://` — but the `/api/*` functions won't
-  run. **`vercel dev` is not available** (Node is not installed on this machine), so the `/api/*`
-  endpoints are verified **in production after deploy** (propose the change as a diff + get
-  confirmation before pushing).
+  run that way. **Node is now installed locally (v24.16.0), so `vercel dev` is available** for a full
+  local preview (frontend + serverless); it needs `localhost` added to the Supabase redirect URLs +
+  Google OAuth origin (open item, TASKS 🟡). Until that's set up, the `/api/*` endpoints are still
+  verified **in production after deploy** (propose the change as a diff + get confirmation before
+  pushing).
 - **Deploy:** push to the Vercel-connected branch (`main`). Recent history shows the workflow is
   committing edits straight to the frontend files (`index.html` + `styles.css`/`progress.js`/
   `admin-ui.js`).
@@ -415,6 +421,24 @@ morti, non per forza pagina bianca). In console controlla anche la rete: styles.
 admin-ui.js devono caricare senza 404 (un 404 = stile assente, oppure funzioni grafici/admin non
 definite). I syntax error in api/*.js non sbiancano la pagina (danno 500) -> per quelli resta diff +
 verifica.
+
+## Syntax gate automatico
+
+Pre-commit hook attivo (`core.hooksPath .githooks` → `scripts/syntax-check.js`, commit `d258d6d`).
+Ogni commit lancia `node --check` sul JS inline di `index.html` + `progress.js` + `admin-ui.js`; il
+commit si blocca su `SyntaxError` (file + riga). Escape d'emergenza: `git commit --no-verify` (solo
+in vera emergenza). **Node è ora disponibile in locale (v24.16.0)** — il vecchio promemoria "node non
+installato su questa macchina" è SUPERATO e va rimosso dove appare. Il gate manuale in Chrome
+incognito (sezione sopra) resta utile per il visivo/runtime, ma la sintassi è ora coperta in
+automatico.
+
+## Gate trial e auto-assegnazione (riassunto)
+
+Gate trial in `api/chat.js`: conta le `sessions` dell'utente (GET `select=created_at`, service role,
+`u.id` dal JWT) e sottrae la più recente se `< 24h` (finestra "Riprendi"). Soglia
+`TRIAL_SESSIONS = 3`. Su `403 trial_exhausted` → CTA "Richiedi il coaching" nel ramo 403 di
+`aiSend()` (mailto a `calislackline@gmail.com`). **L'auto-assegnazione del template trial è un trigger
+DB** (`trg_assign_trial_program`, AFTER INSERT su `profiles`), **NON frontend**.
 
 ## Item aperti (TODO)
 
@@ -520,6 +544,12 @@ These are mandatory working rules for this repository. Follow them on every chan
    by the AI — do not reintroduce it into prompts/`coach_rules`, but the **defensive strip** of
    `[CUE:]` in `fmtText()` (~line 1525) is **intentional — leave it in place** (it only guards a
    stray legacy tag).
+8. **Regola di consegna — Claude.ai pianifica, Claude Code esegue.** Le decisioni di
+   strategia/architettura vivono nel Project su Claude.ai; le modifiche reali a doc e repo si fanno
+   qui, via Claude Code. **Niente file scaricabili, niente artifact** per aggiornare i doc o il repo:
+   tutto passa da **git** (commit + push). Quando viene chiesto di "aggiornare i doc", fai edit
+   chirurgici sui file in `/docs` (e `CLAUDE.md`) e committa — non produrre mai un file da
+   copia-incollare.
 
 ## Conventions
 

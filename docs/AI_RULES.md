@@ -22,7 +22,7 @@
 
 \- Lo sviluppo del codice avviene via Claude Code sul repo `\~/Desktop/calislackline-app` (Windows: `C:\\Users\\39327\\Desktop\\calislackline-app`)
 
-\- \*\*Ambiente Windows PowerShell:\*\* NIENTE `\&\&` (token non valido) — un comando per riga. `node` NON installato: niente `vercel dev` → \*\*GATE DI SINTASSI PRE-DEPLOY\*\* (sezione dedicata in CLAUDE.md): `index.html` locale in Chrome INCOGNITO + console (F12), nessun `Uncaught SyntaxError` né 404 sui file esterni → safe to push; verifica finale in produzione (Ctrl+F5 su ailistenics.com; pochi utenti; rollback Vercel 1-click se serve)
+\- \*\*Ambiente Windows PowerShell:\*\* NIENTE `\&\&` (token non valido) — un comando per riga. \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* (il vecchio "node non installato" è SUPERATO) → `vercel dev` ora possibile. \*\*GATE DI SINTASSI PRE-DEPLOY\*\* ora in DUE livelli: (a) AUTOMATICO — pre-commit hook (`core.hooksPath .githooks` → `scripts/syntax-check.js`, `node --check`) blocca il commit su `SyntaxError`; (b) MANUALE/VISIVO — `index.html` locale in Chrome INCOGNITO + console (F12), nessun `Uncaught SyntaxError` né 404 sui file esterni → safe to push; verifica finale in produzione (Ctrl+F5 su ailistenics.com; pochi utenti; rollback Vercel 1-click se serve)
 
 \- \*\*Dare sempre o un prompt pronto da incollare in Claude Code, o step numerati\*\* — mai indicazioni vaghe
 
@@ -342,6 +342,8 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- \*\*✅ Self-activation gap CHIUSA (12/06, era il TODO `policies.sql:33`):\*\* trigger `trg\_protect\_profile\_fields` + function `protect\_profile\_fields` (SECURITY DEFINER, search\_path=public) su `public.profiles`, BEFORE UPDATE: `status`/`role` READ-ONLY ai non-admin (`is distinct from` → `raise exception`); service role e SQL Editor passano (`auth.uid()` null), admin da browser passa. Applicato via SQL Editor e VERIFICATO in produzione (P0001 da atleta; update profilo normale OK; cambio status da admin OK). NON rimuovere il trigger.
 
+\- \*\*✅ Trigger `trg\_assign\_trial\_program` (13/06)\*\* — AFTER INSERT su `public.profiles`, function `assign\_trial\_program` (SECURITY DEFINER, search\_path=public): auto-assegna il template trial (UUID hardcoded `193af02e-...`, "Prova — Full Body") ai nuovi `athlete`/`pending` copiando i campi contenuto in `programs` (`program\_name/coach\_rules/workout\_csv/ai\_prompt/session\_type`, NON `workouts`). Guardia `role='athlete' AND status='pending'`; `exception when others then return new` (non blocca MAI il signup). NON rimuovere. Coesiste con `trg\_protect\_profile\_fields`. Dettaglio in ARCHITECTURE.
+
 \## Cosa NON fare mai
 
 \- Non riscrivere tutto `index.html` per una modifica piccola
@@ -403,6 +405,10 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 \- \*\*Periodizzazione AI:\*\* mai applicare carichi in automatico agli atleti (coach-in-the-loop obbligatorio)
 
 \- \*\*Apps Script:\*\* non costruirci sopra nuove feature (sistema in overhaul, parti destinate a sparire)
+
+\- \*\*Non saltare/disattivare il pre-commit hook\*\* (`core.hooksPath .githooks` → `scripts/syntax-check.js`). Se un commit viene bloccato per `SyntaxError`, si CORREGGE il codice — non si usa `--no-verify` se non in vera emergenza.
+
+\- Il vincolo "no local Node" è SUPERATO (Node `v24.16.0` installato, `vercel dev` ora possibile); resta valido che `index.html` usa `var` e niente backtick.
 
 \## Workflow consigliato
 

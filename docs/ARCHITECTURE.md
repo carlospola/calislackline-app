@@ -36,7 +36,7 @@
 
 \- \*\*Runtime:\*\* Vercel Serverless Functions (Node.js)
 
-\- \*\*`/api/chat.js`\*\* — proxy verso Anthropic (`claude-sonnet-4-5`, max\_tokens 1000). Riceve `{system, messages, session\_type}`, restituisce la risposta AI completa (la `usage` torna al frontend → utile per i token di cache in Network). \*\*Auth gate\*\*: verifica il JWT Supabase (`GET /auth/v1/user`), altrimenti 401. \*\*Gate status (ATTIVO, 12/06):\*\* dopo il JWT, legge `profiles.status` con la service role → `active` passa; `pending` = TRIALIST → passa per le prime `TRIAL\_SESSIONS=3` sessioni (count `sessions` per `u.id` del JWT, service role, `HEAD` + `Prefer count=exact` via `Content-Range`), oltre → 403 `{ error: 'trial\_exhausted' }` (fail-closed: count indeterminato → trial\_exhausted; la count include le sessioni "Allenamento libero", semplificazione MVP); `inactive`/sconosciuto/assente → 403 `{ error: 'account\_not\_active' }` invariato. \*\*Hardening verificato:\*\* la decisione si basa solo su `u.id` del JWT + profilo via service role, nessun campo del body la influenza. CORS aperto (`\*`) ma token + status obbligatori. Frontend: `aiSend` allega l'access token; su 401 bubble "Sessione scaduta", su 403 bubble "account non ancora attivo". Manca ancora il rate-limit per-utente (Fase 2).
+\- \*\*`/api/chat.js`\*\* — proxy verso Anthropic (`claude-sonnet-4-5`, max\_tokens 1000). Riceve `{system, messages, session\_type}`, restituisce la risposta AI completa (la `usage` torna al frontend → utile per i token di cache in Network). \*\*Auth gate\*\*: verifica il JWT Supabase (`GET /auth/v1/user`), altrimenti 401. \*\*Gate status (ATTIVO, 12/06):\*\* dopo il JWT, legge `profiles.status` con la service role → `active` passa; `pending` = TRIALIST → passa per le prime `TRIAL\_SESSIONS=3` sessioni (count via GET `sessions?user\_id=eq.{u.id}&select=created\_at&order=created\_at.desc` per `u.id` del JWT, service role; se la sessione più recente è < 24h non conta — finestra "Riprendi"; commit `21b25ff`), oltre → 403 `{ error: 'trial\_exhausted' }` (fail-closed: count indeterminato → trial\_exhausted; la count include le sessioni "Allenamento libero", semplificazione MVP); `inactive`/sconosciuto/assente → 403 `{ error: 'account\_not\_active' }` invariato. \*\*Hardening verificato:\*\* la decisione si basa solo su `u.id` del JWT + profilo via service role, nessun campo del body la influenza. CORS aperto (`\*`) ma token + status obbligatori. Frontend: `aiSend` allega l'access token; su 401 bubble "Sessione scaduta", su 403 bubble "account non ancora attivo". Manca ancora il rate-limit per-utente (Fase 2).
 
 &#x20; - \*\*⚠️ PREREQUISITO ADMIN:\*\* il pending-gate vale ANCHE per l'admin. La test session "Prova" parte dall'account admin, quindi l'admin DEVE avere `profiles.status='active'` (sennò 403). Risolto via `update profiles set status='active' where role='admin'`. Hardening opzionale ANCORA APERTO (TASKS 🟢): gate = `status==='active' || role==='admin'` (il gate trial 1A è ora implementato — vedi sotto; questo bypass admin resta separato e non urgente, il fix dati basta).
 
@@ -302,7 +302,7 @@ Card template -> "Prova" -> startTestSession(templateId):
 
 &#x20;
 
-\## Funnel trial self-serve (Google) — accesso + conversione (PARTE SERVER FATTA 12/06; resta frontend)
+\## Funnel trial self-serve (Google) — accesso + conversione (✅ LIVE 13/06 — completo, verificato Test C)
 
 > Voce TASKS 🔴 (1A). DECISIONE: ibrido — entrata self-serve, approvazione admin alla CONVERSIONE
 
@@ -316,35 +316,55 @@ Card template -> "Prova" -> startTestSession(templateId):
 
 &#x20;   Stato trial = RIUSO di 'pending' (DECISO 12/06, nessun valore nuovo): pending = trialist (logga+chatta fino a N), conversione admin -> active.
 
-(2) GATE N SERVER-SIDE nel gate di chat.js — ✅ FATTO (12/06): TRIAL_SESSIONS=3.
+(2) GATE N SERVER-SIDE nel gate di chat.js — ✅ FATTO (12/06, raffinato 13/06 commit 21b25ff): TRIAL_SESSIONS=3.
 
-&#x20;   active -> passa; pending -> passa SE count(sessions per u.id del JWT, service role, HEAD +
+&#x20;   active -> passa; pending -> entra nel gate. Count: GET su
 
-&#x20;   Prefer count=exact via Content-Range) < 3, altrimenti 403 {"error":"trial_exhausted"};
+&#x20;   sessions?user_id=eq.{u.id}&select=created_at&order=created_at.desc (service role, u.id dal JWT,
 
-&#x20;   fail-closed (count indeterminato -> trial_exhausted; include le sessioni "Allenamento libero",
+&#x20;   mai dal body). used = rows.length; se la sessione piu recente e < 24h -> used -= 1 (e "in corso",
 
-&#x20;   MVP). Hardening verificato (decisione solo su u.id del JWT + profilo service role). La CTA
+&#x20;   finestra "Riprendi": non consuma il trial). Passa se Number.isFinite(used) && used < 3, altrimenti
 
-&#x20;   "Richiedi il coaching" sul 403 resta da fare lato frontend.
+&#x20;   403 {"error":"trial_exhausted"}; fail-closed (fetch non-ok / non-array -> NaN -> 403). La count
 
-(3) TEMPLATE DI PROVA = template NORMALE della libreria (corpo libero, zero attrezzi, 1 workout ->
+&#x20;   include le sessioni "Allenamento libero" (MVP). Hardening verificato (decisione solo su u.id del
 
-&#x20;   niente picker), auto-assegnato al signup/primo login (riuso assignTemplate lato server o
+&#x20;   JWT + profilo service role). CTA "Richiedi il coaching" sul 403 = FATTA lato frontend (commit 5323bd3).
 
-&#x20;   assegnazione di default). Contenuto a cura di Carlo.
+(3) TEMPLATE DI PROVA = template NORMALE della libreria "Prova — Full Body" (corpo libero, 1 workout
+
+&#x20;   -> niente picker), auto-assegnato al primo login da TRIGGER DB (trg_assign_trial_program, vedi
+
+&#x20;   sezione dedicata sotto), NON dal frontend. Contenuto creato e collaudato (autoreg. RIR bidirezionale).
 
 FORK CHIUSI (12/06): N=3 (TRIAL_SESSIONS); "sessione consumata" = riga in sessions (nasce al primo
 
 &#x20;   persistSets; chat senza log non consuma, edge MVP); stato trial = riuso 'pending'. Variante
 
-&#x20;   "completata" resta gated dietro "Fine sessione chiara". RESTA: template di prova (contenuto) +
+&#x20;   "completata" resta gated dietro "Fine sessione chiara". ✅ TUTTO CHIUSO (13/06): template +
 
-&#x20;   frontend (CTA trial_exhausted + auto-assegnazione al primo login pending) + Test C live.
+&#x20;   frontend (CTA) + auto-assegnazione (trigger) + Test C live PASSATO (account Google nuovo).
 
 ```
 
 &#x20;
+
+\## Auto-assegnazione template trial (trigger DB)
+
+Al primo login la riga `profiles` nasce dal frontend (`loadProfile()`, `index.html` \~821: INSERT con `status:'pending'` se il profilo non esiste — NON è un upsert, NON c'è trigger applicativo su `auth.users`).
+
+Su questo INSERT scatta `trg\_assign\_trial\_program` (AFTER INSERT su `public.profiles`) → function `assign\_trial\_program` (SECURITY DEFINER, `search\_path=public`):
+
+\- Guardia: agisce SOLO se `new.role = 'athlete' AND new.status = 'pending'` → admin e inserimenti manuali con altro status non ricevono il trial; gli atleti esistenti hanno già la riga `profiles`, quindi l'AFTER INSERT non scatta mai per loro.
+
+\- Lookup template per UUID hardcoded `193af02e-faaf-4f36-bf79-2110e5a886a0` ("Prova — Full Body"). Rinominare il template non rompe nulla; se eliminato → `found=false` → nessun programma, login intatto.
+
+\- Copia in `programs`: `program\_name, coach\_rules, workout\_csv, ai\_prompt, session\_type` (NON copia `workouts`, vestigiale). `id`/`created\_at` via default DB.
+
+\- `exception when others then return new`: il trigger non blocca MAI la creazione del profilo (trade-off MVP: un errore resta silenzioso — meglio un trialist senza programma, recuperabile a mano, che un signup fallito).
+
+\- Applicato via SQL Editor + verificato (Test C, 13/06). NON rimuovere. Migration nel SQL editor, non nel repo. Coesiste con `trg\_protect\_profile\_fields` (BEFORE UPDATE, status/role read-only ai non-admin).
 
 \## (PIANIFICATO) Mail resoconto AI settimanale + scheduler unico
 
@@ -810,7 +830,7 @@ Isometrici (MVP): secondi nel campo reps (+ relabel Progressi); avanzato: campo 
 
 \- Repo: `\~/Desktop/calislackline-app` (Windows `C:\\Users\\39327\\Desktop\\calislackline-app`)
 
-\- Windows PowerShell — NIENTE `\&\&` (un comando per riga). `node` NON installato → niente `vercel dev`.
+\- Windows PowerShell — NIENTE `\&\&` (un comando per riga). \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora eseguibile (preview locale): voce aperta in TASKS 🟡. Il vecchio "node non installato" è SUPERATO.
 
 \- \*\*GATE DI SINTASSI PRE-DEPLOY (dettagli in CLAUDE.md):\*\* prima di OGNI push frontend, aprire `index.html` locale in Chrome INCOGNITO con console (F12): nessun `Uncaught SyntaxError`, nessun 404 su `styles.css`/`progress.js`/`admin-ui.js`, login visibile → safe to push. Poi verifica finale in produzione (Ctrl+F5; rollback Vercel 1-click se serve). Copre i syntax error (causa #1 pagina bianca) + errori runtime al load; i flussi specifici si verificano in produzione.
 
@@ -823,6 +843,14 @@ Isometrici (MVP): secondi nel campo reps (+ relabel Progressi); avanzato: campo 
 \- I 4 .md (PROJECT\_OVERVIEW/ARCHITECTURE/TASKS/AI\_RULES) vivono nel Project (Claude.ai); CLAUDE.md li sostituisce per Claude Code.
 
 \- I prompt (coach\_rules dei template) e il MOTORE (`settings`) vivono in Supabase: modificarli NON richiede commit/deploy.
+
+\## Syntax-check pre-commit (commit `d258d6d`)
+
+`scripts/syntax-check.js` (solo built-in `fs/os/path/child\_process`): estrae via regex i blocchi `<script>` SENZA `src` da `index.html`, li scrive in temp `.js` in `os.tmpdir()`, lancia `node --check`; poi `node --check` diretto su `progress.js` e `admin-ui.js`. Stampa `Syntax OK` (exit 0) o file+riga+errore (exit 1).
+
+`.githooks/pre-commit` (sh, gira con Git Bash su Windows) invoca lo script e blocca il commit su exit≠0. Attivato con `git config core.hooksPath .githooks` (locale al repo). Escape d'emergenza: `git commit --no-verify`.
+
+Copre il rischio CRITICO (syntax error = pagina bianca). Il gate manuale Chrome incognito resta utile per il VISIVO/runtime, ma la sintassi è ora coperta in automatico.
 
 \## External Services
 

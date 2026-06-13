@@ -2,7 +2,7 @@
 
 &#x20;
 
-\_Aggiornato: 2026-06-12\_
+\_Aggiornato: 2026-06-13\_
 
 &#x20;
 
@@ -19,18 +19,6 @@
 \- \[x] \*\*Motore-prompt — casi maxout/misto MIGRATI (11 giugno 2026).\*\* Spostato in ✅ Completati. Meccanismo: blocco PRECEDENZA nel motore + override di filosofia nei coach\_rules (New Workout = maxout, Muscle-Up Pro = misto). Tutti i 9 programmi ora sul motore. Il punto di OVERRIDE PER-PROGRAMMA resta la presa per la filosofia del \*\*descrittore per-esercizio\*\* e (futuro) per gli \*\*elastici\*\* (💡).
 
 \- \[x] \*\*Refactor monolite — FASE 1 FATTA, refactor FERMATO QUI (decisione, giugno 2026).\*\* Vedi ✅ Completati. Gate di sintassi + `styles.css` + `progress.js` + `admin-ui.js`; `index.html` 2757 → \~1929 righe (−30%, oggi \~1934); rischio pagina-bianca eliminato; blast radius per-file. \*\*Il CORE SESSIONE AI NON si estrae.\*\* Estrazioni residue → voce 🟢 sotto.
-
-\- \[ ] \*\*Funnel trial self-serve via Google (1A) — CANDIDATA ALTA (da brainstorming giugno 2026).\*\* Accesso immediato self-serve (senza approvazione preventiva) → l'utente prova il prodotto con N allenamenti reali su un template di prova → la richiesta di coaching è il punto di CONVERSIONE (lì entra l'approvazione admin), non la barriera all'ingresso. \*\*DECISIONE PRESA: chiude il fork "self-serve vs approvazione admin" con l'IBRIDO\*\* (entrata self-serve, approvazione spostata alla conversione). Razionale: il differenziatore core (coaching AI real-time su RIR/RPE) si capisce solo provandolo; un muro di approvazione prima del momento-wow uccide il funnel; alla richiesta di coaching l'admin ha già profilo + log reali → richiesta qualificata; costo token cappato (N sessioni). \*\*✅ PARTE SERVER COMPLETATA (12 giugno 2026):\*\* trigger self-activation applicato + gate trial in `chat.js` (`TRIAL\_SESSIONS=3`, `trial\_exhausted`) + hardening verificato + log puliti — vedi ✅ Completati. RESTANO: (a) template di prova (contenuto), (b) frontend `index.html` (CTA "Richiedi il coaching" su `trial\_exhausted` + auto-assegnazione template al primo login `pending`, col gate di sintassi), (c) Test C live (trialist Google nuovo).
-
-&#x20; - \*\*(1) Le sessioni di prova PERSISTONO\*\* su `sessions`/`log\_data` — \*\*NON usare la primitiva `\_isDemo`\*\* (resta per onboarding demo e test session admin). I grafici Progressi popolati fanno parte del wow e sono i dati che l'admin vede all'approvazione. \*\*✅ DECISO (12/06): stato trial = RIUSO di `pending`\*\* (nessun valore nuovo): `pending` = trialist (logga, chatta fino a N); conversione admin → `active`.
-
-&#x20; - \*\*(2) Limite N enforced SERVER-SIDE — ✅ FATTO (12/06):\*\* `TRIAL\_SESSIONS=3` in `/api/chat.js`; `active` → passa; `pending` → passa SE count(`sessions` per `u.id` del JWT, service role, `HEAD` + `Prefer count=exact`) < 3, altrimenti `403 {"error":"trial\_exhausted"}`; fail-closed (count indeterminato → `trial\_exhausted`). Conteggio: NESSUNA colonna nuova, include le sessioni "Allenamento libero" (semplificazione MVP). La CTA "Richiedi il coaching" sul 403 resta lato frontend.
-
-&#x20; - \*\*(3) Il template di prova è un TEMPLATE NORMALE\*\* della libreria (corpo libero, zero attrezzi, probabilmente 1 solo workout → niente picker), auto-assegnato al signup/primo login (riuso della logica `assignTemplate` lato server o assegnazione di default). Il contenuto lo crea Carlo — unico pezzo non tecnico, nessuna dipendenza.
-
-&#x20; - \*\*PERCORSO PRIMARIO = GOOGLE OAUTH\*\* (già funzionante, email verificata da Google → niente mail di conferma, niente password, niente reset). Il trial può LANCIARE SOLO-GOOGLE ("least path of resistance"). Email/password → voce 🟡 dedicata (1B).
-
-&#x20; - \*\*✅ FORK CHIUSI (12/06):\*\* \*\*N = 3\*\* (`TRIAL\_SESSIONS`); \*\*"sessione consumata" = riga in `sessions`\*\* (nasce al primo `persistSets`; una chat senza alcun log NON consuma — edge accettato MVP, mitigazione futura possibile). La variante "sessione completata" resta agganciata a "Fine sessione chiara" (futura).
 
 \- \[ ] \*\*Video tutorial esercizi\*\* — aggiungere colonna `video\_url` a `exercises` (proporre la migration, attendere conferma). Video su YouTube (NO self-hosting), aperti in overlay in-app, link dal nome esercizio nel `setInfoBox`. Gestire il matching del nome (nomi canonici dal CSV) — punto fragile. Partire dai \~10-15 movimenti del solo programma base, con video propri. Doppia funzione: tutorial in-app + contenuto social, ma due output distinti.
 
@@ -49,6 +37,8 @@
 \## 🟡 Medium Priority
 
 &#x20;
+
+\- \[ ] \*\*Ambiente di preview locale (`vercel dev`).\*\* Ora possibile (Node v24.16.0 installato). Monta frontend + serverless `api/\*.js` su `localhost`; richiede aggiungere `localhost` alle redirect URL Supabase + origin Google OAuth. È il pezzo strategico che sblocca refactor più sicuro e automazioni (prerequisito del Playwright E2E e della PARTE 2 del ponte git).
 
 \- \[ ] \*\*Progressione programma (MVP sequenziale — "dove sono / prossimo workout") — Media-ALTA, è la SPINA DORSALE.\*\* Un programma non è più un "sacchetto" di workout da pescare liberamente, ma una \*\*PLAYLIST ORDINATA\*\*. Le "settimane × allenamenti/settimana" sono il MESOCICLO (come lo pensa/scrive il coach); l'atleta avanza COMPLETANDO i workout IN ORDINE, al suo ritmo, SCOLLEGATO dal calendario ("6 di 24 fatti"). L'app dice qual è il PROSSIMO ("Sett. 2 · Pull").
 
@@ -260,6 +250,12 @@
 
 \- \[ ] \*\*`.single()` → `.maybeSingle()` per il 406 a vuoto\*\* — la query del programma usa `.single()`; senza programma assegnato torna 406 (innocuo). `.maybeSingle()` lo elimina.
 
+\- \[ ] \*\*406 in console su risorsa Supabase\*\* — presente in dashboard e Progressi (anche per account nuovo). Non rompe nulla; stessa radice del task `.single()` → `.maybeSingle()` qui sopra (query che torna zero righe). Da cacciare con calma.
+
+\- \[ ] \*\*Commento stale in `api/chat.js`\*\* — sopra il blocco del gate trial cita ancora "count exact via HEAD", ma la logica è ora GET + finestra 24h (commit `21b25ff`). Solo commento, nessun impatto.
+
+\- \[ ] \*\*Playwright E2E del funnel trial — GATED dietro l'ambiente di preview locale (🟡).\*\* Test ad alto valore (signup → template → 3 sessioni → 403 → CTA) da blindare una volta che c'è dove farlo girare in sicurezza.
+
 \- \[ ] \*\*Cleanup account/programmi di test\*\* — rimuovere account/programmi di prova residui.
 
 \- \[ ] \*\*Cleanup `workouts` (vestigiale)\*\* — colonna `workouts` (text in `programs`, jsonb in `program\_templates`) inutilizzata (source of truth = `workout\_csv`). Già tolta da `repushTemplate`. Valutare di rimuoverla del tutto.
@@ -341,6 +337,16 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — Funnel trial 1A COMPLETO + syntax gate + Node locale (13 giugno 2026)
+
+&#x20;
+
+\- \[x] \*\*Funnel trial self-serve via Google (1A) — COMPLETO E VERIFICATO (13 giugno 2026).\*\* Ibrido: entrata self-serve, approvazione spostata alla conversione. Le tre parti residue ora chiuse: (a) template di prova "Prova — Full Body" creato e collaudato (autoregolazione RIR bidirezionale verificata); (b) frontend `index.html` — CTA "Richiedi il coaching" su `trial\_exhausted` (commit `5323bd3`) + auto-assegnazione spostata su \*\*trigger DB\*\* (non più frontend); (c) \*\*Test C live PASSATO\*\* con account Google nuovo (`medicicro@gmail.com`): signup → profilo `pending` → template auto-assegnato → 3 sessioni loggate → Progressi popolati → 403 `trial\_exhausted` → bubble CTA → mailto precompilato con nome+email → conversione admin a `active` → chat ripassa.
+
+\- \[x] \*\*Syntax-check pre-commit hook (commit `d258d6d`).\*\* `scripts/syntax-check.js` (zero dipendenze, `node --check` sui blocchi `<script>` inline di `index.html` + `progress.js` + `admin-ui.js`) + `.githooks/pre-commit` + `git config core.hooksPath .githooks`. Blocca il commit su `SyntaxError` indicando file e riga. Verificato: passa su codice pulito, blocca su riga rotta, gira nel commit reale. Elimina in automatico il rischio "pagina bianca".
+
+\- \[x] \*\*Node.js installato in locale (v24.16.0).\*\* Supera il vecchio vincolo "no local Node". Sblocca `vercel dev` (preview locale) e strumenti E2E futuri.
 
 \## ✅ Completati — Funnel trial 1A: parte SERVER (12 giugno 2026)
 
@@ -516,7 +522,7 @@
 
 \- \*\*💡 Idee strategiche\*\*: parcheggio NON operativo — elastici (livelli=colori fisici, assist/resist DA DECIDERE), inVictus, rebranding (OPEN QUESTION), workflow source-unico (ponte git), avatar coach. Si promuovono solo con decisione esplicita.
 
-\- \*\*Funnel trial (1A, 🔴)\*\*: fork "self-serve vs approvazione admin" CHIUSO (IBRIDO). \*\*✅ FORK CHIUSI (12/06):\*\* N=3 (`TRIAL\_SESSIONS`); "sessione consumata" = riga in `sessions`; stato trial = RIUSO di `pending`. NON usa `\_isDemo` (le sessioni trial PERSISTONO). \*\*✅ PARTE SERVER FATTA (12/06):\*\* trigger self-activation applicato + gate trial in `chat.js` (`trial\_exhausted`) + hardening verificato + log puliti (vedi ✅ Completati). Lancio SOLO-GOOGLE; email/password = 1B (🟡). RESTANO: template di prova (contenuto) + frontend (CTA + auto-assegnazione) + Test C live.
+\- \*\*Funnel trial (1A) — ✅ COMPLETO E LIVE (13/06)\*\*: fork "self-serve vs approvazione admin" CHIUSO (IBRIDO). \*\*✅ FORK CHIUSI (12/06):\*\* N=3 (`TRIAL\_SESSIONS`); "sessione consumata" = riga in `sessions`; stato trial = RIUSO di `pending`. NON usa `\_isDemo` (le sessioni trial PERSISTONO). Parte SERVER (12/06) + le 3 parti residue ora chiuse: template di prova "Prova — Full Body", CTA `trial\_exhausted` (commit `5323bd3`), auto-assegnazione via \*\*trigger DB\*\* (`trg\_assign\_trial\_program`, non frontend). Verificato end-to-end (Test C, account Google nuovo). Lancio SOLO-GOOGLE; email/password = 1B (🟡).
 
 \- \*\*Aggregatore compatto\*\* (1 riga/esercizio) è CONDIVISO tra "Mail resoconto AI" (🟡) e "Analisi AI progressioni" (🟢 GATED): si costruisce UNA volta. La mail è il banco di prova a basso rischio della periodizzazione (comunica, non applica).
 
@@ -554,7 +560,7 @@
 
 \- \*\*✅ Check coerenza doc↔repo (giugno 2026) FATTO — 31/36 OK.\*\* Residuo (a) \*\*`console.log` in `chat.js`\*\* → ✅ CHIUSO (12/06): rimossi i 3 con dati conversazione/profilo, resta solo `console.log('Error:', err.message)`. Residuo (b) \*\*`workouts` destrutturato in `api/admin.js` (\~riga 176)\*\* — ancora aperto, innocuo (non entra nella PATCH) → si chiude col task cleanup `workouts`.
 
-\- \*\*Note 1A (12/06):\*\* sul `403` il frontend mostra ancora l'errore generico ("account non attivo") anche per `trial\_exhausted` → CTA "Richiedi il coaching" dedicata = prossimo intervento frontend 1A. `admin-ui.js` su `401` fa alert generico "Sessione non valida" + logout al refresh token scaduto → robustezza/UX (voce 🟢, non sicurezza). Il client Supabase frontend si chiama `sb` (utile in console per i test).
+\- \*\*Note 1A (13/06):\*\* sul `403 trial\_exhausted` il frontend ora mostra la CTA dedicata "Richiedi il coaching" (commit `5323bd3`; mailto a `calislackline@gmail.com` con nome+email precompilati) — non più l'errore generico. `admin-ui.js` su `401` fa alert generico "Sessione non valida" + logout al refresh token scaduto → robustezza/UX (voce 🟢, non sicurezza). Il client Supabase frontend si chiama `sb` (utile in console per i test).
 
 &#x20;
 

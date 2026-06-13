@@ -50,9 +50,9 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 &#x20; differenziatore si capisce solo provandolo; alla richiesta l'admin ha già profilo + log reali.
 
-&#x20; Vedi "Funnel trial self-serve" in TASKS (🔴; fork aperti: valore N, semantica "consumata").
+&#x20; Vedi "Funnel trial self-serve" in TASKS (✅ COMPLETO; fork chiusi: N=3, "consumata" = riga in `sessions`, stato trial = riuso `pending`).
 
-&#x20; \*\*✅ Self-activation gap CHIUSA (12/06):\*\* trigger `trg\_protect\_profile\_fields` su `profiles` (BEFORE UPDATE: `status`/`role` read-only ai non-admin) applicato e verificato in produzione. \*\*Parte SERVER di 1A FATTA\*\* (trigger + gate trial `chat.js` `TRIAL\_SESSIONS=3` + hardening + log puliti); restano template di prova + frontend (CTA + auto-assegnazione) + Test C live.
+&#x20; \*\*✅ Self-activation gap CHIUSA (12/06):\*\* trigger `trg\_protect\_profile\_fields` su `profiles` (BEFORE UPDATE: `status`/`role` read-only ai non-admin) applicato e verificato in produzione. \*\*1A COMPLETO E LIVE (13/06):\*\* server (trigger self-activation + gate trial `chat.js` `TRIAL\_SESSIONS=3` + hardening + log puliti) + template di prova "Prova — Full Body" + frontend (CTA `trial\_exhausted`) + auto-assegnazione via \*\*trigger DB\*\* (`trg\_assign\_trial\_program`); verificato end-to-end (Test C, account Google nuovo). Dettaglio in "Stato Attuale" e ARCHITECTURE.
 
 \- \*\*Estensione del fossato (periodizzazione):\*\* i RIR/RPE raccolti in tempo reale possono alimentare
 
@@ -82,7 +82,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~1934 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito
 
-\- \*\*✅ Gate di sintassi pre-deploy (ATTIVO):\*\* prima di OGNI push frontend, apertura di `index.html` in Chrome incognito + console (F12): nessun `Uncaught SyntaxError`, nessun 404 sui file esterni → safe to push. Documentato in CLAUDE.md. Elimina la causa #1 della "pagina bianca"
+\- \*\*✅ Gate di sintassi pre-deploy (ATTIVO, ora AUTOMATICO):\*\* pre-commit hook (`core.hooksPath .githooks` → `scripts/syntax-check.js`, `node --check` su index.html inline + progress.js + admin-ui.js, commit `d258d6d`) blocca il commit su `SyntaxError`. In più il check manuale (Chrome incognito + console F12: nessun `Uncaught SyntaxError`, nessun 404) per il visivo/runtime. Documentato in CLAUDE.md. Elimina la causa #1 della "pagina bianca". \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora possibile
 
 \- Backend: Vercel Serverless Functions (`/api/chat.js`, `/api/admin.js`, `/api/callback.js`)
 
@@ -90,7 +90,9 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Sicurezza `/api/admin.js`\*\*: auth gate (JWT + `role==='admin'`); frontend via `adminFetch`
 
-\- \*\*Sicurezza `/api/chat.js`\*\*: auth gate (JWT) + gate status. \*\*Gate trial ATTIVO (12/06):\*\* `active` → passa; `pending` = trialist → passa per le prime `TRIAL\_SESSIONS=3` sessioni (count `sessions` per `u.id` del JWT, service role), oltre → `403 trial\_exhausted`; `inactive` → `403 account\_not\_active`. Hardening verificato (decisione solo su `u.id` del JWT + profilo service role). Manca il rate-limit (Fase 2). \*\*NB: il gate vale anche per l'admin\*\* → l'admin deve avere `status='active'` (altrimenti 403 sulle sessioni di test). Risolto via SQL `update profiles set status='active' where role='admin'`
+\- \*\*Sicurezza `/api/chat.js`\*\*: auth gate (JWT) + gate status. \*\*Gate trial ATTIVO (12/06, raffinato 13/06):\*\* `active` → passa; `pending` = trialist → passa per le prime `TRIAL\_SESSIONS=3` sessioni (count via GET `sessions select=created\_at` per `u.id` del JWT, service role; la sessione più recente se < 24h non conta — finestra "Riprendi", commit `21b25ff`), oltre → `403 trial\_exhausted`; `inactive` → `403 account\_not\_active`. Sul 403 il frontend mostra la CTA "Richiedi il coaching" (commit `5323bd3`). Hardening verificato (decisione solo su `u.id` del JWT + profilo service role). Manca il rate-limit (Fase 2). \*\*NB: il gate vale anche per l'admin\*\* → l'admin deve avere `status='active'` (altrimenti 403 sulle sessioni di test). Risolto via SQL `update profiles set status='active' where role='admin'`
+
+\- \*\*✅ Funnel trial self-serve (LIVE, 13/06):\*\* entrata self-serve via Google → al primo login il template "Prova — Full Body" (corpo libero, 1 workout, autoregolazione RIR) viene auto-assegnato da \*\*trigger DB\*\* (`trg\_assign\_trial\_program`) → 3 sessioni reali che popolano i Progressi → al tentativo successivo `403 trial\_exhausted` con CTA "Richiedi il coaching" (mailto all'admin). La conversione admin (`pending` → `active`) riapre la chat. Verificato end-to-end (Test C). Email/password (1B) e provider transazionale = lavori futuri
 
 \- \*\*RLS Supabase\*\*: abilitata su tutte le tabelle; `admin.js`/`chat.js` (service role) la bypassano
 
