@@ -1171,7 +1171,29 @@ async function aiSend(text, isFirst){
     }
     if(res.status===403){
       removeTyping(tid);
-      addBubble('ai','Il tuo account non \u00E8 ancora attivo. Contatta il coach.');
+      var body403=null; try{ body403=await res.json(); }catch(e){}
+      if(body403 && body403.error==='trial_exhausted'){
+        var msgsT=document.getElementById('messages');
+        var oldOptsT=document.getElementById('quickOptions'); if(oldOptsT) oldOptsT.remove();
+        var rowT=document.createElement('div'); rowT.className='msg-row ai';
+        var avT=document.createElement('div'); avT.className='avatar ai'; avT.textContent='AI';
+        var bubT=document.createElement('div'); bubT.className='bubble';
+        bubT.textContent='Hai completato le 3 sessioni di prova. I tuoi allenamenti sono salvati nei Progressi \u2014 richiedi il coaching per continuare.';
+        var nmeT=(currentProfile && currentProfile.name) || '';
+        var emT=(currentProfile && currentProfile.email) || '';
+        var subjT='Richiesta coaching '+nmeT;
+        var bodyT='Nome: '+nmeT+'\nEmail: '+emT;
+        var mailT='mailto:calislackline@gmail.com?subject='+encodeURIComponent(subjT)+'&body='+encodeURIComponent(bodyT);
+        var btnT=document.createElement('button');
+        btnT.textContent='Richiedi il coaching';
+        btnT.style.cssText='display:block;margin-top:10px;padding:9px 22px;background:#c8f060;border:none;border-radius:20px;color:#0a0a0a;font-family:var(--display);font-weight:700;font-size:13px;cursor:pointer;';
+        btnT.onclick=function(){ window.location.href=mailT; };
+        bubT.appendChild(btnT);
+        rowT.appendChild(avT); rowT.appendChild(bubT); msgsT.appendChild(rowT);
+        msgsT.scrollTop=msgsT.scrollHeight;
+      }else{
+        addBubble('ai','Il tuo account non \u00E8 ancora attivo. Contatta il coach.');
+      }
       return;
     }
     var data = await res.json();
