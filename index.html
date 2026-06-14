@@ -1163,11 +1163,19 @@ async function aiSend(text, isFirst){
     }
     var chatToken='';
     try{ var cs=await sb.auth.getSession(); chatToken=(cs&&cs.data&&cs.data.session&&cs.data.session.access_token)||''; }catch(e){}
-    var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken},body:JSON.stringify({system:systemPrompt,messages:historyToSend,session_type:(currentProfile && currentProfile.session_type) || 'bodyweight'})});
+    var chatBody = JSON.stringify({system:systemPrompt,messages:historyToSend,session_type:(currentProfile && currentProfile.session_type) || 'bodyweight'});
+    var res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken},body:chatBody});
     if(res.status===401){
-      removeTyping(tid);
-      addBubble('ai','Sessione scaduta. Esci e rientra per continuare.');
-      return;
+      var refreshed=false;
+      try{ var rs=await sb.auth.refreshSession(); if(rs&&rs.data&&rs.data.session&&rs.data.session.access_token){ chatToken=rs.data.session.access_token; refreshed=true; } }catch(e){}
+      if(refreshed){
+        res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken},body:chatBody});
+      }
+      if(res.status===401){
+        removeTyping(tid);
+        addBubble('ai','Sessione scaduta. Esci e rientra per continuare.');
+        return;
+      }
     }
     if(res.status===403){
       removeTyping(tid);
