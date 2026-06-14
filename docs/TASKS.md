@@ -250,7 +250,7 @@
 
 \- \[ ] \*\*Playwright E2E del funnel trial — SBLOCCATO (prerequisito SODDISFATTO: ambiente di preview locale ✅ FATTA, 14/06).\*\* Test ad alto valore (signup → template → 3 sessioni → 403 → CTA): ora c'è dove farlo girare in sicurezza (`vercel dev` via `.\dev.ps1`). \*\*Caveat:\*\* la preview tocca il DB Supabase REALE (env da production) → l'E2E va isolato su dati/account di test.
 
-\- \[ ] \*\*Rischio gemello refresh token su `persistSets` e `adminFetch`\*\* — stesso scenario del fix `aiSend` (commit `d87ecfe`), ma: (a) `persistSets` scrive i set via SDK → con token scaduto l'insert puo' fallire silenziosamente (set perso); (b) `adminFetch` su 401 fa alert generico + logout. Valutare un retry con `refreshSession()` anche li' (persistSets piu' sensibile: tocca la persistenza dei set → diff + approvo dedicati). Non urgente.
+\- \[ ] \*\*Rischio gemello refresh token su `adminFetch`\*\* — stesso scenario del fix `aiSend` (commit `d87ecfe`): su token scaduto `adminFetch` su 401 fa alert generico + logout. Meno grave della gemella `persistSets` (✅ FATTA, 14/06, commit `3088677`): non perde dati in silenzio. Valutare un retry con `refreshSession()` anche qui. Non urgente.
 
 \- \[ ] \*\*Cleanup account/programmi di test\*\* — rimuovere account/programmi di prova residui.
 
@@ -343,6 +343,8 @@
 \- \[x] \*\*406 in console eliminato (`.single()` → `.maybeSingle()`).\*\* Causa: `loadProfile` (index.html) faceva `SELECT profiles ... .single()` che su 0 righe (profilo non ancora creato al primo login) torna 406 da PostgREST. Fix: `.maybeSingle()` su quella query + sulla gemella in `openAthleteProfileModal` (admin-ui.js). Le due `insert().select().single()` (loadProfile branch insert, persistSets) lasciate invariate (lì 0 righe = errore vero). Branch logici invariati. Diagnosi confermata in preview locale (Progressi → query `sessions` a 200, nessun 406). Commit `19774c0`.
 
 \- \[x] \*\*Refresh token / "Sessione scaduta" — retry su 401 (commit `d87ecfe`).\*\* In `aiSend` (index.html), quando `/api/chat` torna 401 il client ora tenta `sb.auth.refreshSession()` e, se ottiene un token nuovo, rifa' la stessa fetch (stesso `chatBody`) UNA volta; la bubble "Sessione scaduta. Esci e rientra" compare solo se anche il retry e' 401 (o il refresh fallisce). Causa: su mobile l'`autoRefreshToken` dell'SDK Supabase viene sospeso quando la tab va in background (schermo bloccato tra i set) → al ritorno l'access token e' scaduto e la prima chiamata falliva. Scope: solo il blocco 401 di `aiSend`; body preservato verbatim; `persistSets`/reader intatti. Smoke test chat OK in locale.
+
+\- \[x] \*\*Rischio gemello refresh token su `persistSets` — FATTO (commit `3088677`).\*\* In `index.html` la scrittura della riga `sessions` è isolata in una nuova helper `persistSetsWrite()` (INSERT 1ª serie / UPDATE successive, ritorna `true`/`false`); su scrittura fallita (error sull'UPDATE o throw di `.single()` sull'INSERT) `persistSets` chiama `sb.auth.refreshSession()` e riprova la scrittura UNA volta. Copre il "rischio gemello" del token scaduto con tab in background su mobile (stesso scenario del fix `aiSend` `d87ecfe`). Il merge in `sessionLog` resta in `persistSets`, fuori da try/catch; la rete `.catch(){}` di `queueAutosave` è invariata. La gemella `adminFetch` resta aperta (🟢, meno grave).
 
 \## ✅ Completati — Funnel trial 1A COMPLETO + syntax gate + Node locale (13 giugno 2026)
 

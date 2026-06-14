@@ -550,7 +550,9 @@ Logging PER-SERIE (niente "fine"):
 
 &#x20; sendMsg costruisce i set con reps>0; RIR/RPE null se non dichiarati; setNum=currentSetNum
 
-&#x20; queueAutosave -> persistSets (INSERT 1ª serie -> currentSessionId; poi UPDATE con dedup nome+setNum)
+&#x20; queueAutosave -> persistSets (merge in sessionLog, fuori da try/catch) -> persistSetsWrite (INSERT 1ª serie -> currentSessionId; poi UPDATE con dedup nome+setNum; ritorna true se ok)
+
+&#x20; persistSetsWrite fallita (error sull'UPDATE / throw di .single() sull'INSERT) -> sb.auth.refreshSession() + 1 retry della scrittura (token scaduto da tab in background su mobile, cfr aiSend d87ecfe; commit 3088677)
 
 &#x20; SESSIONI DEMO/TEST NON persistite (guardia \_isDemo)
 
