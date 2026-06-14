@@ -116,7 +116,7 @@ programs
 
 &#x20; template\_id uuid (FK program\_templates, ON DELETE SET NULL)  <-- aggancio al template
 
-&#x20; program\_name text, workouts text (VESTIGIALE), ai\_prompt text,
+&#x20; program\_name text, workouts text (VESTIGIALE — rimossa dal CODICE 14/06 commit `2618335`; nessun writer/reader, drop DB pendente), ai\_prompt text,
 
 &#x20; coach\_rules text (solo gli specifici per-programma; qui anche il RIR target e gli
 
@@ -128,7 +128,7 @@ programs
 
 program\_templates   <-- SOURCE OF TRUTH (libreria template riassegnabili)
 
-&#x20; id uuid, program\_name text NOT NULL, workouts jsonb (inutilizzato),
+&#x20; id uuid, program\_name text NOT NULL, workouts jsonb (inutilizzato — rimossa dal CODICE 14/06 commit `2618335`, drop DB pendente),
 
 &#x20; coach\_rules, workout\_csv, ai\_prompt, session\_type (default 'bodyweight'), created\_at
 

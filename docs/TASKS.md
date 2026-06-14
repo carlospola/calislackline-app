@@ -252,7 +252,7 @@
 
 \- \[ ] \*\*Cleanup account/programmi di test\*\* — rimuovere account/programmi di prova residui.
 
-\- \[ ] \*\*Cleanup `workouts` (vestigiale)\*\* — colonna `workouts` (text in `programs`, jsonb in `program\_templates`) inutilizzata (source of truth = `workout\_csv`). Già tolta da `repushTemplate`. Valutare di rimuoverla del tutto.
+\- \[ ] \*\*Cleanup `workouts` (vestigiale)\*\* — colonna `workouts` (text in `programs`, jsonb in `program\_templates`) inutilizzata (source of truth = `workout\_csv`). \*\*✅ PARTE CODICE FATTA (14/06, commit `2618335`, Tempo 1):\*\* rimosse le 5 scritture LIVE (`addProgram`/`editProgram` su `programs`, `addTemplate`/`editTemplate` su `program\_templates`, `assignTemplate` su `programs`) in `api/admin.js` + i 6 payload `workouts:JSON.stringify([])` in `admin-ui.js` + la destrutturazione morta in `repushTemplate`. Le legacy `updateProgram`/`resetProgram` (patchano `profiles`, già dead) NON toccate. \*\*Resta SOLO il DROP della colonna DB\*\* (Tempo 2 — migration nel SQL Editor, non nel repo): `alter table programs drop column workouts` + idem `program\_templates`.
 
 \- \[ ] \*\*Cleanup `COACH\_LOG\_FORMAT` / `saveSessionLog()`\*\* — morti/non usati in `index.html`.
 
@@ -566,7 +566,7 @@
 
 \- \*\*skip\*\*, \*\*session\_drafts\*\*, \*\*Generatore prompt AI\*\*, \*\*CUE tecnica\*\*, \*\*REGOLA FINE / WORKOUT LOG nei coach\_rules\*\* RIMOSSI — non reintrodurli. La sessione demo (`\_isDemo`) NON è rimossa — è viva.
 
-\- \*\*✅ Check coerenza doc↔repo (giugno 2026) FATTO — 31/36 OK.\*\* Residuo (a) \*\*`console.log` in `chat.js`\*\* → ✅ CHIUSO (12/06): rimossi i 3 con dati conversazione/profilo, resta solo `console.log('Error:', err.message)`. Residuo (b) \*\*`workouts` destrutturato in `api/admin.js` (\~riga 176)\*\* — ancora aperto, innocuo (non entra nella PATCH) → si chiude col task cleanup `workouts`.
+\- \*\*✅ Check coerenza doc↔repo (giugno 2026) FATTO — 31/36 OK.\*\* Residuo (a) \*\*`console.log` in `chat.js`\*\* → ✅ CHIUSO (12/06): rimossi i 3 con dati conversazione/profilo, resta solo `console.log('Error:', err.message)`. Residuo (b) \*\*`workouts` in `api/admin.js`\*\* → ✅ RISOLTO (14/06, commit `2618335`): NON era solo la destrutturazione morta in `repushTemplate` (\~riga 176) — c'erano anche 5 WRITER LIVE (`addProgram`/`editProgram`/`addTemplate`/`editTemplate`/`assignTemplate`) che scrivevano `workouts` nel DB, più 6 payload lato `admin-ui.js`. Tutto rimosso dal codice. Resta pendente solo il DROP della colonna DB (vedi "Cleanup `workouts`", Tempo 2).
 
 \- \*\*Note 1A (13/06):\*\* sul `403 trial\_exhausted` il frontend ora mostra la CTA dedicata "Richiedi il coaching" (commit `5323bd3`; mailto a `calislackline@gmail.com` con nome+email precompilati) — non più l'errore generico. `admin-ui.js` su `401` fa alert generico "Sessione non valida" + logout al refresh token scaduto → robustezza/UX (voce 🟢, non sicurezza). Il client Supabase frontend si chiama `sb` (utile in console per i test).
 
