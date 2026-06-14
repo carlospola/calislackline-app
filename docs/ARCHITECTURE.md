@@ -56,7 +56,7 @@
 
 &#x20; - \*\*Composizione finale:\*\* `\[ motor (cached) , system\_del\_frontend ]`, dove `system\_del\_frontend` = `coach\_rules`/`ai\_prompt` + `workout\_csv` (filtrato) + `athleteContext` (SOLO primo turno). NON rompere ordine/struttura.
 
-\- \*\*`/api/admin.js`\*\* — operazioni protette DB (service role, bypassa RLS). \*\*Auth gate\*\*: JWT + `profiles.role === 'admin'`, altrimenti 401/403. Frontend via `adminFetch()` (`{action, ...}`).
+\- \*\*`/api/admin.js`\*\* — operazioni protette DB (service role, bypassa RLS). \*\*Auth gate\*\*: JWT + `profiles.role === 'admin'`, altrimenti 401/403. Frontend via `adminFetch()` (`{action, ...}`). \*\*`adminFetch` su `401` (token scaduto da tab in background) fa `sb.auth.refreshSession()` + 1 retry della stessa fetch col token nuovo\*\* (retry isolato nella helper → tutti i ~12 call-site invariati; cfr aiSend `d87ecfe` / persistSets `3088677`; commit `adfe5cc`).
 
 &#x20; - \*\*Action atleti/programmi:\*\* updateProfile, updateProgram, updateStatus, resetProgram, addProgram, editProgram, removeProgram, deleteUser, createUser. \_(updateProgram/resetProgram legacy/dead.)\_
 
