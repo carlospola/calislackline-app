@@ -304,8 +304,9 @@ logged set is written to `sessions` immediately:
   `setNum`** instead of appending (so re-sending a set — e.g. when the AI asks for a missing RIR —
   does not duplicate it). **Demo sessions are not persisted.**
 - The athlete leaves with **← Torna** (`showDash`), which also stops the recovery timer. `log_text`
-  is never written here. `COACH_LOG_FORMAT` and `saveSessionLog()` still exist in the file but are
-  **dead/unused** — the old `WORKOUT LOG` + `[LOG_DATA:{…}]` end-of-session mechanism was removed.
+  is never written here. `COACH_LOG_FORMAT` and `saveSessionLog()` were **removed** from the file
+  (15/06; they were dead/unused) — the old `WORKOUT LOG` + `[LOG_DATA:{…}]` end-of-session mechanism
+  was removed.
 
 **Explicit resume.** Resuming is a dashboard action anchored on `sessions`/`log_data` (not on a chat
 transcript). `showDash()` (~line 1011) shows a **"Riprendi"** panel at the top of the dashboard when

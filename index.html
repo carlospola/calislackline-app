@@ -731,8 +731,6 @@ var currentSetNum = null;
 var autosaveChain = Promise.resolve();
 var testSession = false;
 
-var COACH_LOG_FORMAT = '\n\nDOPO IL WORKOUT LOG aggiungi OBBLIGATORIAMENTE questa riga (tutto su UNA SOLA RIGA, zero newline, zero spazi extra):\n[LOG_DATA:{"workout":"NOME_WORKOUT","exercises":[{"name":"NomeEsercizio","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":""},{"reps":7,"rir":3,"rpe":8,"weight":0,"note":"stanco"}]}]}]\nESEMPIO REALE con 2 esercizi (copia questo formato):\n[LOG_DATA:{"workout":"PULL","exercises":[{"name":"Weighted Pull-up","sets":[{"reps":8,"rir":0,"rpe":9,"weight":20,"note":""},{"reps":12,"rir":1,"rpe":8,"weight":15,"note":""}]},{"name":"Chinup","sets":[{"reps":8,"rir":2,"rpe":7,"weight":0,"note":"tuck"}]}]}]\nREGOLE CRITICHE: 1) Includi TUTTI gli esercizi fatti. 2) Solo set con reps>0. 3) rir=dichiarato dall\x27atleta (0 se non detto). 4) rpe=fatica percepita dichiarata (0 se non detta). 5) weight=peso in kg dichiarato dall\x27atleta (0 se a corpo libero o non detto). 6) note=testo libero atleta o stringa vuota. 7) TUTTO SU UNA RIGA SOLA.';
-
 var DEMO_PROMPT = 'Sei il coach AI di AILISTENICS per il programma Workout Personalizzato.\n\nREGOLE ASSOLUTE:\n- Durante le domande iniziali: solo la domanda + lista opzioni.\n- Durante il workout: formato fisso.\n- [SET:NomeEsercizio] sempre prima di ogni esercizio.\n- Recupero formato mm:ss.\n- Niente incoraggiamenti.\n- Quando l utente dice fine genera WORKOUT LOG.\n\nDOMANDE INIZIALI:\n1.\nQuanto tempo hai?\n- 30 minuti\n- 45 minuti\n- 60 minuti\n- 90 minuti\n\n2.\nDove ti alleni?\n- Casa - solo bodyweight\n- Parco - sbarra e parallele\n- Palestra completa\n- Casa con attrezzi\n\n3.\nObiettivo oggi?\n- Tutto il corpo\n- Solo upper body\n- Solo lower body\n- Forza e skills\n\n4.\nCome ti senti?\n- Carico\n- Nella media\n- Stanco\n\nDopo le 4 risposte vai al primo esercizio.\n\nFORMATO ESERCIZIO:\n[SET:NomeEsercizio]\nNomeEsercizio - Set N/TOT | X-Y reps | Recupero: mm:ss\n\nFORMATO SUPERSET:\n[SUPERSET:Nome1,Nome2]\nSUPERSET X - Set N/TOT\nNome1: X-Y reps\nNome2: X-Y reps\n-> VAI SUBITO su Nome2\nRecupero: mm:ss\n\nFEEDBACK: ok max 4 parole. Recupero: mm:ss\n\nWORKOUT LOG:\nWORKOUT LOG\n================\nData: [data]\nDurata: [X] min\n[Esercizio]: [sets x reps]';
 
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1257,54 +1255,6 @@ async function persistSetsWrite(){
       return !(upd && upd.error);
     }
   }catch(e){ return false; }
-}
-
-async function saveSessionLog(log){
-  var logData = null;
-  var tagStart = log.indexOf('[LOG_DATA:');
-  var jsonEnd = -1;
-
-  if(tagStart > -1){
-    var jsonStart = log.indexOf('{', tagStart);
-    if(jsonStart > -1){
-      var depth = 0;
-      for(var i = jsonStart; i < log.length; i++){
-        if(log[i] === '{') depth++;
-        else if(log[i] === '}') { depth--; if(depth === 0){ jsonEnd = i; break; } }
-      }
-      if(jsonEnd > -1){
-        try{ logData = JSON.parse(log.substring(jsonStart, jsonEnd + 1)); }catch(e){ logData = null; }
-      }
-    }
-  }
-
-  var cleanLog = log;
-  if(tagStart > -1){
-    if(jsonEnd > -1){
-      var tagEnd = log.indexOf(']', jsonEnd);
-      if(tagEnd > -1){
-        cleanLog = (log.substring(0, tagStart) + log.substring(tagEnd + 1)).replace(/\n{3,}/g, '\n\n').trim();
-      } else {
-        cleanLog = log.substring(0, tagStart).trim();
-      }
-    } else {
-      cleanLog = log.substring(0, tagStart).trim();
-    }
-  }
-
-  // Tappa 1: log_data e' gia' stato scritto set-per-set durante la sessione.
-  // Qui aggiorniamo SOLO il riassunto testuale, senza toccare log_data.
-  var saveResult;
-  if(currentSessionId !== null){
-    saveResult = await sb.from('sessions').update({log_text: cleanLog}).eq('id', currentSessionId);
-  } else {
-    // nessuna serie salvata durante la sessione: creiamo comunque la riga col riassunto
-    saveResult = await sb.from('sessions').insert({user_id: currentUser.id, workout_name: sessionWorkout, log_text: cleanLog, log_data: null});
-  }
-  if(saveResult.error){
-    console.error('saveSessionLog error:', saveResult.error);
-    alert('Errore salvataggio sessione: ' + saveResult.error.message);
-  }
 }
 
 function sessionTimerSet(seconds){

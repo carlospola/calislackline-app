@@ -294,9 +294,9 @@
 
 \- \*\*Prompt caching (Leva 2):\*\* motore cachato in `chat.js` — non rompere (vedi Backend Rules). Il motore è cresciuto (\~250 token: precedenza + valutazione range) ma resta nel blocco cachato; i coach\_rules vanno tenuti SNELLI perché viaggiano nel blocco NON cachato.
 
-\## COACH\_LOG\_FORMAT — LEGACY/dead
+\## COACH\_LOG\_FORMAT — RIMOSSO (15/06)
 
-`COACH\_LOG\_FORMAT` e `saveSessionLog()` sono ancora nel file ma NON usati. Non costruirci sopra; rimovibili in un cleanup futuro. (I protocolli "REGOLA FINE"/"WORKOUT LOG" nei coach\_rules sono stati rimossi — zombie.)
+`COACH\_LOG\_FORMAT` e `saveSessionLog()` sono stati RIMOSSI da `index.html` (15/06; erano morti, zero chiamanti). Non reintrodurli. (I protocolli "REGOLA FINE"/"WORKOUT LOG" nei coach\_rules sono stati rimossi — zombie.)
 
 &#x20;
 

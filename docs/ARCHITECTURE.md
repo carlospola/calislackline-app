@@ -768,9 +768,9 @@ client + RLS owner. Niente picker/lista CSV, niente \[SET:] dall'AI. Senza progr
 
 &#x20;
 
-\## COACH\_LOG\_FORMAT — LEGACY/dead
+\## COACH\_LOG\_FORMAT — RIMOSSO (15/06)
 
-`COACH\_LOG\_FORMAT` e `saveSessionLog()` esistono ma sono morti. Rimovibili in un cleanup.
+`COACH\_LOG\_FORMAT` e `saveSessionLog()` sono stati RIMOSSI da `index.html` (15/06; erano morti, zero chiamanti). Non reintrodurli.
 
 > I protocolli "REGOLA FINE"/"WORKOUT LOG" sono stati RIMOSSI anche dai coach\_rules (zombie) — non reintrodurli.
 

@@ -254,7 +254,7 @@
 
 \- \[x] \*\*Cleanup `workouts` (vestigiale) — FATTA (14/06).\*\* Colonna `workouts` (text in `programs`, jsonb in `program\_templates`) inutilizzata (source of truth = `workout\_csv`), ora RIMOSSA del tutto. \*\*Tempo 1 — CODICE (commit `2618335`):\*\* rimosse le 5 scritture LIVE (`addProgram`/`editProgram` su `programs`, `addTemplate`/`editTemplate` su `program\_templates`, `assignTemplate` su `programs`) in `api/admin.js` + i 6 payload `workouts:JSON.stringify([])` in `admin-ui.js` + la destrutturazione morta in `repushTemplate`. \*\*Tempo 2 — DROP colonna DB (eseguito a mano nel SQL Editor di Supabase, non versionato):\*\* `alter table programs drop column workouts` + idem `program\_templates`; verifica `information\_schema` tornata a zero righe. Nessun riferimento residuo su `programs`/`program\_templates`. Le 3 occorrenze legacy su `profiles` (`updateProgram`/`resetProgram`) restano FUORI SCOPE — coperte dal loro TODO dedicato ("Cleanup `admin.js` legacy").
 
-\- \[ ] \*\*Cleanup `COACH\_LOG\_FORMAT` / `saveSessionLog()`\*\* — morti/non usati in `index.html`.
+\- \[x] \*\*Cleanup `COACH\_LOG\_FORMAT` / `saveSessionLog()` — FATTA (15/06).\*\* Rimossi da `index.html` (dichiarazione + intera funzione), zero chiamanti verificati. `stripLogData` (usata da `fmtText`) lasciata VIVA di proposito.
 
 \- \[x] \*\*Cleanup `admin.js` legacy — FATTA (14/06).\*\* Rimosse le due funzioni morte `updateProgram`/`resetProgram` da `api/admin.js` (nessun chiamante nel frontend); chiuse così le ultime occorrenze di `workouts` su `profiles`.
 
