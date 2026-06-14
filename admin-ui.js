@@ -76,7 +76,7 @@ async function createUser(){
 async function openAthleteProfileModal(userId, userName){
   athleteProgramsUserId=userId;
   document.getElementById('athleteProfileName').textContent=userName;
-  var r=await sb.from('profiles').select('*').eq('id',userId).single();
+  var r=await sb.from('profiles').select('*').eq('id',userId).maybeSingle();
   if(r.data){
     var d=r.data;
     var map={apEta:d.eta,apSesso:d.sesso,apPeso:d.peso,apAltezza:d.altezza,apLivello:d.livello,apFrequenza:d.frequenza,apObiettivo:d.obiettivo,apObiettivo3m:d.obiettivo3m,apLuogo:d.luogo,apDisponibilita:d.disponibilita,apDiscipline:d.discipline,apSkill:d.skill,apAttrezzatura:d.attrezzatura,apInfortuni:d.infortuni,apLimitazioni:d.limitazioni,apStile:d.stile,apSonno:d.sonno,apMotivazione:d.motivazione,apNote:d.note_libere};

@@ -815,7 +815,7 @@ async function handleSession(session){
 }
 
 async function loadProfile(){
-  var r = await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+  var r = await sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
   currentProfile = r.data;
   if(!currentProfile){
     var r2 = await sb.from('profiles').insert({id:currentUser.id,email:currentUser.email,name:(currentUser.user_metadata&&currentUser.user_metadata.full_name)||currentUser.email.split('@')[0],role:currentUser.email===ADMIN_EMAIL?'admin':'athlete',status:'pending'}).select().single();
