@@ -42,7 +42,16 @@ function openLogModalById(id){
 async function adminFetch(payload){
   var token='';
   try{ var s=await sb.auth.getSession(); token=(s&&s.data&&s.data.session&&s.data.session.access_token)||''; }catch(e){}
-  return fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
+  var body=JSON.stringify(payload);
+  var r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:body});
+  if(r.status===401){
+    var refreshed=false;
+    try{ var rs=await sb.auth.refreshSession(); if(rs&&rs.data&&rs.data.session&&rs.data.session.access_token){ token=rs.data.session.access_token; refreshed=true; } }catch(e){}
+    if(refreshed){
+      r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:body});
+    }
+  }
+  return r;
 }
 
 async function toggleStatus(userId, currentStatus){
