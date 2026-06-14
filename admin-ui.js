@@ -170,7 +170,7 @@ async function saveEditProgram(programId){
   var prompt=document.getElementById('editPrompt_'+programId).value.trim();
   if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
   var editType=document.getElementById('editType_'+programId); var sType=editType?editType.value:'bodyweight';
-  var r=await adminFetch({action:'editProgram',programId:programId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType});
+  var r=await adminFetch({action:'editProgram',programId:programId,program_name:name,coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   await renderAthletePrograms();
@@ -183,7 +183,7 @@ async function addProgram(){
   var prompt=document.getElementById('newProgPrompt').value.trim();
   if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
   var progType=document.getElementById('newProgType').value||'bodyweight';
-  var r=await adminFetch({action:'addProgram',userId:athleteProgramsUserId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:progType});
+  var r=await adminFetch({action:'addProgram',userId:athleteProgramsUserId,program_name:name,coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:progType});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   document.getElementById('newProgName').value='';
@@ -270,9 +270,9 @@ async function saveTemplate(){
   if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
   var payload;
   if(editingTemplateId){
-    payload={action:'editTemplate',templateId:editingTemplateId,program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType};
+    payload={action:'editTemplate',templateId:editingTemplateId,program_name:name,coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType};
   }else{
-    payload={action:'addTemplate',program_name:name,workouts:JSON.stringify([]),coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType};
+    payload={action:'addTemplate',program_name:name,coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType};
   }
   var r=await adminFetch(payload);
   var data=await r.json();
@@ -312,7 +312,7 @@ async function confirmAssign(){
   if(!userId){alert('Seleziona un atleta.'); return;}
   var t=window._templates?window._templates.find(function(x){return x.id===assigningTemplateId;}):null;
   if(!t){alert('Template non trovato.'); return;}
-  var r=await adminFetch({action:'assignTemplate',userId:userId,templateId:assigningTemplateId,program_name:t.program_name,workouts:JSON.stringify([]),coach_rules:t.coach_rules,workout_csv:t.workout_csv,ai_prompt:t.ai_prompt,session_type:t.session_type});
+  var r=await adminFetch({action:'assignTemplate',userId:userId,templateId:assigningTemplateId,program_name:t.program_name,coach_rules:t.coach_rules,workout_csv:t.workout_csv,ai_prompt:t.ai_prompt,session_type:t.session_type});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   closeModal('assignModal');
@@ -324,7 +324,7 @@ async function applyToAll(templateId){
   if(!confirm('Sovrascrive il programma di tutti gli atleti a cui e\' assegnato questo template, inclusi eventuali ritocchi manuali. Procedere?')) return;
   var t=window._templates?window._templates.find(function(x){return x.id===templateId;}):null;
   if(!t){alert('Template non trovato.'); return;}
-  var r=await adminFetch({action:'repushTemplate',templateId:templateId,program_name:t.program_name,workouts:JSON.stringify([]),coach_rules:t.coach_rules,workout_csv:t.workout_csv,ai_prompt:t.ai_prompt,session_type:t.session_type});
+  var r=await adminFetch({action:'repushTemplate',templateId:templateId,program_name:t.program_name,coach_rules:t.coach_rules,workout_csv:t.workout_csv,ai_prompt:t.ai_prompt,session_type:t.session_type});
   var data=await r.json();
   if(data.error){alert('Errore: '+data.error); return;}
   alert('Programmi aggiornati');
