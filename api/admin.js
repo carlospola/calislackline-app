@@ -65,24 +65,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    if (action === 'updateProgram') {
-      const { program_name, workouts, ai_prompt, status } = req.body;
-      await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
-        program_name, workouts, ai_prompt, status
-      });
-      return res.status(200).json({ success: true });
-    }
-
     if (action === 'updateStatus') {
       const { status } = req.body;
       await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, { status });
-      return res.status(200).json({ success: true });
-    }
-
-    if (action === 'resetProgram') {
-      await supabaseRequest('PATCH', `profiles?id=eq.${userId}`, {
-        program_name: null, workouts: null, ai_prompt: null, status: 'pending'
-      });
       return res.status(200).json({ success: true });
     }
 

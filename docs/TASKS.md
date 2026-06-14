@@ -256,7 +256,7 @@
 
 \- \[ ] \*\*Cleanup `COACH\_LOG\_FORMAT` / `saveSessionLog()`\*\* — morti/non usati in `index.html`.
 
-\- \[ ] \*\*Cleanup `admin.js` legacy\*\* — `updateProgram`/`resetProgram` (patchavano `profiles`, non più usate).
+\- \[x] \*\*Cleanup `admin.js` legacy — FATTA (14/06).\*\* Rimosse le due funzioni morte `updateProgram`/`resetProgram` da `api/admin.js` (nessun chiamante nel frontend); chiuse così le ultime occorrenze di `workouts` su `profiles`.
 
 \- \[ ] \*\*PWA / installazione mobile (PASSO 2)\*\* — service worker + installabilità + Lighthouse ≥80. \*\*Il PASSO 1 (manifest + icone + favicon) è la voce 🟡 "Logo/icona web app"\*\* e si fa prima, indipendente. \*\*PREREQUISITO di "Distribuzione app store".\*\*
 

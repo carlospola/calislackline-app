@@ -58,7 +58,7 @@
 
 \- \*\*`/api/admin.js`\*\* — operazioni protette DB (service role, bypassa RLS). \*\*Auth gate\*\*: JWT + `profiles.role === 'admin'`, altrimenti 401/403. Frontend via `adminFetch()` (`{action, ...}`). \*\*`adminFetch` su `401` (token scaduto da tab in background) fa `sb.auth.refreshSession()` + 1 retry della stessa fetch col token nuovo\*\* (retry isolato nella helper → tutti i ~12 call-site invariati; cfr aiSend `d87ecfe` / persistSets `3088677`; commit `adfe5cc`).
 
-&#x20; - \*\*Action atleti/programmi:\*\* updateProfile, updateProgram, updateStatus, resetProgram, addProgram, editProgram, removeProgram, deleteUser, createUser. \_(updateProgram/resetProgram legacy/dead.)\_
+&#x20; - \*\*Action atleti/programmi:\*\* updateProfile, updateStatus, addProgram, editProgram, removeProgram, deleteUser, createUser.
 
 &#x20; - \*\*✅ Action template:\*\* `addTemplate`, `editTemplate`, `removeTemplate`, `assignTemplate`, `repushTemplate` ("Applica a tutti" — riscrive SOLO `program\_name`/`coach\_rules`/`workout\_csv`/`ai\_prompt`/`session\_type`; `workouts` RIMOSSO, `74b72bd`). Le LETTURE le fa il frontend via SDK.
 

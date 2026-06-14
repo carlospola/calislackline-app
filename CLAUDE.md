@@ -142,7 +142,7 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   (do not invert the common→delta→program order).**
 - **`api/admin.js`** — privileged Supabase operations using the **service-role key** (bypasses RLS).
   Single endpoint dispatched by `req.body.action`: `createUser`, `deleteUser`, `updateProfile`,
-  `updateStatus`, `addProgram`/`editProgram`/`removeProgram`, `updateProgram`, `resetProgram`, plus
+  `updateStatus`, `addProgram`/`editProgram`/`removeProgram`, plus
   the **template actions** `addTemplate`/`editTemplate`/`removeTemplate`, `assignTemplate`,
   `repushTemplate` (see "Sistema template" below).
   Protected by an **auth gate**: the handler reads the caller's Supabase JWT from the

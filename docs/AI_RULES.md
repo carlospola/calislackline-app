@@ -324,7 +324,7 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- `exercises.owner\_id = null` = esercizio globale
 
-\- \*\*`programs.workouts` è `text` (NON jsonb) ed è VESTIGIALE/inutilizzato\*\* — source of truth = `workout\_csv`. `program\_templates.workouts` è `jsonb` ma ugualmente inutilizzato. NON copiarlo tra le tabelle, NON reintrodurlo in `repushTemplate`. Rimovibile in un cleanup.
+\- \*\*La colonna `workouts` è stata DROPPATA da `programs` e `program\_templates` (14/06)\*\* — source of truth = `workout\_csv`. NON reintrodurla e NON copiarla tra le tabelle né in `repushTemplate`.
 
 \- Non eliminare mai dati senza conferma esplicita
 

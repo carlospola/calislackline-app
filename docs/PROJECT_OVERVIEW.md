@@ -150,7 +150,6 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Validazione `coach\_rules` non vuoto\*\* → da togliere (utile per il SaaS). NB: il guard della test session già controlla `workout\_csv`, non i coach\_rules
 
-\- \*\*`programs.workouts` vestigiale\*\* (`text`, non jsonb) — `repushTemplate` non lo tocca; da rimuovere in un cleanup
 
 \- \*\*Open question strategiche (non task, vedi TASKS 💡):\*\* rebranding del nome (nessuna decisione; il "Dominio email personalizzato" ne eredita il gate) e doppia source-of-truth dei doc (ponte git `/docs` + `@`-import in CLAUDE.md)
 
