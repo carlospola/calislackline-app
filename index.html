@@ -1225,25 +1225,38 @@ function queueAutosave(pendingSets){
 async function persistSets(pendingSets){
   if(!currentUser) return;
   if(currentProfile && currentProfile._isDemo) return; // la demo non scrive su sessions
+  if(!sessionLog) sessionLog = {workout: sessionWorkout, exercises: []};
+  pendingSets.forEach(function(p){
+    var ex = null;
+    for(var i=0;i<sessionLog.exercises.length;i++){ if(sessionLog.exercises[i].name===p.name){ ex=sessionLog.exercises[i]; break; } }
+    if(!ex){ ex={name:p.name, sets:[]}; sessionLog.exercises.push(ex); }
+    var idx = -1;
+    if(p.set.setNum != null){
+      for(var k=0;k<ex.sets.length;k++){ if(ex.sets[k].setNum === p.set.setNum){ idx=k; break; } }
+    }
+    if(idx > -1) ex.sets[idx] = p.set; else ex.sets.push(p.set);
+  });
+  var ok = await persistSetsWrite();
+  if(!ok){
+    // rischio gemello (commit d87ecfe): token forse scaduto col tab in background su mobile.
+    var refreshed = false;
+    try{ var rs = await sb.auth.refreshSession(); if(rs && rs.data && rs.data.session) refreshed = true; }catch(e){}
+    if(refreshed) await persistSetsWrite();
+  }
+}
+
+// scrittura della riga sessions (insert 1ª serie, update successive). Ritorna true se ok.
+async function persistSetsWrite(){
   try{
-    if(!sessionLog) sessionLog = {workout: sessionWorkout, exercises: []};
-    pendingSets.forEach(function(p){
-      var ex = null;
-      for(var i=0;i<sessionLog.exercises.length;i++){ if(sessionLog.exercises[i].name===p.name){ ex=sessionLog.exercises[i]; break; } }
-      if(!ex){ ex={name:p.name, sets:[]}; sessionLog.exercises.push(ex); }
-      var idx = -1;
-      if(p.set.setNum != null){
-        for(var k=0;k<ex.sets.length;k++){ if(ex.sets[k].setNum === p.set.setNum){ idx=k; break; } }
-      }
-      if(idx > -1) ex.sets[idx] = p.set; else ex.sets.push(p.set);
-    });
     if(currentSessionId === null){
       var ins = await sb.from('sessions').insert({user_id:currentUser.id, workout_name:sessionWorkout, log_data:sessionLog}).select('id').single();
-      if(ins && ins.data && ins.data.id) currentSessionId = ins.data.id;
+      if(ins && ins.data && ins.data.id){ currentSessionId = ins.data.id; return true; }
+      return false;
     } else {
-      await sb.from('sessions').update({log_data:sessionLog}).eq('id', currentSessionId);
+      var upd = await sb.from('sessions').update({log_data:sessionLog}).eq('id', currentSessionId);
+      return !(upd && upd.error);
     }
-  }catch(e){ /* best-effort: il prossimo set riscrive lo stato completo */ }
+  }catch(e){ return false; }
 }
 
 async function saveSessionLog(log){
