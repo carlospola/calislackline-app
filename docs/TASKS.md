@@ -246,10 +246,6 @@
 
 \- \[ ] \*\*"Workout improvvisato" (Opzione 4)\*\* — mini-questionario (attrezzi, obiettivi, tempo) → l'AI GENERA il workout su prompt generico. DEVE catturare infortuni/limitazioni (sicurezza). \*\*DIVERSO da "Allenamento libero"\*\* (🟡): qui l'AI genera, lì è log manuale.
 
-\- \[ ] \*\*`.single()` → `.maybeSingle()` per il 406 a vuoto\*\* — la query del programma usa `.single()`; senza programma assegnato torna 406 (innocuo). `.maybeSingle()` lo elimina.
-
-\- \[ ] \*\*406 in console su risorsa Supabase\*\* — presente in dashboard e Progressi (anche per account nuovo). Non rompe nulla; stessa radice del task `.single()` → `.maybeSingle()` qui sopra (query che torna zero righe). Da cacciare con calma.
-
 \- \[ ] \*\*Commento stale in `api/chat.js`\*\* — sopra il blocco del gate trial cita ancora "count exact via HEAD", ma la logica è ora GET + finestra 24h (commit `21b25ff`). Solo commento, nessun impatto.
 
 \- \[ ] \*\*Playwright E2E del funnel trial — SBLOCCATO (prerequisito SODDISFATTO: ambiente di preview locale ✅ FATTA, 14/06).\*\* Test ad alto valore (signup → template → 3 sessioni → 403 → CTA): ora c'è dove farlo girare in sicurezza (`vercel dev` via `.\dev.ps1`). \*\*Caveat:\*\* la preview tocca il DB Supabase REALE (env da production) → l'E2E va isolato su dati/account di test.
@@ -341,6 +337,8 @@
 &#x20;
 
 \- \[x] \*\*Ambiente di preview locale (`vercel dev`) — ATTIVO (14 giugno 2026).\*\* `vercel dev` gira in locale (Node v24.16.0). Launcher: `.\dev.ps1` dalla root (carica `.env.local` nella shell, poi `vercel dev --listen 3000`). Aggiunto il redirect `http://localhost:3000/\*\*` ai Supabase Redirect URLs (Site URL invariato). Validato end-to-end, inclusa una SESSIONE AI completa in locale.
+
+\- \[x] \*\*406 in console eliminato (`.single()` → `.maybeSingle()`).\*\* Causa: `loadProfile` (index.html) faceva `SELECT profiles ... .single()` che su 0 righe (profilo non ancora creato al primo login) torna 406 da PostgREST. Fix: `.maybeSingle()` su quella query + sulla gemella in `openAthleteProfileModal` (admin-ui.js). Le due `insert().select().single()` (loadProfile branch insert, persistSets) lasciate invariate (lì 0 righe = errore vero). Branch logici invariati. Diagnosi confermata in preview locale (Progressi → query `sessions` a 200, nessun 406). Commit `19774c0`.
 
 \## ✅ Completati — Funnel trial 1A COMPLETO + syntax gate + Node locale (13 giugno 2026)
 
