@@ -387,11 +387,22 @@ snapshots.** Model: **snapshot + repush**.
 
 - **Local preview:** open `index.html` directly — the sibling assets (`styles.css`, `progress.js`,
   `admin-ui.js`) load via their relative paths over `file://` — but the `/api/*` functions won't
-  run that way. **Node is now installed locally (v24.16.0), so `vercel dev` is available** for a full
-  local preview (frontend + serverless); it needs `localhost` added to the Supabase redirect URLs +
-  Google OAuth origin (open item, TASKS 🟡). Until that's set up, the `/api/*` endpoints are still
-  verified **in production after deploy** (propose the change as a diff + get confirmation before
-  pushing).
+  run that way. **`vercel dev` preview is now ACTIVE** (Node v24.16.0): run **`.\dev.ps1`** from the
+  repo root — it loads `.env.local` into the shell, then runs `vercel dev --listen 3000` (frontend +
+  serverless on `http://localhost:3000`; `http://localhost:3000/**` is in the Supabase Redirect URLs).
+  - **GOTCHA — `vercel dev` does NOT inject `.env.local` into the serverless functions:** the env
+    must be in the **shell environment** before launch; `dev.ps1` does `Get-Content .env.local` →
+    `Set-Item Env:` to bridge that.
+  - **`.env.local` (gitignored via `.env*`) must be POPULATED BY HAND** with the real values:
+    Vercel vars marked **Sensitive** do **not** come down with `vercel env pull` (they arrive empty).
+    Service-role = the new Supabase **Secret key** (`sb_secret_...`). The anon key isn't needed by the
+    backend (`chat.js` uses only URL + service-role).
+  - **⚠️ Env are pulled from PRODUCTION → the preview hits the REAL Supabase DB + real Anthropic
+    tokens** (no staging); a dedicated local Anthropic key (`calislackline-local-dev`) was created.
+  - Debug note: `chat.js`'s JWT-gate `catch` swallows the exception and returns `401 "Autenticazione
+    fallita"` — locally that 401 usually means the env weren't loaded.
+  - The `/api/*` endpoints can now be checked locally first, but still do the final verification
+    **in production after deploy** (propose the change as a diff + get confirmation before pushing).
 - **Deploy:** push to the Vercel-connected branch (`main`). Recent history shows the workflow is
   committing edits straight to the frontend files (`index.html` + `styles.css`/`progress.js`/
   `admin-ui.js`).

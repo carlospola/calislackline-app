@@ -30,7 +30,7 @@
 
 \- Ciclo: descrivi modifica -> piano/diff -> approvi edit chirurgici -> GATE di sintassi -> commit + push -> verifica in produzione -> Vercel deploya da main
 
-\- Backend (`api/\*.js`) e documentazione vanno dritti su `main`. Il frontend (`index.html`, `styles.css`, `progress.js`, `admin-ui.js`) va su `main` col GATE prima del push e verifica immediata Ctrl+F5 dopo (rollback pronto); l'anteprima Vercel resta non usabile (login -> produzione)
+\- Backend (`api/\*.js`) e documentazione vanno dritti su `main`. Il frontend (`index.html`, `styles.css`, `progress.js`, `admin-ui.js`) va su `main` col GATE prima del push e verifica immediata Ctrl+F5 dopo (rollback pronto); l'anteprima Vercel CLOUD (deployment di branch) resta non usabile (login -> produzione). \*\*Per la preview testabile usa `vercel dev` in LOCALE\*\* (`.\dev.ps1`, ✅ FATTA 14/06; gira però sul DB Supabase REALE)
 
 \- Git NON consuma usage di Claude: commit/push a mano sempre possibili
 
@@ -124,7 +124,7 @@
 
 \- `callback.js`: login `?code` -> `/?code=`; recovery (`type=recovery`) -> `/reset?code=`
 
-\- \*\*⚠️ RESET PASSWORD ROTTO (correzione di stato, giugno 2026):\*\* il flusso recovery oggi NON funziona — i doc lo davano erroneamente ok. Il fix è legato al percorso email/password (TASKS 🟡 1B): `inviteUserByEmail` (invito → set password) e recovery sono LO STESSO MECCANISMO → un solo lavoro.
+\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO — intero path (correzione di stato, giugno 2026):\*\* funziona SOLO Google OAuth (PKCE). NON è solo il reset rotto: anche login/signup via email+password non funziona — i doc lo davano erroneamente ok. Il fix copre l'intero percorso email/password (TASKS 🟡 1B): login + `inviteUserByEmail` (invito → set password) + recovery sono LO STESSO MECCANISMO → un solo lavoro.
 
 \## AI Coach Prompt Rules
 

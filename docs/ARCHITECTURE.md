@@ -74,7 +74,7 @@
 
 \- `callback.js`: login `?code` -> `/?code=`; recovery -> `/reset?code=`.
 
-\- \*\*⚠️ RESET PASSWORD ROTTO (correzione di stato, giugno 2026):\*\* il flusso recovery oggi NON funziona. Fix legato al percorso email/password (TASKS 🟡 1B): Supabase ha `inviteUserByEmail` (link → set password) e il recovery di `/reset` — "crea password al primo accesso" e "reset" sono LO STESSO MECCANISMO → un solo lavoro.
+\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO — intero path (correzione di stato, giugno 2026):\*\* funziona SOLO Google OAuth (PKCE). NON è solo il reset rotto: anche login/signup via email+password non funziona. Fix dell'intero percorso email/password (TASKS 🟡 1B): Supabase ha `inviteUserByEmail` (link → set password) e il recovery di `/reset` — login/"crea password al primo accesso"/"reset" sono LO STESSO MECCANISMO → un solo lavoro.
 
 \## Database
 
@@ -830,7 +830,7 @@ Isometrici (MVP): secondi nel campo reps (+ relabel Progressi); avanzato: campo 
 
 \- Repo: `\~/Desktop/calislackline-app` (Windows `C:\\Users\\39327\\Desktop\\calislackline-app`)
 
-\- Windows PowerShell — NIENTE `\&\&` (un comando per riga). \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora eseguibile (preview locale): voce aperta in TASKS 🟡. Il vecchio "node non installato" è SUPERATO.
+\- Windows PowerShell — NIENTE `\&\&` (un comando per riga). \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora ATTIVO (preview locale, vedi sotto "Preview locale (vercel dev)"; TASKS ✅). Il vecchio "node non installato" è SUPERATO.
 
 \- \*\*GATE DI SINTASSI PRE-DEPLOY (dettagli in CLAUDE.md):\*\* prima di OGNI push frontend, aprire `index.html` locale in Chrome INCOGNITO con console (F12): nessun `Uncaught SyntaxError`, nessun 404 su `styles.css`/`progress.js`/`admin-ui.js`, login visibile → safe to push. Poi verifica finale in produzione (Ctrl+F5; rollback Vercel 1-click se serve). Copre i syntax error (causa #1 pagina bianca) + errori runtime al load; i flussi specifici si verificano in produzione.
 
@@ -844,6 +844,20 @@ Isometrici (MVP): secondi nel campo reps (+ relabel Progressi); avanzato: campo 
 
 \- I prompt (coach\_rules dei template) e il MOTORE (`settings`) vivono in Supabase: modificarli NON richiede commit/deploy.
 
+\## Preview locale (vercel dev)
+
+\- \*\*Avvio:\*\* `.\dev.ps1` dalla root — carica `.env.local` nella shell, poi lancia `vercel dev --listen 3000`. Frontend + serverless `api/\*.js` su `http://localhost:3000`. Validato end-to-end, inclusa una SESSIONE AI completa in locale.
+
+\- \*\*GOTCHA — `vercel dev` NON inietta `.env.local` nelle serverless:\*\* le env vanno messe nell'AMBIENTE DELLA SHELL prima di lanciare. `dev.ps1` fa esattamente questo: `Get-Content .env.local` → `Set-Item Env:`. Senza, le funzioni partono con env vuote.
+
+\- \*\*`.env.local` (gitignorato via `.env\*`) va POPOLATO A MANO coi valori veri:\*\* le variabili Vercel marcate \*\*Sensitive\*\* NON si scaricano con `vercel env pull` (arrivano vuote). Il \*\*service-role\*\* = la \*\*Secret key\*\* nuova di Supabase (`sb_secret_...`, Project Settings → API Keys). L'\*\*anon NON serve\*\* al backend (`chat.js` usa solo `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`).
+
+\- \*\*⚠️ Env tirate da PRODUCTION → la preview tocca il DB Supabase REALE + token Anthropic reali\*\* (niente staging). Per i token è stata creata una \*\*API key Anthropic dedicata locale\*\* (`calislackline-local-dev`).
+
+\- \*\*Debug `chat.js`:\*\* il `catch` del gate JWT INGOIA l'eccezione e ritorna `401 "Autenticazione fallita"`; in locale quel 401 ≈ "le env non sono caricate" → controllare che `.env.local` sia popolato e che `dev.ps1` l'abbia caricato nella shell.
+
+\- \*\*File tooling (root):\*\* `dev.ps1` (launcher preview) + `.gitignore` (tracciato: ignora `.vercel`, `.env\*`).
+
 \## Syntax-check pre-commit (commit `d258d6d`)
 
 `scripts/syntax-check.js` (solo built-in `fs/os/path/child\_process`): estrae via regex i blocchi `<script>` SENZA `src` da `index.html`, li scrive in temp `.js` in `os.tmpdir()`, lancia `node --check`; poi `node --check` diretto su `progress.js` e `admin-ui.js`. Stampa `Syntax OK` (exit 0) o file+riga+errore (exit 1).
@@ -854,7 +868,7 @@ Copre il rischio CRITICO (syntax error = pagina bianca). Il gate manuale Chrome 
 
 \## External Services
 
-\- \*\*Supabase\*\* — Auth (Google OAuth PKCE + email/password), PostgreSQL
+\- \*\*Supabase\*\* — Auth (SOLO Google OAuth PKCE attivo; email/password NON attivo — intero path), PostgreSQL
 
 \- \*\*Anthropic API\*\* — Claude (`claude-sonnet-4-5`) via `/api/chat.js`
 

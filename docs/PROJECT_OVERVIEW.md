@@ -86,7 +86,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- Backend: Vercel Serverless Functions (`/api/chat.js`, `/api/admin.js`, `/api/callback.js`)
 
-\- Auth: funzionante (Google OAuth PKCE + email/password). `detectSessionInUrl: false` su `index.html` e `reset.html`. \*\*⚠️ CORREZIONE (giugno 2026): il RESET PASSWORD è ROTTO\*\* — era erroneamente dato per funzionante. Fix legato al percorso email/password (TASKS 🟡 1B: invito = reset = stesso meccanismo Supabase)
+\- Auth: \*\*funziona SOLO Google OAuth (PKCE)\*\*. `detectSessionInUrl: false` su `index.html` e `reset.html`. \*\*⚠️ CORREZIONE (giugno 2026): l'INTERO percorso EMAIL/PASSWORD NON è attivo\*\* — non è solo il reset rotto: login/signup via email+password non funziona affatto. Era erroneamente dato per funzionante. Fix dell'intero path (login + invito + reset) = TASKS 🟡 1B: invito = reset = stesso meccanismo Supabase
 
 \- \*\*Sicurezza `/api/admin.js`\*\*: auth gate (JWT + `role==='admin'`); frontend via `adminFetch`
 
@@ -126,7 +126,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \## Problemi Aperti
 
-\- \*\*⚠️ RESET PASSWORD ROTTO\*\* — i doc lo davano funzionante, NON lo è. Fix = stesso meccanismo dell'invito email/password (Supabase recovery/`inviteUserByEmail`) → un solo lavoro, vedi TASKS 🟡 1B. Non bloccante per il trial funnel (lancio solo-Google)
+\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO (intero path), non solo il reset\*\* — i doc davano email/password funzionante: NON lo è. Funziona SOLO Google OAuth (PKCE). Login/signup via email+password e il reset password sono entrambi rotti. Fix = stesso meccanismo dell'invito email/password (Supabase recovery/`inviteUserByEmail`) → un solo lavoro, vedi TASKS 🟡 1B. Non bloccante per il trial funnel (lancio solo-Google)
 
 \- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` −30% (\~1929 righe, oggi \~1934; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
 
@@ -234,7 +234,7 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \## Features principali
 
-\- \*\*Auth\*\* — Google OAuth (PKCE) + email/password (⚠️ reset rotto, vedi Problemi Aperti)
+\- \*\*Auth\*\* — SOLO Google OAuth (PKCE) attivo (⚠️ email/password NON attivo — intero path, non solo il reset; vedi Problemi Aperti)
 
 \- \*\*Dashboard atleta\*\* — programmi assegnati, statistiche, log recenti, riquadro "Riprendi"
 

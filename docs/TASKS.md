@@ -2,7 +2,7 @@
 
 &#x20;
 
-\_Aggiornato: 2026-06-13\_
+\_Aggiornato: 2026-06-14\_
 
 &#x20;
 
@@ -37,8 +37,6 @@
 \## 🟡 Medium Priority
 
 &#x20;
-
-\- \[ ] \*\*Ambiente di preview locale (`vercel dev`).\*\* Ora possibile (Node v24.16.0 installato). Monta frontend + serverless `api/\*.js` su `localhost`; richiede aggiungere `localhost` alle redirect URL Supabase + origin Google OAuth. È il pezzo strategico che sblocca refactor più sicuro e automazioni (prerequisito del Playwright E2E e della PARTE 2 del ponte git).
 
 \- \[ ] \*\*Progressione programma (MVP sequenziale — "dove sono / prossimo workout") — Media-ALTA, è la SPINA DORSALE.\*\* Un programma non è più un "sacchetto" di workout da pescare liberamente, ma una \*\*PLAYLIST ORDINATA\*\*. Le "settimane × allenamenti/settimana" sono il MESOCICLO (come lo pensa/scrive il coach); l'atleta avanza COMPLETANDO i workout IN ORDINE, al suo ritmo, SCOLLEGATO dal calendario ("6 di 24 fatti"). L'app dice qual è il PROSSIMO ("Sett. 2 · Pull").
 
@@ -254,7 +252,7 @@
 
 \- \[ ] \*\*Commento stale in `api/chat.js`\*\* — sopra il blocco del gate trial cita ancora "count exact via HEAD", ma la logica è ora GET + finestra 24h (commit `21b25ff`). Solo commento, nessun impatto.
 
-\- \[ ] \*\*Playwright E2E del funnel trial — GATED dietro l'ambiente di preview locale (🟡).\*\* Test ad alto valore (signup → template → 3 sessioni → 403 → CTA) da blindare una volta che c'è dove farlo girare in sicurezza.
+\- \[ ] \*\*Playwright E2E del funnel trial — SBLOCCATO (prerequisito SODDISFATTO: ambiente di preview locale ✅ FATTA, 14/06).\*\* Test ad alto valore (signup → template → 3 sessioni → 403 → CTA): ora c'è dove farlo girare in sicurezza (`vercel dev` via `.\dev.ps1`). \*\*Caveat:\*\* la preview tocca il DB Supabase REALE (env da production) → l'E2E va isolato su dati/account di test.
 
 \- \[ ] \*\*Cleanup account/programmi di test\*\* — rimuovere account/programmi di prova residui.
 
@@ -328,7 +326,7 @@
 
 &#x20; - \*\*PARTE 2 (Avanzato, GATED — NON ora):\*\* Agent Teams/subagent paralleli in Claude Code e/o GitHub Action di Claude Code con issue/PR come coda di task e PR automatica su branch.
 
-&#x20; - \*\*⚠️ CAVEAT LOAD-BEARING:\*\* NON puntare al pieno automatico. Il gate "piano/diff prima del codice" resta obbligatorio: è produzione con utenti veri, e NON esiste ancora una preview testabile (il login rimbalza in produzione). Il refactor fase 1 ha ridotto il blast radius ma NON crea la preview → \*\*PREREQUISITO per la PARTE 2: ambiente di preview/test.\*\* Un loop "completa tutta TASKS.md da solo" spedirebbe rotture dritte in prod. Coach-in-the-loop obbligatorio.
+&#x20; - \*\*⚠️ CAVEAT LOAD-BEARING:\*\* NON puntare al pieno automatico. Il gate "piano/diff prima del codice" resta obbligatorio: è produzione con utenti veri. \*\*PREREQUISITO per la PARTE 2 — ambiente di preview/test: ora SODDISFATTO\*\* (preview locale `vercel dev` ✅ FATTA, 14/06) → la PARTE 2 è SBLOCCATA su questo fronte. \*\*MA\*\* la preview gira sul DB Supabase REALE (env da production), quindi NON è ancora uno staging isolato: un loop "completa tutta TASKS.md da solo" spedirebbe comunque effetti in prod. Coach-in-the-loop obbligatorio.
 
 &#x20; - \*\*Next reasoning:\*\* decidere se attivare la PARTE 1 in un prossimo batch documentale.
 
@@ -337,6 +335,12 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — Preview locale vercel dev (14 giugno 2026)
+
+&#x20;
+
+\- \[x] \*\*Ambiente di preview locale (`vercel dev`) — ATTIVO (14 giugno 2026).\*\* `vercel dev` gira in locale (Node v24.16.0). Launcher: `.\dev.ps1` dalla root (carica `.env.local` nella shell, poi `vercel dev --listen 3000`). Aggiunto il redirect `http://localhost:3000/\*\*` ai Supabase Redirect URLs (Site URL invariato). Validato end-to-end, inclusa una SESSIONE AI completa in locale.
 
 \## ✅ Completati — Funnel trial 1A COMPLETO + syntax gate + Node locale (13 giugno 2026)
 
