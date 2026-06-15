@@ -16,7 +16,7 @@
 
 \- Mantieni naming conventions esistenti (camelCase JS, kebab-case CSS IDs)
 
-\- \*\*Frontend MULTI-FILE (refactor fase 1, giugno 2026):\*\* `index.html` + `styles.css` + `progress.js` + `admin-ui.js`, script CLASSICI non-module → funzioni e var GLOBALI (gli onclick inline e le chiamate cross-file ci contano). TUTTE le Frontend Rules valgono per TUTTI i .js frontend. NON convertire in ES modules; NON cambiare l'ordine dei tag (inline → progress.js → admin-ui.js); NON estrarre il CORE SESSIONE AI da `index.html` (decisione di fase 1). `admin-ui.js` (frontend, root) ≠ `api/admin.js` (serverless). Eventuali nuove estrazioni (log modal, onboarding): SOLO su richiesta, col metodo recon dipendenze read-only → diff → gate → test funzionale (la libreria esercizi è già stata estratta in `admin-ui.js` il 15/06)
+\- \*\*Frontend MULTI-FILE (refactor fase 1, giugno 2026):\*\* `index.html` + `styles.css` + `progress.js` + `admin-ui.js` + `log.js`, script CLASSICI non-module → funzioni e var GLOBALI (gli onclick inline e le chiamate cross-file ci contano). TUTTE le Frontend Rules valgono per TUTTI i .js frontend. NON convertire in ES modules; NON cambiare l'ordine dei tag (inline → progress.js → admin-ui.js → log.js); NON estrarre il CORE SESSIONE AI da `index.html` (decisione di fase 1). `admin-ui.js` (frontend, root) ≠ `api/admin.js` (serverless). Eventuali nuove estrazioni (onboarding): SOLO su richiesta, col metodo recon dipendenze read-only → diff → gate → test funzionale (la libreria esercizi è già stata estratta in `admin-ui.js` e il modale log in `log.js` il 15/06; `buildLogSummary` è rimasta nel core)
 
 \## Sviluppo via Claude Code (repo locale)
 
@@ -348,7 +348,7 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- Non riscrivere tutto `index.html` per una modifica piccola
 
-\- \*\*Non convertire i .js frontend in ES modules; non togliere/riordinare i tag `<script>` (inline → progress.js → admin-ui.js) né il `<link styles.css>`; non estrarre il core sessione AI da `index.html`\*\*
+\- \*\*Non convertire i .js frontend in ES modules; non togliere/riordinare i tag `<script>` (inline → progress.js → admin-ui.js → log.js) né il `<link styles.css>`; non estrarre il core sessione AI da `index.html`\*\*
 
 \- \*\*Non confondere `admin-ui.js` (frontend, root) con `api/admin.js` (serverless): sono due file diversi\*\*
 

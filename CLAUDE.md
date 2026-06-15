@@ -27,9 +27,9 @@ Three layers, no framework:
   `<script>` core plus three sibling assets, all **classic non-module scripts** — so every function
   and `var` is **global**. Inline `onclick`/`onchange` handlers and cross-file calls depend on this;
   **do not convert to ES modules.** Plain ES5-style `var`/`function`.
-  - **`index.html`** (~1835 lines) — markup + the **core JS**: auth/init, dashboard, the AI session
+  - **`index.html`** (~1787 lines) — markup + the **core JS**: auth/init, dashboard, the AI session
     flow, CSV parsing/picker/`lista`, `setNum`/`log_data` persistence, recovery timer, chat
-    rendering, the **log modal**, onboarding, utilities (`esc`/
+    rendering, onboarding, utilities (`esc`/
     `showScreen`/`closeModal`/…), and the global-state `var` block (`currentUser`, `currentProfile`,
     `sessionHistory`, `sessionLog`, `currentSessionId`, `currentSetNum`, `testSession`,
     …) at the top of the inline `<script>`. UI is a set of `.screen` divs toggled by
@@ -47,17 +47,28 @@ Three layers, no framework:
     `loadLibrary`/`filterLibrary`/`openExerciseModal`/`saveExercise`/`deleteExercise`, plus the
     `allExercises` state — moved here from `index.html` on 15/06; the markup + `onclick`s stay in
     `index.html`).
+  - **`log.js`** — the **log modal**: `var currentLogSession` + 4 functions
+    (`openLogModal`/`toggleLogEdit`/`saveLogEdit`/`deleteLog`), extracted from `index.html` on 15/06.
+    The markup `#logModal` and its `onclick`s stay in `index.html`. **`buildLogSummary` does NOT move
+    — it stays in the `index.html` core** (pure log-summary helper used by both `resumeSession` and
+    `openLogModal`).
 
   **Load order — do not change.** `<link rel="stylesheet" href="styles.css">` in `<head>`; then at
-  the end of `<body>`, in this order: the inline `<script>` → `progress.js` → `admin-ui.js`. Each
-  later file relies on globals the inline core already defined, so the order is load-bearing.
+  the end of `<body>`, in this order: the inline `<script>` → `progress.js` → `admin-ui.js` → `log.js`.
+  Each later file relies on globals the inline core already defined; the order is the current
+  convention (not load-bearing for correctness — all cross-file calls fire post-load via global scope).
 
   **Cross-file contact points (all via global scope).** index.html → admin-ui.js: `handleSession`
   → `showAdmin`; `showDash` → `renderTemplates` (test-session return: re-selects the `atabTemplates`
-  tab); `deleteLog` → `renderLogTable` (behind a `typeof … === 'function'` guard). admin-ui.js →
-  core: uses `esc`/`showScreen`/`closeModal`/`sb`/`openLogModal`/`startSessionWithPrompt`
+  tab). admin-ui.js →
+  core: uses `esc`/`showScreen`/`closeModal`/`sb`/`startSessionWithPrompt`
   and reads/writes `currentProfile`/`testSession`/`allExercises`. progress.js → core: uses
-  `esc`/`showScreen`/`sb`/`Chart`.
+  `esc`/`showScreen`/`sb`/`Chart`. **log.js** ↔ rest: core → log.js (`showDash` → `openLogModal`,
+  via the dashboard log-item `onclick`); log.js → core (`openLogModal` → `buildLogSummary`;
+  `saveLogEdit`/`deleteLog` → `showDash`, behind a `typeof` guard); log.js → admin-ui.js
+  (`deleteLog` → `renderLogTable`, behind a `typeof` guard); admin-ui.js → log.js
+  (`openLogModalById` → `openLogModal`). `deleteLog`'s `role` branch (admin → `renderLogTable`,
+  athlete → `showDash`) is unchanged.
 - **`reset.html`** — standalone password-reset page (served at `/reset` via `vercel.json` rewrite).
 - **`api/*.js`** — Vercel serverless functions (Node, `export default async function handler`).
 
@@ -440,8 +451,8 @@ verifica.
 ## Syntax gate automatico
 
 Pre-commit hook attivo (`core.hooksPath .githooks` → `scripts/syntax-check.js`, commit `d258d6d`).
-Ogni commit lancia `node --check` sul JS inline di `index.html` + `progress.js` + `admin-ui.js`; il
-commit si blocca su `SyntaxError` (file + riga). Escape d'emergenza: `git commit --no-verify` (solo
+Ogni commit lancia `node --check` sul JS inline di `index.html` + `progress.js` + `admin-ui.js` +
+`log.js`; il commit si blocca su `SyntaxError` (file + riga). Escape d'emergenza: `git commit --no-verify` (solo
 in vera emergenza). **Node è ora disponibile in locale (v24.16.0)** — il vecchio promemoria "node non
 installato su questa macchina" è SUPERATO e va rimosso dove appare. Il gate manuale in Chrome
 incognito (sezione sopra) resta utile per il visivo/runtime, ma la sintassi è ora coperta in
@@ -479,11 +490,11 @@ DB** (`trg_assign_trial_program`, AFTER INSERT su `profiles`), **NON frontend**.
 
 - **Refactor del monolite `index.html` — FASE 1 FATTA, poi FERMATO per decisione** (giugno 2026).
   Estratti in file separati: `styles.css` (tutto il CSS), `progress.js` (Progressi/grafici),
-  `admin-ui.js` (admin panel + template + test session + libreria esercizi) — vedi "Architecture". index.html è passato
-  da ~2757 (pre-refactor) a ~1835 righe (fase 1 + libreria esercizi spostata in admin-ui.js il 15/06). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
-  estrazioni future (log modal, onboarding) **solo su richiesta**, e **sempre con una recon
+  `admin-ui.js` (admin panel + template + test session + libreria esercizi) + `log.js` (modale log) — vedi "Architecture". index.html è passato
+  da ~2757 (pre-refactor) a ~1787 righe (fase 1 + libreria esercizi in admin-ui.js + modale log in log.js, 15/06). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
+  estrazioni future (onboarding) **solo su richiesta**, e **sempre con una recon
   delle dipendenze prima** (chiamanti esterni, funzioni cross-area interposte, var globali condivise),
-  come fatto per progress.js/admin-ui.js.
+  come fatto per progress.js/admin-ui.js/log.js.
 - **Test sessione AI Coach dall'account admin — DONE.** Shipped as the **"Prova" test session**
   (template card → `startTestSession`, reusing the `_isDemo` demo primitive + the template picker)
   — see "Admin "Prova" test session" in the AI session flow. Prereq: admin `status='active'`.
@@ -531,7 +542,7 @@ These are mandatory working rules for this repository. Follow them on every chan
 `index.html` (the `var`/no-backtick/no-localStorage/`esc()`/unchanged-IDs/16px rules included).
 
 1. **Never rewrite `index.html` (or `progress.js`/`admin-ui.js`/`styles.css`) wholesale for small
-   changes.** `index.html` is still a large file (~1835 lines); always make targeted, surgical edits
+   changes.** `index.html` is still a large file (~1787 lines); always make targeted, surgical edits
    to the specific block involved. Do not regenerate or re-emit a whole file to change a few lines.
 2. **Show the plan before writing code.** Present the intended approach and the exact spots you'll
    touch, then implement only after that's laid out.

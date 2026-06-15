@@ -80,9 +80,9 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Production\*\* — live su ailistenics.com (Vercel)
 
-\- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~1835 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session/libreria esercizi). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito
+\- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~1787 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session/libreria esercizi) + `log.js` (modale log). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito (`buildLogSummary` incluso)
 
-\- \*\*✅ Gate di sintassi pre-deploy (ATTIVO, ora AUTOMATICO):\*\* pre-commit hook (`core.hooksPath .githooks` → `scripts/syntax-check.js`, `node --check` su index.html inline + progress.js + admin-ui.js, commit `d258d6d`) blocca il commit su `SyntaxError`. In più il check manuale (Chrome incognito + console F12: nessun `Uncaught SyntaxError`, nessun 404) per il visivo/runtime. Documentato in CLAUDE.md. Elimina la causa #1 della "pagina bianca". \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora possibile
+\- \*\*✅ Gate di sintassi pre-deploy (ATTIVO, ora AUTOMATICO):\*\* pre-commit hook (`core.hooksPath .githooks` → `scripts/syntax-check.js`, `node --check` su index.html inline + progress.js + admin-ui.js + log.js, commit `d258d6d`) blocca il commit su `SyntaxError`. In più il check manuale (Chrome incognito + console F12: nessun `Uncaught SyntaxError`, nessun 404) per il visivo/runtime. Documentato in CLAUDE.md. Elimina la causa #1 della "pagina bianca". \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora possibile
 
 \- Backend: Vercel Serverless Functions (`/api/chat.js`, `/api/admin.js`, `/api/callback.js`)
 
@@ -128,7 +128,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO (intero path), non solo il reset\*\* — i doc davano email/password funzionante: NON lo è. Funziona SOLO Google OAuth (PKCE). Login/signup via email+password e il reset password sono entrambi rotti. Fix = stesso meccanismo dell'invito email/password (Supabase recovery/`inviteUserByEmail`) → un solo lavoro, vedi TASKS 🟡 1B. Non bloccante per il trial funnel (lancio solo-Google)
 
-\- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` −33% (\~1835 righe oggi, dopo l'estrazione della libreria esercizi in `admin-ui.js` il 15/06; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
+\- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`/`log.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` −35% (\~1787 righe oggi, dopo l'estrazione della libreria esercizi in `admin-ui.js` e del modale log in `log.js` il 15/06; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
 
 \- \*\*✅ RIR target per-programma — FATTO (tutti).\*\* BBR fascia 0-3, i 3 gym \~3, maxout 0-1 via filosofia New Workout
 

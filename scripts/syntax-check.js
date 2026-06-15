@@ -1,6 +1,6 @@
 // Syntax-check pre-commit — zero dipendenze npm, solo built-in.
 // Estrae i blocchi <script> SENZA src da index.html e fa "node --check"
-// su ognuno; poi "node --check" diretto su progress.js e admin-ui.js.
+// su ognuno; poi "node --check" diretto su progress.js, admin-ui.js e log.js.
 var fs = require('fs');
 var os = require('os');
 var path = require('path');
@@ -39,7 +39,7 @@ while ((m = re.exec(html)) !== null) {
 }
 
 // --- 2) file .js esterni nella root ---
-['progress.js', 'admin-ui.js'].forEach(function (f) {
+['progress.js', 'admin-ui.js', 'log.js'].forEach(function (f) {
   var p = path.join(ROOT, f);
   if (fs.existsSync(p)) {
     checkFile(p, f);
