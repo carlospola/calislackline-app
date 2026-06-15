@@ -16,7 +16,7 @@
 
 \- Mantieni naming conventions esistenti (camelCase JS, kebab-case CSS IDs)
 
-\- \*\*Frontend MULTI-FILE (refactor fase 1, giugno 2026):\*\* `index.html` + `styles.css` + `progress.js` + `admin-ui.js`, script CLASSICI non-module → funzioni e var GLOBALI (gli onclick inline e le chiamate cross-file ci contano). TUTTE le Frontend Rules valgono per TUTTI i .js frontend. NON convertire in ES modules; NON cambiare l'ordine dei tag (inline → progress.js → admin-ui.js); NON estrarre il CORE SESSIONE AI da `index.html` (decisione di fase 1). `admin-ui.js` (frontend, root) ≠ `api/admin.js` (serverless). Eventuali nuove estrazioni (log modal, onboarding, libreria): SOLO su richiesta, col metodo recon dipendenze read-only → diff → gate → test funzionale
+\- \*\*Frontend MULTI-FILE (refactor fase 1, giugno 2026):\*\* `index.html` + `styles.css` + `progress.js` + `admin-ui.js`, script CLASSICI non-module → funzioni e var GLOBALI (gli onclick inline e le chiamate cross-file ci contano). TUTTE le Frontend Rules valgono per TUTTI i .js frontend. NON convertire in ES modules; NON cambiare l'ordine dei tag (inline → progress.js → admin-ui.js); NON estrarre il CORE SESSIONE AI da `index.html` (decisione di fase 1). `admin-ui.js` (frontend, root) ≠ `api/admin.js` (serverless). Eventuali nuove estrazioni (log modal, onboarding): SOLO su richiesta, col metodo recon dipendenze read-only → diff → gate → test funzionale (la libreria esercizi è già stata estratta in `admin-ui.js` il 15/06)
 
 \## Sviluppo via Claude Code (repo locale)
 

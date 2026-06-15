@@ -18,7 +18,7 @@
 
 \- \[x] \*\*Motore-prompt — casi maxout/misto MIGRATI (11 giugno 2026).\*\* Spostato in ✅ Completati. Meccanismo: blocco PRECEDENZA nel motore + override di filosofia nei coach\_rules (New Workout = maxout, Muscle-Up Pro = misto). Tutti i 9 programmi ora sul motore. Il punto di OVERRIDE PER-PROGRAMMA resta la presa per la filosofia del \*\*descrittore per-esercizio\*\* e (futuro) per gli \*\*elastici\*\* (💡).
 
-\- \[x] \*\*Refactor monolite — FASE 1 FATTA, refactor FERMATO QUI (decisione, giugno 2026).\*\* Vedi ✅ Completati. Gate di sintassi + `styles.css` + `progress.js` + `admin-ui.js`; `index.html` 2757 → \~1929 righe (−30%, oggi \~1934); rischio pagina-bianca eliminato; blast radius per-file. \*\*Il CORE SESSIONE AI NON si estrae.\*\* Estrazioni residue → voce 🟢 sotto.
+\- \[x] \*\*Refactor monolite — FASE 1 FATTA, refactor FERMATO QUI (decisione, giugno 2026).\*\* Vedi ✅ Completati. Gate di sintassi + `styles.css` + `progress.js` + `admin-ui.js`; `index.html` 2757 → \~1835 righe (−33%, dopo l'estrazione della libreria esercizi il 15/06); rischio pagina-bianca eliminato; blast radius per-file. \*\*Il CORE SESSIONE AI NON si estrae.\*\* Estrazioni residue → voce 🟢 sotto.
 
 \- \[ ] \*\*Video tutorial esercizi\*\* — aggiungere colonna `video\_url` a `exercises` (proporre la migration, attendere conferma). Video su YouTube (NO self-hosting), aperti in overlay in-app, link dal nome esercizio nel `setInfoBox`. Gestire il matching del nome (nomi canonici dal CSV) — punto fragile. Partire dai \~10-15 movimenti del solo programma base, con video propri. Doppia funzione: tutorial in-app + contenuto social, ma due output distinti.
 
@@ -196,7 +196,7 @@
 
 &#x20;
 
-\- \[ ] \*\*Refactor — estrazioni residue (OPZIONALI, solo se la dimensione torna a pesare).\*\* Col metodo rodato della fase 1 (recon dipendenze read-only → diff → gate → push → test funzionale in produzione): candidati log modal, onboarding, libreria esercizi (\~150-200 righe l'una). \*\*NON estrarre il core sessione AI\*\* (decisione di fase 1). Nuovi file = script classici non-module caricati dopo l'inline.
+\- \[ ] \*\*Refactor — estrazioni residue (OPZIONALI, solo se la dimensione torna a pesare).\*\* Col metodo rodato della fase 1 (recon dipendenze read-only → diff → gate → push → test funzionale in produzione): candidati residui log modal, onboarding (\~150-200 righe l'una). \*\*Libreria esercizi: FATTA il 15/06\*\* (spostata in `admin-ui.js`, vedi ✅ Completati). \*\*NON estrarre il core sessione AI\*\* (decisione di fase 1). Nuovi file = script classici non-module caricati dopo l'inline.
 
 \- \[ ] \*\*Dominio email personalizzato — GATED dietro il rebranding (💡, OPEN QUESTION non decisa).\*\* Mail transazionali da dominio proprio (es. coach@<brand>.com) invece di Gmail/Apps Script. \*\*NON avviare prima della decisione rebranding\*\* (ne eredita il gate). Note tecniche: richiede provider transazionale (Resend/Postmark/SES) + SPF/DKIM sul dominio; Supabase supporta SMTP custom per le mail auth → quando esisterà, anche le mail di invito/conferma/reset (1B) escono dal dominio brandizzato. \*\*Il provider transazionale è dipendenza CONDIVISA con "Mail resoconto AI settimanale" (🟡).\*\*
 
@@ -331,6 +331,10 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — Estrazione libreria esercizi (15 giugno 2026)
+
+\- \[x] \*\*Estrazione libreria esercizi (`index.html` → `admin-ui.js`) — FATTA (15/06).\*\* Le 5 funzioni (`loadLibrary`/`filterLibrary`/`openExerciseModal`/`saveExercise`/`deleteExercise`) + la var `allExercises` spostate VERBATIM (byte-accurate: preservati gli escape `\\'` negli onclick generati e `è` in `saveExercise`). Il MARKUP (toolbar libreria, modale `exerciseModal`) e gli onclick restano in `index.html`, risolti via global scope post-load (script classici non-module). Unico chiamante esterno (`switchTab` in `admin-ui.js`) ora intra-file. Syntax gate (`node scripts/syntax-check.js` → exit 0) + smoke OK. `index.html` \~1934 → \~1835 righe. Metodo: recon dipendenze read-only → diff → verifica byte → gate.
 
 \## ✅ Completati — Preview locale vercel dev (14 giugno 2026)
 

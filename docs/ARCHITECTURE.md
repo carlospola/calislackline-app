@@ -6,17 +6,17 @@
 
 \- \*\*Framework:\*\* Nessuno — HTML/CSS/JS vanilla. \*\*MULTI-FILE dal refactor fase 1 (giugno 2026):\*\*
 
-&#x20; - `index.html` (\~1934 righe; pre-refactor 2757) — markup + core JS: auth/init, dashboard, sessione AI (avvio/chat/aiSend/sendMsg), parsing CSV + picker + lista, setNum + persistenza `log\_data`, timer, chat rendering, log modal, onboarding, libreria esercizi, utility comuni (`esc`/`showScreen`/`closeModal`), client `sb`, var globali in testa allo `<script>`
+&#x20; - `index.html` (\~1835 righe; pre-refactor 2757) — markup + core JS: auth/init, dashboard, sessione AI (avvio/chat/aiSend/sendMsg), parsing CSV + picker + lista, setNum + persistenza `log\_data`, timer, chat rendering, log modal, onboarding, utility comuni (`esc`/`showScreen`/`closeModal`), client `sb`, var globali in testa allo `<script>` (il MARKUP della libreria esercizi — toolbar + modale `exerciseModal` + onclick — resta qui; le funzioni sono in `admin-ui.js`)
 
 &#x20; - `styles.css` — tutto il CSS (ex blocco `<style>`), `<link>` nel `<head>`
 
 &#x20; - `progress.js` — schermata Progressi/grafici: stato co-locato + 10 funzioni (switchProgressTab, showProgress, destroyChart, numOrNull, getExSets, makeBarOpts, renderProgressCharts, calNavMonth, renderOverviewCharts, renderHeatmapMonth)
 
-&#x20; - `admin-ui.js` — admin panel (19 funzioni showAdmin…removeProgram) + template (renderTemplates…applyToAll + `editingTemplateId`/`assigningTemplateId`) + `startTestSession`. \*\*⚠️ NON confondere con `api/admin.js` (serverless)\*\*
+&#x20; - `admin-ui.js` — admin panel (19 funzioni showAdmin…removeProgram) + template (renderTemplates…applyToAll + `editingTemplateId`/`assigningTemplateId`) + `startTestSession` + libreria esercizi (5 funzioni loadLibrary/filterLibrary/openExerciseModal/saveExercise/deleteExercise + var `allExercises`, spostate da `index.html` il 15/06; markup/onclick restano in `index.html`). \*\*⚠️ NON confondere con `api/admin.js` (serverless)\*\*
 
 \- \*\*Ordine di caricamento (NON cambiare):\*\* `<link styles.css>` nel `<head>`; in coda al `<body>`: `<script>` inline → `<script src="progress.js">` → `<script src="admin-ui.js">`. Script \*\*CLASSICI non-module\*\*: funzioni e var restano GLOBALI — gli onclick/onchange inline e le chiamate cross-file ci contano. NON convertire in ES modules.
 
-\- \*\*Punti di contatto cross-file (via global scope):\*\* `handleSession→showAdmin`; `showDash→renderTemplates` (ritorno test session, tab `atabTemplates`); `deleteLog→renderLogTable` (con guard `typeof`); `admin-ui.js` → `esc`/`showScreen`/`closeModal`/`sb`/`loadLibrary`/`openLogModal`/`startSessionWithPrompt` + R/W su `currentProfile`/`testSession`/`allExercises`; `progress.js` → `esc`/`showScreen`/`sb`/`Chart`.
+\- \*\*Punti di contatto cross-file (via global scope):\*\* `handleSession→showAdmin`; `showDash→renderTemplates` (ritorno test session, tab `atabTemplates`); `deleteLog→renderLogTable` (con guard `typeof`); `admin-ui.js` → `esc`/`showScreen`/`closeModal`/`sb`/`openLogModal`/`startSessionWithPrompt` + R/W su `currentProfile`/`testSession`; `progress.js` → `esc`/`showScreen`/`sb`/`Chart`.
 
 \- \*\*Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO\*\* (protocollo implicito sendMsg→nextSetNum→persistSets→reader): non estrarlo.
 

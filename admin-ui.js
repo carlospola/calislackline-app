@@ -1,3 +1,5 @@
+var allExercises = [];
+
 async function showAdmin(){showScreen('adminScreen'); await renderUserTable(); await renderLogTable();}
 
 function switchTab(tab, btn){
@@ -339,4 +341,95 @@ function startTestSession(templateId){
   currentProfile={_isDemo:true,_orig:orig};
   testSession=true;
   startSessionWithPrompt(t.program_name, t.coach_rules, t.workout_csv, t.ai_prompt, t.session_type, null);
+}
+
+// ============================================================
+// EXERCISE LIBRARY (admin)
+// ============================================================
+async function loadLibrary(){
+  var r = await sb.from('exercises').select('*').order('name',{ascending:true});
+  allExercises = r.data || [];
+  filterLibrary();
+}
+
+function filterLibrary(){
+  var q = (document.getElementById('libSearch').value||'').toLowerCase().trim();
+  var cat = document.getElementById('libCat').value;
+  var equip = (document.getElementById('libEquip').value||'').toLowerCase();
+  var level = document.getElementById('libLevel').value;
+  var filtered = allExercises.filter(function(ex){
+    if(q && ex.name && ex.name.toLowerCase().indexOf(q)===-1) return false;
+    if(cat && ex.category !== cat) return false;
+    if(equip && (!ex.equipment || ex.equipment.toLowerCase().indexOf(equip)===-1)) return false;
+    if(level && ex.level !== level) return false;
+    return true;
+  });
+  document.getElementById('libCount').textContent = filtered.length + ' / ' + allExercises.length + ' esercizi';
+  var tbody = document.getElementById('libTableBody');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Nessun esercizio trovato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(ex){
+    return '<tr><td>'+esc(ex.name||'-')+'</td>'
+      +'<td style="color:var(--muted)">'+esc(ex.category||'-')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px;">'+esc(ex.muscles||'-')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px;">'+esc(ex.equipment||'-')+'</td>'
+      +'<td><span class="badge">'+esc(ex.level||'-')+'</span></td>'
+      +'<td style="color:var(--muted);font-size:11px;">'+esc(ex.progressions||'-')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px;">'+esc(ex.cue||'-')+'</td>'
+      +'<td><button class="action-btn" onclick="openExerciseModal(\''+ex.id+'\')">Modifica</button>'
+      +'<button class="action-btn danger" onclick="deleteExercise(\''+ex.id+'\')">X</button></td></tr>';
+  }).join('');
+}
+
+function openExerciseModal(id){
+  var ex = id ? allExercises.find(function(e){return e.id===id;}) : null;
+  document.getElementById('exModalTitle').textContent = ex ? 'Modifica esercizio' : 'Nuovo esercizio';
+  document.getElementById('exId').value = ex ? ex.id : '';
+  document.getElementById('exName').value = ex ? (ex.name||'') : '';
+  document.getElementById('exCategory').value = ex ? (ex.category||'') : '';
+  document.getElementById('exLevel').value = ex ? (ex.level||'') : '';
+  document.getElementById('exMuscles').value = ex ? (ex.muscles||'') : '';
+  document.getElementById('exEquipment').value = ex ? (ex.equipment||'') : '';
+  document.getElementById('exRest').value = ex ? (ex.rest_seconds||'') : '';
+  document.getElementById('exCue').value = ex ? (ex.cue||'') : '';
+  document.getElementById('exProgressions').value = ex ? (ex.progressions||'') : '';
+  document.getElementById('exNotes').value = ex ? (ex.notes||'') : '';
+  document.getElementById('exError').textContent = '';
+  document.getElementById('exerciseModal').classList.add('open');
+}
+
+async function saveExercise(){
+  var id = document.getElementById('exId').value;
+  var name = document.getElementById('exName').value.trim();
+  var errEl = document.getElementById('exError');
+  if(!name){ errEl.textContent = 'Il nome \u00E8 obbligatorio.'; return; }
+  var data = {
+    name: name,
+    category: document.getElementById('exCategory').value||null,
+    level: document.getElementById('exLevel').value||null,
+    muscles: document.getElementById('exMuscles').value.trim()||null,
+    equipment: document.getElementById('exEquipment').value.trim()||null,
+    rest_seconds: document.getElementById('exRest').value?parseInt(document.getElementById('exRest').value):null,
+    cue: document.getElementById('exCue').value.trim()||null,
+    progressions: document.getElementById('exProgressions').value.trim()||null,
+    notes: document.getElementById('exNotes').value.trim()||null
+  };
+  var r;
+  if(id){
+    r = await sb.from('exercises').update(data).eq('id', id);
+  } else {
+    r = await sb.from('exercises').insert(data);
+  }
+  if(r.error){ errEl.textContent = 'Errore: '+r.error.message; return; }
+  closeModal('exerciseModal');
+  await loadLibrary();
+}
+
+async function deleteExercise(id){
+  if(!confirm('Eliminare questo esercizio?')) return;
+  var r = await sb.from('exercises').delete().eq('id', id);
+  if(r.error){ alert('Errore: '+r.error.message); return; }
+  await loadLibrary();
 }
