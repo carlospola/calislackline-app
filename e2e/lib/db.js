@@ -11,7 +11,7 @@
 //
 // NB: non stampa MAI valori di secret/password.
 
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '..', '.env.local') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '..', '..', '.env.local'), quiet: true });
 
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
@@ -179,6 +179,25 @@ async function preSweep() {
   return swept;
 }
 
+// Login programmatico come utente (client ANON, niente sessione persistita).
+// Ritorna { access_token, refresh_token } per iniettare la sessione nel browser
+// dell'E2E via window.sb.auth.setSession. NON logga MAI i token.
+async function signInAsUser(email, password) {
+  const anon = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false } }
+  );
+  const r = await anon.auth.signInWithPassword({ email: email, password: password });
+  if (r.error || !(r.data && r.data.session)) {
+    throw new Error('signInAsUser fallito: ' + (r.error && r.error.message));
+  }
+  return {
+    access_token: r.data.session.access_token,
+    refresh_token: r.data.session.refresh_token
+  };
+}
+
 module.exports = {
   admin: admin,
   RESERVED_RE: RESERVED_RE,
@@ -189,5 +208,6 @@ module.exports = {
   seedExhaustedSessions: seedExhaustedSessions,
   countSessions: countSessions,
   teardown: teardown,
-  preSweep: preSweep
+  preSweep: preSweep,
+  signInAsUser: signInAsUser
 };
