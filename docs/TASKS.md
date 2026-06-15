@@ -2,7 +2,7 @@
 
 &#x20;
 
-\_Aggiornato: 2026-06-15\_
+\_Aggiornato: 2026-06-16\_
 
 &#x20;
 
@@ -196,6 +196,8 @@
 
 &#x20;
 
+\- \[ ] \*\*Rinomina repo GitHub → AILISTENICS — PARCHEGGIATA (ora SBLOCCATA, branding deciso 16/06).\*\* Allineamento del NOME del repo al brand confermato (oggi `carlospola/calislackline-app`). Checklist: (1) rinomina il repo su GitHub (i redirect del vecchio path reggono); (2) aggiorna il link repo su Vercel; (3) aggiorna il remote git locale (`git remote set-url`); (4) allinea lo slug nei doc. \*\*Nota:\*\* il dominio `ailistenics.com` è INVARIATO — è solo allineamento del nome repo, NON un cambio prodotto/feature.
+
 \- \[ ] \*\*Refactor — estrazioni residue (OPZIONALI, solo se la dimensione torna a pesare).\*\* Col metodo rodato della fase 1 (recon dipendenze read-only → diff → gate → push → test funzionale in produzione): candidato residuo onboarding (\~150-200 righe). \*\*Libreria esercizi (→`admin-ui.js`) e modale log (→`log.js`): FATTE il 15/06\*\* (vedi ✅ Completati). \*\*NON estrarre il core sessione AI\*\* (decisione di fase 1). Nuovi file = script classici non-module caricati dopo l'inline.
 
 \- \[ ] \*\*Dominio email personalizzato — GATED dietro il rebranding (💡, OPEN QUESTION non decisa).\*\* Mail transazionali da dominio proprio (es. coach@<brand>.com) invece di Gmail/Apps Script. \*\*NON avviare prima della decisione rebranding\*\* (ne eredita il gate). Note tecniche: richiede provider transazionale (Resend/Postmark/SES) + SPF/DKIM sul dominio; Supabase supporta SMTP custom per le mail auth → quando esisterà, anche le mail di invito/conferma/reset (1B) escono dal dominio brandizzato. \*\*Il provider transazionale è dipendenza CONDIVISA con "Mail resoconto AI settimanale" (🟡).\*\*
@@ -302,13 +304,13 @@
 
 &#x20; - \*\*CROSS-REF:\*\* Analisi AI progressioni + deload, Progressione programma, Sblocco skill ad albero, Video tutorial esercizi, Onboarding AI.
 
-\- \[ ] \*\*Rebranding nome prodotto — ⚠️ OPEN QUESTION, NON CONFERMATA. Nessun nome scelto, nessuna migrazione pianificata.\*\*
+\- \[x] \*\*Rebranding nome prodotto — ✅ DECISO (16/06): AILISTENICS CONFERMATO come nome prodotto; COAICH SCARTATO. NON è più una domanda aperta.\*\*
 
-&#x20; - \*\*Innesco:\*\* "AILISTENICS" (AI + calisthenics) lega il brand al solo corpo libero; il prodotto copre anche palestra/ipertrofia, funzionale e movimento. Domanda aperta: nome troppo settoriale? → DA DECIDERE, non deciso. Registrato solo per non perdere il materiale.
+&#x20; - \*\*Innesco (storico):\*\* "AILISTENICS" (AI + calisthenics) lega il brand al solo corpo libero; il prodotto copre anche palestra/ipertrofia, funzionale e movimento. Domanda: nome troppo settoriale? → \*\*valutata e DECISA (16/06): si TIENE AILISTENICS\*\* (cambio nome = costo/rischio non giustificato ora; il prodotto cresce sotto questo nome).
 
 &#x20; - \*\*Esplorazione archiviata (NON scelte):\*\* candidato emerso COAICH (CO-AI-CH, "AI" dentro "coach"; verifica web: nessuna app/brand fitness omonima → libero in categoria; caveat: a voce suona "coach" → ambiguità pronuncia/spelling, rischio passaparola + digitazione dominio, radice generica). Scartati con motivo: trAInr/Trainr (saturo: Trainerize, "Trainr: Strength Coach" quasi-clone, trainr.fitness…), AIthlete (preso su .co/.net/.club/.app + handle IG, con "AiThlete" quasi-clone). Lezione: lo spazio "AI infilata in una parola" è affollato; gli evocativi (Kairos, Strive/Straive, Thrive, Sensei/Sensai) già a mercato, spesso da cloni del concept.
 
-&#x20; - \*\*SE mai si decidesse (solo informativo, gated dietro decisione NON presa):\*\* chiudere il bivio (a) COAICH + risoluzione wordmark/pronuncia VS (b) marchio coniato/astratto distintivo + AI nel tagline (da verificare disponibilità). Verifiche pre-acquisto: dominio coaich.com (+ .it/.ai) su Namecheap, handle @coaich su IG/TikTok/X; clearance trademark = passo legale separato. Scope migrazione AMPIO (non è solo "scegliere il nome"): `index.html` (title, UI, stringhe "AILISTENICS", meta/OG, futuro manifest PWA); dominio (Vercel + DNS Namecheap + redirect dal vecchio + URL callback/reset); email onboarding (Apps Script); .md + CLAUDE.md; social/store; repo (`calislackline/calislackline-app`) e progetto Supabase: valutare di LASCIARE i nomi interni invariati (non rompere FK/URL/env). Separare DECISIONE (low-effort, high-leverage) da IMPLEMENTAZIONE (chunk grande); se mai si facesse, PRIMA dei milestone marketing/app-store (meglio rinominare da piccoli). \*\*GATE A CASCATA:\*\* il "Dominio email personalizzato" (🟢) eredita questo gate.
+&#x20; - \*\*Storico (decisione ora PRESA: si resta AILISTENICS — riferimento solo se mai si riaprisse):\*\* il bivio era (a) COAICH + risoluzione wordmark/pronuncia VS (b) marchio coniato/astratto distintivo + AI nel tagline. Verifiche pre-acquisto (allora): dominio coaich.com (+ .it/.ai) su Namecheap, handle @coaich su IG/TikTok/X; clearance trademark = passo legale separato. Scope migrazione AMPIO (non è solo "scegliere il nome"): `index.html` (title, UI, stringhe "AILISTENICS", meta/OG, futuro manifest PWA); dominio (Vercel + DNS Namecheap + redirect dal vecchio + URL callback/reset); email onboarding (Apps Script); .md + CLAUDE.md; social/store; repo (`carlospola/calislackline-app`) e progetto Supabase: valutare di LASCIARE i nomi interni invariati (non rompere FK/URL/env). \*\*GATE A CASCATA (ora SBLOCCATO):\*\* il "Dominio email personalizzato" (🟢) ereditava questo gate; con AILISTENICS confermato non è più gated dal rebranding.
 
 &#x20; - \*\*DO-NOT:\*\* non rinominare nulla in codice/dominio/repo/Supabase finché non c'è decisione esplicita; non comprare domini senza il check Namecheap. Il cambio nome NON è un cambio di prodotto/feature.
 
@@ -331,6 +333,16 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — E2E funnel trial (Playwright) (16 giugno 2026)
+
+\- \[x] \*\*Harness E2E ISOLATO sotto `e2e/` (Playwright) — FATTO (16/06).\*\* Cartella `e2e/` con `package.json` proprio (NON il repo, che resta no-build), `node_modules` gitignorato (`e2e/.gitignore`), e `e2e` in `.vercelignore` alla root → \*\*escluso dal deploy\*\*. Config `playwright.config.js`: un solo project chromium, `baseURL http://localhost:3000`, NESSUN `webServer` (il dev server si avvia a mano con `.\dev.ps1`).
+
+\- \[x] \*\*Spec `e2e/specs/trial-funnel.spec.js` — verifica il gate trial.\*\* Scenario: trialist (`pending`) con \*\*3 sessioni consumate\*\* → 4o avvio sessione dal dashboard → \*\*POST `/api/chat` → 403 `trial_exhausted`\*\* → CTA \*\*"Richiedi il coaching"\*\* visibile. Iniezione sessione via `signInAsUser` (login programmatico anon) + `window.sb.auth.setSession` → \*\*nessuna UI Google\*\*.
+
+\- \[x] \*\*Seed/teardown via service-role isolati (`e2e/lib/db.js`).\*\* Tutte le operazioni su \*\*email riservate\*\* `e2e+<ts>@ailistenics.test` (regex `RESERVED_RE`); ogni delete passa per `assertTestEmail`; `preSweep` ripulisce run crashati. Determinismo: le 3 sessioni sono \*\*retrodatate 25h\*\* (oltre la finestra 24h "Riprendi" → nessuna sottrazione → `used=3`). \*\*Zero token Anthropic\*\*: il 403 scatta PRIMA della chiamata AI. Validato (`1 passed`).
+
+\- \[x] \*\*Commit:\*\* `7239400` (scaffold harness + seed/teardown validati) e `14ed1d7` (spec + helper `signInAsUser` + probe auth + dotenv quiet). \*\*Prereq esecuzione:\*\* dev server locale (`.\dev.ps1`) + `NEXT_PUBLIC_SUPABASE_ANON_KEY` valorizzata in `.env.local`.
 
 \## ✅ Completati — Estrazione modale log (15 giugno 2026)
 

@@ -429,6 +429,14 @@ snapshots.** Model: **snapshot + repush**.
 - `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — used by `api/admin.js` **and now also
   by `api/chat.js`** (for its JWT auth gate and pending-gate; reused, not new).
 - The frontend Supabase URL and anon key are hardcoded in `index.html` / `reset.html`.
+- **E2E harness (`e2e/`):** richiede `NEXT_PUBLIC_SUPABASE_ANON_KEY` **valorizzata** in `.env.local`
+  (è la **publishable key** presa da `index.html`; Vercel la scarica **vuota** perché il backend usa
+  solo URL + service-role, quindi va popolata a mano). `.env.local` resta gitignorato (`.env*`).
+- **GitHub:** lo **username è stato rinominato** da `calislackline` a **`carlospola`** (slug repo →
+  `carlospola/calislackline-app`); il **NOME del repo è INVARIATO** (`calislackline-app`) e il remote
+  git locale è già aggiornato. **Invariati** il dominio `ailistenics.com`, il dominio legacy
+  `calislackline.com` e la mail `calislackline@gmail.com`. (Rinominare il repo al brand = task
+  parcheggiata, vedi TASKS 🟢.)
 
 ## Gate di sintassi pre-deploy (frontend)
 

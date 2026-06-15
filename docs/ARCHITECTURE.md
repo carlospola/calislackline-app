@@ -734,7 +734,7 @@ client + RLS owner. Niente picker/lista CSV, niente \[SET:] dall'AI. Senza progr
 
 \- \*\*Frontend + API:\*\* Vercel (deploy automatico da GitHub, branch main)
 
-\- \*\*Repo:\*\* `calislackline/calislackline-app` · \*\*Dominio:\*\* `ailistenics.com` (reset: `/reset` -> `reset.html`)
+\- \*\*Repo:\*\* `carlospola/calislackline-app` · \*\*Dominio:\*\* `ailistenics.com` (reset: `/reset` -> `reset.html`)
 
 \- \*\*⚠️ Lezione OPS DNS (10-11/06):\*\* le mail Namecheap di verifica ICANN hanno deadline reale (sospensione → parking). A riattivazione avvenuta, la cache DNS del resolver locale può servire ancora l'IP di parking (198.54.117.x) fino a scadenza TTL → `ERR\_CONNECTION\_REFUSED` a dominio sano. Diagnosi: doppio `nslookup` (locale vs `8.8.8.8`). Bypass sempre disponibile: URL `\*.vercel.app`.
 
@@ -861,6 +861,26 @@ Isometrici (MVP): secondi nel campo reps (+ relabel Progressi); avanzato: campo 
 \- \*\*Debug `chat.js`:\*\* il `catch` del gate JWT INGOIA l'eccezione e ritorna `401 "Autenticazione fallita"`; in locale quel 401 ≈ "le env non sono caricate" → controllare che `.env.local` sia popolato e che `dev.ps1` l'abbia caricato nella shell.
 
 \- \*\*File tooling (root):\*\* `dev.ps1` (launcher preview) + `.gitignore` (tracciato: ignora `.vercel`, `.env\*`).
+
+\## (HARNESS) E2E Playwright — funnel trial
+
+\- \*\*Struttura `e2e/`\*\* (cartella ISOLATA, `package.json` proprio — il repo resta no-build):
+
+&#x20; - `lib/db.js` — seed/teardown via \*\*service-role\*\* (`createTrialist`, `getAssignedProgram`, `seedExhaustedSessions`, `countSessions`, `teardown`, `preSweep`, `signInAsUser`).
+
+&#x20; - `specs/trial-funnel.spec.js` — la spec del gate trial (vedi sotto).
+
+&#x20; - `scripts/` — `probe-auth.js` (verifica login programmatico) e `validate-seed.js` (smoke seed/teardown).
+
+&#x20; - `playwright.config.js` — un project chromium, `baseURL http://localhost:3000`, \*\*senza `webServer`\*\* (dev server avviato a mano).
+
+\- \*\*Isolamento (la sicurezza è TUTTA nelle guardie + teardown):\*\* tutte le operazioni passano dalla \*\*service-role\*\* e sono vincolate a email riservate `e2e+<ts>@ailistenics.test` (`RESERVED_RE`); \*\*`assertTestEmail` su OGNI delete\*\*; `preSweep` ripulisce residui di run crashati.
+
+\- \*\*⚠️ Gira sul DB Supabase REALE\*\* (env da `vercel dev`/`.env.local`) → \*\*NON è uno staging isolato\*\*: niente DB separato, la protezione è solo le guardie email + il teardown in `afterAll` (eseguito anche su fallimento).
+
+\- \*\*Spec trial:\*\* trialist con \*\*3 sessioni retrodatate 25h\*\* (oltre la finestra 24h → `used=3`, determinismo) → 4o avvio dal dashboard → \*\*POST `/api/chat` 403 `trial_exhausted`\*\* → CTA "Richiedi il coaching". Sessione iniettata via `signInAsUser` + `window.sb.auth.setSession` (no UI Google). \*\*403 PRIMA di Anthropic → zero token consumati.\*\*
+
+\- \*\*Come si lancia:\*\* `.\dev.ps1` dalla root (dev server su :3000), poi da dentro `e2e/`: `npx playwright test`. Prereq: `NEXT_PUBLIC_SUPABASE_ANON_KEY` valorizzata in `.env.local` (publishable key). `e2e` è in `.vercelignore` → fuori dal deploy. Commit `7239400` (scaffold) + `14ed1d7` (spec).
 
 \## Syntax-check pre-commit (commit `d258d6d`)
 

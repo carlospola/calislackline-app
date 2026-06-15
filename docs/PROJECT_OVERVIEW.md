@@ -151,7 +151,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 \- \*\*Validazione `coach\_rules` non vuoto\*\* → da togliere (utile per il SaaS). NB: il guard della test session già controlla `workout\_csv`, non i coach\_rules
 
 
-\- \*\*Open question strategiche (non task, vedi TASKS 💡):\*\* rebranding del nome (nessuna decisione; il "Dominio email personalizzato" ne eredita il gate) e doppia source-of-truth dei doc (ponte git `/docs` + `@`-import in CLAUDE.md)
+\- \*\*Open question strategiche (non task, vedi TASKS 💡):\*\* ~~rebranding del nome~~ \*\*✅ CHIUSA (16/06): AILISTENICS confermato come nome prodotto, COAICH scartato\*\* → il "Dominio email personalizzato" non è più gated dal rebranding; resta aperta solo la doppia source-of-truth dei doc (ponte git `/docs` + `@`-import in CLAUDE.md)
 
 \- \*\*FORK APERTI (da decidere, NON ancora risolti):\*\*
 
