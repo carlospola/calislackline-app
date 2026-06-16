@@ -177,7 +177,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Gestione programmi come libreria di template — FATTA (mono-coach).\*\* Multi-coach resta GATED
 
-\- \*\*Progressione del programma\*\* come sequenza ("dove sono / prossimo workout") — spina dorsale che collega multi-fase, sblocco skill, fine sessione chiara
+\- \*\*Progressione del programma\*\* (spina dorsale del percorso atleta) — modello a fasi: base SHIPPED (navigazione per fasi + vista dettaglio); restano da collegare sblocco skill, fine sessione chiara e avanzamento automatico di fase
 
 \- \*\*Periodizzazione attiva\*\* (analisi AI progressioni + deload, coach-in-the-loop) — estende il fossato; la \*\*mail resoconto AI\*\* ne è il banco di prova
 
@@ -263,5 +263,5 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Onboarding form\*\* — email automatica via Apps Script (in overhaul, vedi TASKS)
 
-\- \*\*(In arrivo)\*\* Funnel trial self-serve (Google); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Progressione programma (sequenza "prossimo workout"); Peso per-esercizio + Logging isometrici (descrittore per-esercizio); Timer-esercizio a tempo; Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
+\- \*\*(In arrivo)\*\* Funnel trial self-serve (Google); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Peso per-esercizio + Logging isometrici (descrittore per-esercizio); Timer-esercizio a tempo; Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
 
