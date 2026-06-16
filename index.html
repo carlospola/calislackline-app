@@ -1561,36 +1561,6 @@ function stripPhase(name){
   return (name || '').replace(/^\s*Fase\s*\d+\s*-\s*/i, '');
 }
 
-// Progressione programma (modello ROTAZIONE, fase-aware): il "prossimo" e' il workout dopo
-// l'ultimo loggato, con wrap-around, ristretto alla fase corrente (= fase dell'ultima sessione,
-// altrimenti la fase piu' bassa). Se il programma non ha fasi, ruota sull'intera lista.
-function programProgress(program, sessions){
-  var ordered = (parseWorkoutCsv(program.workout_csv).orderedWorkouts) || [];
-  if (ordered.length === 0) return { next: null, total: 0, phase: null, hasPhases: false };
-  var phases = [];
-  ordered.forEach(function(n){ var p = phaseOf(n); if (p != null && phases.indexOf(p) === -1) phases.push(p); });
-  phases.sort(function(a, b){ return a - b; });
-  var hasPhases = phases.length > 0;
-  var lastWorkout = null;
-  for (var i = 0; i < sessions.length; i++){
-    var s = sessions[i];
-    if (s.log_data && s.log_data.programId === program.id && s.log_data.chosenWorkout){
-      lastWorkout = s.log_data.chosenWorkout;
-      break;
-    }
-  }
-  var curPhase = null;
-  if (hasPhases){
-    var lp = lastWorkout ? phaseOf(lastWorkout) : null;
-    curPhase = (lp != null) ? lp : phases[0];
-  }
-  var inScope = hasPhases ? ordered.filter(function(n){ return phaseOf(n) === curPhase; }) : ordered;
-  if (inScope.length === 0) return { next: null, total: 0, phase: curPhase, hasPhases: hasPhases };
-  var idx = lastWorkout ? inScope.indexOf(lastWorkout) : -1;
-  var next = (idx === -1) ? inScope[0] : inScope[(idx + 1) % inScope.length];
-  return { next: next, total: inScope.length, phase: curPhase, hasPhases: hasPhases };
-}
-
 function programDayStates(program, sessions){
   var ordered = (parseWorkoutCsv(program.workout_csv).orderedWorkouts) || [];
   if (ordered.length === 0) return { phase: null, hasPhases: false, days: [], higherPhaseLocked: false, nextPhase: null };
