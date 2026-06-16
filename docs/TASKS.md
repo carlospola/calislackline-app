@@ -556,7 +556,7 @@
 
 \- \*\*🗺️ SEQUENZA DI ESECUZIONE DECISA (16/06):\*\* (1) PACCHETTO landing+hero + profilo SLIM + layer privacy (rischio basso, NESSUNA dipendenza email) → solo-Google, col bottone "Crea account con email" nascosto/disabilitato finché l'OTP non è pronto (niente porta morta). (2) Flusso OTP email (1B) DOPO aver scelto e configurato il provider (Resend). In PARALLELO: la \*\*conversione MANUALE\*\* dei primi 1-3 trialist gira da subito e fa da \*\*GATE a Stripe\*\* (no Stripe prima del primo pagante a mano).
 
-\- \*\*💡 Idee strategiche\*\*: parcheggio NON operativo — elastici (livelli=colori fisici, assist/resist DA DECIDERE), inVictus, rebranding (OPEN QUESTION), workflow source-unico (ponte git), avatar coach. Si promuovono solo con decisione esplicita.
+\- \*\*💡 Idee strategiche\*\*: parcheggio NON operativo — elastici (livelli=colori fisici, assist/resist DA DECIDERE), inVictus, rebranding (CHIUSO 16/06: AILISTENICS confermato, COAICH scartato), workflow source-unico (ponte git), avatar coach. Si promuovono solo con decisione esplicita.
 
 \- \*\*Funnel trial (1A) — ✅ COMPLETO E LIVE (13/06)\*\*: fork "self-serve vs approvazione admin" CHIUSO (IBRIDO). \*\*✅ FORK CHIUSI (12/06):\*\* N=3 (`TRIAL\_SESSIONS`); "sessione consumata" = riga in `sessions`; stato trial = RIUSO di `pending`. NON usa `\_isDemo` (le sessioni trial PERSISTONO). Parte SERVER (12/06) + le 3 parti residue ora chiuse: template di prova "Prova — Full Body", CTA `trial\_exhausted` (commit `5323bd3`), auto-assegnazione via \*\*trigger DB\*\* (`trg\_assign\_trial\_program`, non frontend). Verificato end-to-end (Test C, account Google nuovo). Lancio SOLO-GOOGLE; email/password = 1B (🟡).
 
