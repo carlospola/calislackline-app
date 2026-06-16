@@ -106,6 +106,8 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*✅ Sistema template programmi (ATTIVO):\*\* libreria di template riassegnabili (`program\_templates` + `programs.template\_id`); "Assegna" + "Applica a tutti" (snapshot + repush). Migrazione FATTA (9 template)
 
+**Progressione programma (modello a fasi).** I programmi periodizzati multi-fase vivono in un solo CSV/template coi workout prefissati "Fase N - <sessione>". La vista dettaglio (tap sul programma) mostra i giorni della fase corrente con stato fatto/continua (logica min-count deterministica). Avanzamento automatico di fase non ancora implementato. Il vecchio pannello dashboard "Prossimo allenamento" e la funzione programProgress sono stati rimossi.
+
 \- \*\*✅ Test sessione AI Coach dall'admin ("Prova") — ATTIVO:\*\* dalla tab Template, "Prova" su una card avvia una sessione AI reale col contenuto del template, \*\*non persistita\*\* (riusa la primitiva demo `\_isDemo`; contesto atleta neutro), e "Torna" riporta al pannello admin. (Var `testSession`, id `atabTemplates`.)
 
 \- \*\*Meccanismo demo:\*\* `startDemoSession`/`\_isDemo`/`\_orig` + guardia in `persistSets` + restore in `showDash` sono VIVI (usati da onboarding e dalla test session) — NON rimossi

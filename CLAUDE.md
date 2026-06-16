@@ -528,9 +528,7 @@ open forks.**
   **instead of the session-level `session_type`** (handles **mixed** sessions + isometrics). **Do
   NOT introduce a `session_type:'mixed'`.** Isometrics MVP: **seconds in the reps field** + relabel
   on Progressi.
-- **Progressione programma** ("dove sono / prossimo"): `programProgress(program, sessions)` over
-  `orderedWorkouts` (= the workout order in the CSV) + `log_data.chosenWorkout`. **FORK OPEN:**
-  carichi-nel-CSV vs auto-progressione.
+- **Progressione programma (PHASE model, SHIPPED):** multi-phase periodized programs live in one CSV with workouts prefixed "Fase N - " (`phaseOf`/`stripPhase`). `programDayStates(program, sessions)` computes the current phase's days and their state via MIN-COUNT (done = count > min; "continua" = first day, CSV order, with count == min). Detail view `programDetailScreen` (via `openProgram`/`openProgramDetail`); tapping a day -> `beginSession` with the FULL name. The old `programProgress` and the "Prossimo allenamento" dashboard panel are REMOVED. **Picker alive only via the admin "Prova" test session** (`admin-ui.js` -> `startSessionWithPrompt` -> `showWorkoutPicker`): NOT an orphan, do not remove; `.wpick-btn`/`.wpick-sub` are reused by `openProgramDetail`. **FORK OPEN (loads):** loads-in-CSV vs auto-progression.
 - **Editor tabellare CSV ↔ tabella:** **lossless** round-trip (parse ↔ serialize), reusing
   `parseWorkoutCsv` / `editProgram`. Prerequisite for applying periodization.
 - **Allenamento libero** (manual log, **no AI**): reuse `persistSets` / `log_data` / `nextSetNum`,

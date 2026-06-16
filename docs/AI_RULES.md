@@ -140,7 +140,7 @@
 
 \- \*\*✅ WARM-UP OBBLIGATORIO (motore, `coach\_prompt\_global`):\*\* a OGNI avvio sessione ("Inizia sessione: …") la PRIMA risposta è SEMPRE un riscaldamento. Se la prima riga del CSV è un warm-up (Note "riscaldamento"/"warm", o Reps "10 min") presentala (nome + durata + 1-2 punti dalla Note); altrimenti GENERA un warm-up di 3-4 frasi adatto al lavoro. Chiudi SEMPRE col tag `\[PRONTO]` su riga dedicata; NON trattare il warm-up come un set; NON emettere `\[SET:]` finché l'atleta non scrive "pronto". \*\*ECCEZIONE — ripresa:\*\* su "Bentornato"/sessione già iniziata NON rifare il riscaldamento. (I coach\_rules possono fornire il CONTENUTO del warm-up — es. checklist New Workout — la MECCANICA `\[PRONTO]` resta del motore.)
 
-\- \*\*Il workout e' scelto dal picker pre-chat:\*\* il prompt NON deve far scegliere il workout. L'AI parte col warm-up poi col primo esercizio.
+- **Il workout e' scelto PRIMA della chat:** il prompt NON deve far scegliere il workout; l'AI parte col warm-up poi col primo esercizio. (Meccanica UI: per i PROGRAMMI il giorno della fase corrente e' scelto dalla vista dettaglio programDetailScreen e passato a beginSession col nome completo "Fase N - ..."; il picker pre-chat sopravvive SOLO per la test session admin "Prova". In entrambi i casi all'AI arriva un workout gia' scelto.)
 
 \- \*\*Ordine libero:\*\* l'atleta può cambiare esercizio tappando la lista; il messaggio arriva prefissato "Esercizio: <nome>". L'AI NON deve fare la guardia all'ordine.
 

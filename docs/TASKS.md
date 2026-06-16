@@ -38,23 +38,14 @@
 
 &#x20;
 
-\- \[ ] \*\*Progressione programma (MVP sequenziale — "dove sono / prossimo workout") — Media-ALTA, è la SPINA DORSALE.\*\* Un programma non è più un "sacchetto" di workout da pescare liberamente, ma una \*\*PLAYLIST ORDINATA\*\*. Le "settimane × allenamenti/settimana" sono il MESOCICLO (come lo pensa/scrive il coach); l'atleta avanza COMPLETANDO i workout IN ORDINE, al suo ritmo, SCOLLEGATO dal calendario ("6 di 24 fatti"). L'app dice qual è il PROSSIMO ("Sett. 2 · Pull").
-
-&#x20; - \*\*Riuso/deterministico:\*\* `parseWorkoutCsv` dà già `orderedWorkouts` IN ORDINE (= la sequenza È l'ordine dei workout nel CSV); `log\_data.chosenWorkout` + timestamp di ogni sessione → quali workout l'atleta ha fatto per `programId`. "Prossimo" = primo workout in ordine NON ancora completato, calcolato al volo, NESSUNA nuova colonna.
-
-&#x20; - \*\*Convenzione nome workout:\*\* "S1 · Push", "S1 · Pull", "S2 · Push"…; un parse leggero estrae "Sett. N".
-
-&#x20; - \*\*`programProgress(program, sessions)`\*\* → conteggio (6/24), settimana corrente, prossimo workout. Dashboard: "Programma X — Sett. 2/4 · Prossimo: Pull" + barra progresso + CTA che avvia DIRETTAMENTE quel workout (il picker resta per saltare in giro).
-
-&#x20; - \*\*"Completato":\*\* si appoggia a "Fine sessione chiara" (workout = fatto quando tutti gli esercizi hanno serie loggate); interim = ≥1 sessione loggata.
-
-&#x20; - \*\*Carichi:\*\* nell'MVP li scrive il COACH nel CSV (Sett. 2 = numeri più alti); l'app sequenzia e basta.
-
-&#x20; - \*\*FORK APERTO (NON risolvere):\*\* carichi scritti nel CSV dal coach (default MVP) VS app che SUGGERISCE i carichi (= ramo Avanzato = Analisi AI progressioni). In attesa decisione Carlo.
-
-&#x20; - \*\*TARGET:\*\* programmi FINITI e ORDINATI (BBR, Muscle-Up Pro). Per gli split a rotazione infinita (PPL) il "dove sono" conta meno, basta il picker libero.
-
-&#x20; - \*\*File:\*\* `index.html` (helper `programProgress` + render dashboard + entry "prossimo"). Frontend-only, no migration. \*\*È la spina dorsale che collega\*\* "Multi-fase programmi", "Sblocco skill ad albero", "Fine sessione chiara", e i template.
+- [x] **Progressione programma — modello a FASI + vista dettaglio — FATTO (giugno 2026, SHIPPED).** Un programma periodizzato multi-fase vive in UN template/CSV; i workout sono prefissati "Fase N - <sessione>" (il prefisso rende i nomi unici, evita il collasso del parser, codifica la fase). Retrocompat: nomi senza prefisso -> nessuna fase -> rotazione piatta.
+  - **phaseOf** (/Fase\s*(\d+)/i -> numero|null) e **stripPhase** ("Fase N - " tolto per il display).
+  - **programDayStates(program, sessions):** per la fase corrente (= phaseOf dell'ultima sessione, altrimenti la fase piu' bassa) calcola i giorni e lo stato. "Completato nel ciclo corrente" deterministico via MIN-COUNT: count[giorno] = n. sessioni con quel chosenWorkout nella fase; min = minimo; done = count > min (smorzato); continua = primo giorno (ordine CSV) con count == min. Day-0/fine-ciclo (tutti zero o tutti pari) -> niente smorzati, continua = primo giorno.
+  - **Vista dettaglio (programDetailScreen):** tap sul programma in showDash -> openProgram: <2 workout = beginSession diretto, altrimenti openProgramDetail (async, ri-query sessions). Giorno fatto smorzato + tag "fatto"; giorno continua con anello accent + "Continua"; tap -> beginSession col nome COMPLETO. Fasi superiori non raggiunte -> riga muta "Fase N bloccata".
+  - **Rimosso:** vecchia funzione programProgress (rotazione "dopo l'ultimo", dead code) e pannello dashboard "Prossimo allenamento" (#programProgressPanel).
+  - **Supera** la vecchia convenzione "S1 · Push / Sett. N": ora il prefisso di fase e' "Fase N - <sessione>".
+  - **GAP NOTO:** avanzamento automatico di fase NON ancora implementato (le fasi superiori restano "bloccate" nella vista).
+  - **FORK ANCORA APERTO (carichi, ortogonale alla navigazione):** carichi scritti dal coach nel CSV (default MVP) VS app che suggerisce i carichi (= periodizzazione attiva). In attesa decisione Carlo.
 
 \- \[ ] \*\*Percorso email/password completo + FIX reset password (1B) — POSTICIPABILE (il trial parte solo-Google).\*\* Per chi non ha/non vuole Google: signup con richiesta accesso → mail di conferma con link → l'utente entra e CREA la propria password. \*\*⚠️ Il reset password oggi è ROTTO\*\* (correzione di stato giugno 2026: i doc lo davano funzionante). Nota tecnica: Supabase ha nativamente `inviteUserByEmail` (link → atterraggio → set password) e il flusso recovery già usato da `/reset`; "crea password al primo accesso" e "reset password" sono LO STESSO MECCANISMO → fixare il reset e costruire l'invito è UN lavoro, non due.
 

@@ -606,34 +606,30 @@ NON introdurre session\_type 'mixed'.
 
 &#x20;
 
-\## (PIANIFICATO) Progressione programma — sequenza "dove sono / prossimo"
+## Progressione programma — modello a FASI + vista dettaglio (SHIPPED giugno 2026)
 
-> Voce TASKS (SPINA DORSALE). Frontend-only, no migration. Deterministico.
+> Frontend-only (index.html), no migration. Deterministico. Sostituisce il vecchio modello ROTAZIONE (programProgress, rimosso).
 
 ```
-
-Concetto: il programma è una PLAYLIST ORDINATA (mesociclo = settimane × allenamenti/sett come lo
-
-scrive il coach). L'atleta avanza completando i workout IN ORDINE, scollegato dal calendario.
-
-Dati: parseWorkoutCsv.orderedWorkouts (= sequenza) + log\_data.chosenWorkout/timestamp per programId.
-
-Convenzione nome workout: "S1 · Push", "S1 · Pull", "S2 · Push"… (parse leggero estrae "Sett. N").
-
-programProgress(program, sessions) -> { fatti/totali (6/24), settimana corrente, prossimo workout }.
-
-"Prossimo" = primo workout in ordine NON ancora completato (calcolato al volo, niente colonna).
-
-Dashboard: "Programma X — Sett. 2/4 · Prossimo: Pull" + barra + CTA che avvia quel workout.
-
-"Completato" = "Fine sessione chiara" (tutti gli esercizi con serie loggate); interim = ≥1 sessione.
-
-Carichi: MVP li scrive il coach nel CSV (Sett. 2 più alti). FORK APERTO: CSV-coach vs auto-progressione (#7).
-
-Target: programmi FINITI/ORDINATI (BBR, Muscle-Up Pro); per PPL infinito basta il picker.
-
-È la spina dorsale di "Multi-fase", "Sblocco skill ad albero", "Fine sessione chiara".
-
+Modello: un programma periodizzato multi-fase vive in UN template/CSV; i nomi workout sono PREFISSATI "Fase N - <sessione>". Il prefisso rende i nomi unici (evita il collasso del parser su nomi uguali) e codifica la fase. Retrocompat: nomi SENZA prefisso -> nessuna fase -> rotazione piatta.
+phaseOf(name): /Fase\s*(\d+)/i -> numero | null.
+stripPhase(name): rimuove "Fase N - " per il display.
+programDayStates(program, sessions): per la FASE CORRENTE (= phaseOf dell'ultima sessione del programma; altrimenti la fase piu' bassa) calcola i giorni della fase e il loro stato. "Completato nel ciclo corrente" e' DETERMINISTICO via min-count:
+  count[giorno] = n. sessioni con quel chosenWorkout nella fase corrente
+  min  = minimo dei count
+  done = count > min            (smorzato, tag "fatto")
+  continua = primo giorno (ordine CSV) con count == min   (anello accent, label "Continua")
+Day-0 e fine-ciclo: tutti i count a zero o tutti pari -> niente giorni smorzati, continua = primo giorno.
+Vista dettaglio (screen programDetailScreen):
+  openProgram(prog) e' chiamata dal tap sul programma in showDash:
+    < 2 workout  -> beginSession diretto
+    >= 2 workout -> openProgramDetail(prog) (async: ri-query sessions, render giorni)
+  Giorno fatto: opacity 0.45 + tag "fatto". Giorno "continua": boxShadow anello accent + "Continua".
+  Tap su un giorno -> beginSession col nome COMPLETO (prefisso "Fase N - " incluso).
+  Topbar replicata da profileScreen; back -> showDash().
+  Fasi superiori non ancora raggiunte: solo una riga muta "Fase N bloccata" (AVANZAMENTO DI FASE NON ANCORA IMPLEMENTATO - gap noto).
+Rimosso: pannello dashboard "Prossimo allenamento" (HTML #programProgressPanel + popolamento in showDash), ridondante con la vista dettaglio. Rimossa la funzione programProgress (vecchia rotazione "dopo l'ultimo", dead code, zero chiamanti).
+PICKER NON E' MORTO (nota anti-regressione): showWorkoutPicker / closeWorkoutPicker / startSessionWithPrompt / overlay #workoutPickerOverlay (#wpickTitle/#wpickBody) NON sono orfani. Il flusso PROGRAMMA non li usa piu' (ora passa da openProgramDetail), MA restano vivi tramite la test session admin "Prova": admin-ui.js -> startSessionWithPrompt -> showWorkoutPicker. NON rimuoverli. Le classi CSS .wpick-btn / .wpick-sub sono riusate da openProgramDetail: NON rimuoverle da styles.css.
 ```
 
 &#x20;
