@@ -52,6 +52,13 @@
         <button id="resumeBtn" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;">&#9654; Riprendi</button>
       </div>
     </div>
+    <div id="programProgressPanel" style="display:none;">
+      <div class="program-card">
+        <div class="section-label" style="margin-bottom:8px;">Prossimo allenamento</div>
+        <div id="programProgressInfo" style="font-size:12px;color:var(--text2);margin-bottom:10px;"></div>
+        <button id="nextWorkoutBtn" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;"></button>
+      </div>
+    </div>
     <div>
       <div class="section-label">I tuoi programmi</div>
       <div class="program-card">
@@ -948,6 +955,28 @@ async function showDash(){
   } else {
     resumePanel.style.display = 'none';
   }
+  // Pannello "Prossimo allenamento" (modello rotazione).
+  var ppPanel = document.getElementById('programProgressPanel');
+  var currentProg = null;
+  if (sess.length && sess[0].log_data && sess[0].log_data.programId){
+    currentProg = (programs||[]).find(function(p){ return p.id === sess[0].log_data.programId; }) || null;
+  } else if (programs && programs.length === 1){
+    currentProg = programs[0];
+  }
+  if (currentProg){
+    var pp = programProgress(currentProg, sess);
+    if (pp.total >= 2 && pp.next){
+      document.getElementById('programProgressInfo').innerHTML = esc(currentProg.program_name) + '<br>Prossimo: ' + esc(pp.next);
+      var nwBtn = document.getElementById('nextWorkoutBtn');
+      nwBtn.textContent = 'Inizia: ' + pp.next;
+      nwBtn.onclick = function(){ beginSession(currentProg.program_name, currentProg.coach_rules, currentProg.workout_csv, currentProg.ai_prompt, currentProg.session_type, pp.next, currentProg.id); };
+      ppPanel.style.display = '';
+    } else {
+      ppPanel.style.display = 'none';
+    }
+  } else {
+    ppPanel.style.display = 'none';
+  }
   document.getElementById('statSessions').textContent = sess.length;
   var weekAgo = new Date(Date.now()-7*24*60*60*1000);
   document.getElementById('statWeek').textContent = sess.filter(function(s){return new Date(s.created_at)>weekAgo;}).length;
@@ -1537,6 +1566,24 @@ function removeTyping(id){var el=document.getElementById(id); if(el) el.remove()
 // ============================================================
 // WORKOUT LIST OVERLAY
 // ============================================================
+// Progressione programma (modello ROTAZIONE): il "prossimo" e' il workout dopo l'ultimo
+// loggato nel ciclo, con wrap-around. Nessun conteggio "fatti", nessun "completato".
+function programProgress(program, sessions){
+  var ordered = (parseWorkoutCsv(program.workout_csv).orderedWorkouts) || [];
+  if (ordered.length === 0) return { next: null, total: 0 };
+  var lastWorkout = null;
+  for (var i = 0; i < sessions.length; i++){
+    var s = sessions[i];
+    if (s.log_data && s.log_data.programId === program.id && s.log_data.chosenWorkout){
+      lastWorkout = s.log_data.chosenWorkout;
+      break;
+    }
+  }
+  var idx = lastWorkout ? ordered.indexOf(lastWorkout) : -1;
+  var next = (idx === -1) ? ordered[0] : ordered[(idx + 1) % ordered.length];
+  return { next: next, total: ordered.length };
+}
+
 // Parser CSV workout condiviso. Ritorna header, ordine workout, righe grezze per
 // workout (per ricostruire un CSV filtrato) e campi parsati (per il rendering).
 function parseWorkoutCsv(csv){
