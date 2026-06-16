@@ -52,13 +52,6 @@
         <button id="resumeBtn" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;">&#9654; Riprendi</button>
       </div>
     </div>
-    <div id="programProgressPanel" style="display:none;">
-      <div class="program-card">
-        <div class="section-label" style="margin-bottom:8px;">Prossimo allenamento</div>
-        <div id="programProgressInfo" style="font-size:12px;color:var(--text2);margin-bottom:10px;"></div>
-        <button id="nextWorkoutBtn" style="padding:10px 20px;background:var(--accent);border:none;border-radius:7px;color:#000;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;"></button>
-      </div>
-    </div>
     <div>
       <div class="section-label">I tuoi programmi</div>
       <div class="program-card">
@@ -244,6 +237,19 @@
 </div>
 
 <!-- PROGRESS SCREEN -->
+<div class="screen" id="programDetailScreen">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="topbar-btn" onclick="showDash()">&larr; Torna</button>
+      <div class="topbar-brand"><span id="programDetailTitle"></span></div>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div id="programDetailInfo" style="font-size:12px;color:var(--text2);margin-bottom:12px;"></div>
+    <div id="programDetailDays"></div>
+  </div>
+</div>
+
 <div class="screen" id="progressScreen">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px;">
@@ -926,7 +932,9 @@ async function showDash(){
       var item = document.createElement('div');
       item.className = 'program-item';
       item.innerHTML = '<div class="program-item-name">'+esc(prog.program_name)+'</div><button class="program-start-btn">Inizia &#8594;</button>';
-      item.querySelector('.program-start-btn').onclick = function(){startSessionWithPrompt(prog.program_name, prog.coach_rules, prog.workout_csv, prog.ai_prompt, prog.session_type, prog.id);};
+      item.querySelector('.program-start-btn').onclick = function(){
+        openProgram(prog);
+      };
       list.appendChild(item);
     });
   }else{
@@ -954,28 +962,6 @@ async function showDash(){
     resumePanel.style.display = 'block';
   } else {
     resumePanel.style.display = 'none';
-  }
-  // Pannello "Prossimo allenamento" (modello rotazione).
-  var ppPanel = document.getElementById('programProgressPanel');
-  var currentProg = null;
-  if (sess.length && sess[0].log_data && sess[0].log_data.programId){
-    currentProg = (programs||[]).find(function(p){ return p.id === sess[0].log_data.programId; }) || null;
-  } else if (programs && programs.length === 1){
-    currentProg = programs[0];
-  }
-  if (currentProg){
-    var pp = programProgress(currentProg, sess);
-    if (pp.total >= 2 && pp.next){
-      document.getElementById('programProgressInfo').innerHTML = esc(currentProg.program_name) + (pp.hasPhases ? ' · Fase ' + pp.phase : '') + '<br>Prossimo: ' + esc(stripPhase(pp.next));
-      var nwBtn = document.getElementById('nextWorkoutBtn');
-      nwBtn.textContent = 'Inizia: ' + stripPhase(pp.next);
-      nwBtn.onclick = function(){ beginSession(currentProg.program_name, currentProg.coach_rules, currentProg.workout_csv, currentProg.ai_prompt, currentProg.session_type, pp.next, currentProg.id); };
-      ppPanel.style.display = '';
-    } else {
-      ppPanel.style.display = 'none';
-    }
-  } else {
-    ppPanel.style.display = 'none';
   }
   document.getElementById('statSessions').textContent = sess.length;
   var weekAgo = new Date(Date.now()-7*24*60*60*1000);
@@ -1603,6 +1589,94 @@ function programProgress(program, sessions){
   var idx = lastWorkout ? inScope.indexOf(lastWorkout) : -1;
   var next = (idx === -1) ? inScope[0] : inScope[(idx + 1) % inScope.length];
   return { next: next, total: inScope.length, phase: curPhase, hasPhases: hasPhases };
+}
+
+function programDayStates(program, sessions){
+  var ordered = (parseWorkoutCsv(program.workout_csv).orderedWorkouts) || [];
+  if (ordered.length === 0) return { phase: null, hasPhases: false, days: [], higherPhaseLocked: false, nextPhase: null };
+  var phases = [];
+  ordered.forEach(function(n){ var p = phaseOf(n); if (p != null && phases.indexOf(p) === -1) phases.push(p); });
+  phases.sort(function(a, b){ return a - b; });
+  var hasPhases = phases.length > 0;
+  var lastWorkout = null;
+  for (var i = 0; i < sessions.length; i++){
+    var s = sessions[i];
+    if (s.log_data && s.log_data.programId === program.id && s.log_data.chosenWorkout){
+      lastWorkout = s.log_data.chosenWorkout;
+      break;
+    }
+  }
+  var curPhase = null;
+  if (hasPhases){
+    var lp = lastWorkout ? phaseOf(lastWorkout) : null;
+    curPhase = (lp != null) ? lp : phases[0];
+  }
+  var inScope = hasPhases ? ordered.filter(function(n){ return phaseOf(n) === curPhase; }) : ordered;
+  var counts = {};
+  inScope.forEach(function(n){ counts[n] = 0; });
+  sessions.forEach(function(s){
+    if (s.log_data && s.log_data.programId === program.id){
+      var cw = s.log_data.chosenWorkout;
+      if (cw != null && counts.hasOwnProperty(cw)) counts[cw]++;
+    }
+  });
+  var min = -1;
+  inScope.forEach(function(n){ if (min === -1 || counts[n] < min) min = counts[n]; });
+  if (min === -1) min = 0;
+  var nextAssigned = false;
+  var days = inScope.map(function(n){
+    var isNext = false;
+    if (!nextAssigned && counts[n] === min){ isNext = true; nextAssigned = true; }
+    return { name: n, display: stripPhase(n), count: counts[n], done: counts[n] > min, isNext: isNext };
+  });
+  var nextPhase = null;
+  if (hasPhases){
+    for (var k = 0; k < phases.length; k++){ if (phases[k] > curPhase){ nextPhase = phases[k]; break; } }
+  }
+  return { phase: curPhase, hasPhases: hasPhases, days: days, higherPhaseLocked: (nextPhase != null), nextPhase: nextPhase };
+}
+
+function openProgram(prog){
+  var parsed = parseWorkoutCsv(prog.workout_csv || '');
+  if (parsed.orderedWorkouts.length < 2){
+    beginSession(prog.program_name, prog.coach_rules, prog.workout_csv, prog.ai_prompt, prog.session_type, null, prog.id);
+    return;
+  }
+  openProgramDetail(prog);
+}
+
+async function openProgramDetail(prog){
+  var res = await sb.from('sessions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  var sessions = res.data || [];
+  var parsed = parseWorkoutCsv(prog.workout_csv || '');
+  var st = programDayStates(prog, sessions);
+  document.getElementById('programDetailTitle').textContent = prog.program_name;
+  var nDays = st.days.length;
+  document.getElementById('programDetailInfo').textContent = (st.hasPhases ? 'Fase ' + st.phase + ' · ' : '') + nDays + (nDays === 1 ? ' giorno' : ' giorni');
+  var list = document.getElementById('programDetailDays');
+  list.innerHTML = '';
+  st.days.forEach(function(d){
+    var n = (parsed.fieldsByWorkout[d.name] || []).length;
+    var btn = document.createElement('button');
+    btn.className = 'wpick-btn';
+    if (d.done) btn.style.opacity = '0.45';
+    if (d.isNext) btn.style.boxShadow = '0 0 0 2px var(--accent)';
+    var tag = d.isNext ? '<span style="color:var(--accent);font-weight:700;"> · Continua</span>' : (d.done ? '<span style="color:var(--text2);"> · fatto</span>' : '');
+    btn.innerHTML = esc(d.display) + tag + '<div class="wpick-sub">' + n + (n === 1 ? ' esercizio' : ' esercizi') + '</div>';
+    btn.onclick = function(){
+      beginSession(prog.program_name, prog.coach_rules, prog.workout_csv, prog.ai_prompt, prog.session_type, d.name, prog.id);
+    };
+    list.appendChild(btn);
+  });
+  if (st.higherPhaseLocked){
+    var lock = document.createElement('div');
+    lock.style.fontSize = '12px';
+    lock.style.color = 'var(--text2)';
+    lock.style.marginTop = '12px';
+    lock.textContent = 'Fase ' + st.nextPhase + ' bloccata';
+    list.appendChild(lock);
+  }
+  showScreen('programDetailScreen');
 }
 
 // Parser CSV workout condiviso. Ritorna header, ordine workout, righe grezze per
