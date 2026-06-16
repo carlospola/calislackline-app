@@ -321,6 +321,13 @@
 
 \- \[ ] \*\*Avatar coach per-atleta — idea minore, DA VALUTARE (tenuta in parcheggio prima di scartarla).\*\* Personalizzazione visiva del coach AI per atleta. Nessun dettaglio definito, nessuna analisi fatta.
 
+- [ ] 💡 **Log multi-disciplina + timer attivita + calendario multicolore — PARCHEGGIATA (idea, BS 16/06/2026).** Registro allenamenti OLTRE AILISTENICS: timer di durata per BJJ e altre discipline, log che compare nei Progressi con media/settimana, totale mese e totale storico PER disciplina; calendario con un colore per disciplina e cella splittata in 2-3 quando nello stesso giorno ci sono piu discipline; sessioni AILISTENICS incluse come una delle discipline.
+  - **Aggancio architettura:** il calendario esiste gia (`renderHeatmapMonth` + `calNavMonth` in `progress.js`) → lo split-cella multicolore e un'evoluzione di quello; stat per disciplina sullo stesso pattern di `renderOverviewCharts`. Il timer durata cavalca il MOTORE-TIMER unico a `Date.now()` gia pianificato (NO `setInterval` dedicato). "Disciplina" = dato configurabile `{nome, colore}` (stessa filosofia del descrittore per-esercizio); AILISTENICS e una delle discipline.
+  - **⚠️ FORK #1 (data model, da sciogliere PRIMA del build):** tabella nuova `activities {user_id, discipline, date, duration_seconds, note}` VS campo `discipline` sulla `sessions` esistente. Gotcha: il gate trial in `chat.js` conta le righe di `sessions` → i log non-AILISTENICS li dentro BRUCIANO i crediti di prova e gonfiano i conteggi. Spinge forte verso tabella separata.
+  - **FORK minori aperti:** AILISTENICS = una disciplina o due (cali vs gym, gia distinti da `session_type`); regola di render per >3 discipline in un giorno (tetto 3 + "+N"?); granularita log BJJ (solo durata+nota MVP vs round/sparring/tecnica v2).
+  - **MVP:** quick-log (disciplina + data + durata) + colore per disciplina nel calendario esistente + i tre conteggi. Frontend + tabella leggera, basso rischio. Split-cella multicolore = v2.
+  - **Posizionamento:** feature di RETENTION/stickiness, NON del fossato (il core resta il coaching real-time su RIR/RPE). Prioritizzare DOPO le mosse che sbloccano il primo pagante. Valutazione BS: retention 8/10, core 3/10, fattibilita MVP 7/10, urgenza 4/10.
+
 \---
 
 &#x20;
