@@ -76,6 +76,20 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 &#x20; strategica che impatta il flusso Stripe (vedi "Distribuzione app store" in TASKS).
 
+\- \*\*✅ DECISIONE — Priorità attuale = VALIDAZIONE con conversione MANUALE (16/06):\*\* la prima mossa
+&#x20; è convertire a mano i primi \*\*1-3 trialist reali\*\* col percorso manuale GIÀ esistente (CTA
+&#x20; "Richiedi il coaching" → mailto → l'admin porta `pending`→`active` + incasso manuale). \*\*Stripe
+&#x20; resta GATED dietro la prima conversione manuale\*\*: prima si validano i paganti, poi si automatizza
+&#x20; il pagamento. Vedi "Conversione manuale primi trialist" e "Stripe" in TASKS.
+
+\- \*\*⚠️ Nota fiscale Stripe (NON è consulenza — da confermare col commercialista):\*\* costruire Stripe
+&#x20; in \*\*Test Mode\*\* è legale e senza requisiti; per \*\*incassare un abbonamento ricorrente\*\* serve
+&#x20; \*\*partita IVA\*\* (attività abituale) — la prestazione occasionale (<5.000€) NON copre un SaaS
+&#x20; ricorrente. Regime \*\*forfettario\*\* soglia 85.000€, flat tax 15% (5% nei primi 5 anni); \*\*caveat:\*\*
+&#x20; il reddito da lavoro dipendente dell'anno precedente (soglia nell'ordine dei 30.000€) può escludere
+&#x20; il forfettario → da verificare. Obbligo fattura elettronica; autofattura reverse charge \*\*TD17\*\*
+&#x20; sulle commissioni Stripe (Stripe Ireland).
+
 \## Stato Attuale
 
 \- \*\*Production\*\* — live su ailistenics.com (Vercel)
@@ -86,7 +100,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- Backend: Vercel Serverless Functions (`/api/chat.js`, `/api/admin.js`, `/api/callback.js`)
 
-\- Auth: \*\*funziona SOLO Google OAuth (PKCE)\*\*. `detectSessionInUrl: false` su `index.html` e `reset.html`. \*\*⚠️ CORREZIONE (giugno 2026): l'INTERO percorso EMAIL/PASSWORD NON è attivo\*\* — non è solo il reset rotto: login/signup via email+password non funziona affatto. Era erroneamente dato per funzionante. Fix dell'intero path (login + invito + reset) = TASKS 🟡 1B: invito = reset = stesso meccanismo Supabase
+\- Auth: \*\*funziona SOLO Google OAuth (PKCE)\*\*. `detectSessionInUrl: false` su `index.html` e `reset.html`. \*\*⚠️ CORREZIONE (giugno 2026): l'INTERO percorso EMAIL/PASSWORD NON è attivo\*\* — non è solo il reset rotto: login/signup via email+password non funziona affatto. Era erroneamente dato per funzionante. \*\*Piano (16/06): SOSTITUIRE il path email/password con un flusso OTP a codice\*\* (Supabase `signInWithOtp` + `verifyOtp` + `updateUser` per la password) che unifica signup/login/reset e scavalca il magic-link/PKCE rotto = TASKS 🟡 1B (dipende da SMTP custom / provider transazionale)
 
 \- \*\*Sicurezza `/api/admin.js`\*\*: auth gate (JWT + `role==='admin'`); frontend via `adminFetch`
 
@@ -126,9 +140,32 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Sviluppo via Claude Code\*\* sul repo locale (CLAUDE.md nel repo) + git/GitHub → deploy automatico Vercel
 
+\- \*\*✅ DECISIONE — Profilo SLIM self-serve (16/06):\*\* il profilo in-app self-serve = \*\*SOLO nickname\*\*.
+&#x20; Tolti dalla UI self-serve nome, cognome, telefono, biometrie e dati salute. Coaching
+&#x20; principle-driven → `athleteContext` snello/vuoto nel self-serve (la test session prova già che il
+&#x20; motore gira su profilo neutro). \*\*REVISIONE CONSAPEVOLE\*\* della vecchia regola "athleteContext incl.
+&#x20; infortuni — non eliminare (sicurezza)": gli infortuni/dati salute NON si raccolgono nel self-serve →
+&#x20; rete di sicurezza = contenuto di prova generico e a basso rischio (bodyweight) + l'atleta segnala il
+&#x20; dolore in chat + disclaimer medico nei Termini. \*\*Due profili distinti:\*\* SLIM in-app (nickname) vs
+&#x20; questionario di CONVERSIONE ("Richiedi il coaching": intake completo + infortuni/salute con consenso
+&#x20; esplicito). DB: semplificazione SOLO-UI, colonne profilo restano nullable, NESSUNA migration. Vedi
+&#x20; TASKS + ARCHITECTURE + AI_RULES.
+
+\- \*\*✅ DECISIONE — Landing + hero + flusso accesso (16/06):\*\* hero riscritto in italiano (headline
+&#x20; "Il coach AI che adatta ogni serie alla tua fatica"); azioni "Accedi con Google" (primaria) + "Crea
+&#x20; account con email" (primaria, \*\*flusso OTP a codice\*\*) + "Richiedi il coaching" come \*\*link
+&#x20; secondario\*\*. Il blocco email/password rotto va \*\*SOSTITUITO\*\* dal flusso OTP (non solo nascosto).
+&#x20; Footer con link Privacy/Termini + nota consenso al login. Vedi "Landing + hero" e 1B (OTP) in TASKS.
+
+\- \*\*✅ DECISIONE — Layer privacy minimo (16/06):\*\* pagine statiche Informativa privacy + Termini, link
+&#x20; nel footer, canale per la cancellazione. Col profilo slim NIENTE dati Art. 9 (salute) nel funnel
+&#x20; self-serve → niente consenso salute nel funnel, probabilmente niente cookie banner (solo cookie di
+&#x20; sessione); consenso salute confinato al questionario di conversione. Disclosure responsabili
+&#x20; (Google, Supabase, Vercel, Anthropic), età minima 16, disclaimer medico nei Termini. Vedi TASKS.
+
 \## Problemi Aperti
 
-\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO (intero path), non solo il reset\*\* — i doc davano email/password funzionante: NON lo è. Funziona SOLO Google OAuth (PKCE). Login/signup via email+password e il reset password sono entrambi rotti. Fix = stesso meccanismo dell'invito email/password (Supabase recovery/`inviteUserByEmail`) → un solo lavoro, vedi TASKS 🟡 1B. Non bloccante per il trial funnel (lancio solo-Google)
+\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO (intero path), non solo il reset\*\* — i doc davano email/password funzionante: NON lo è. Funziona SOLO Google OAuth (PKCE). Login/signup via email+password e il reset password sono entrambi rotti. \*\*Piano (16/06): SOSTITUZIONE con flusso OTP a codice\*\* (Supabase `signInWithOtp`/`verifyOtp`/`updateUser`) che unifica signup/login/reset e scavalca il magic-link/PKCE rotto → un solo lavoro, vedi TASKS 🟡 1B. \*\*Dipendenza HARD: SMTP custom / provider transazionale\*\* (il mailer Supabase di default è 2 mail/ora, inutilizzabile in produzione). Non bloccante per il trial funnel (lancio solo-Google)
 
 \- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`/`log.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` −35% (\~1787 righe oggi, dopo l'estrazione della libreria esercizi in `admin-ui.js` e del modale log in `log.js` il 15/06; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
 
@@ -253,7 +290,7 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*log\_data strutturato\*\* — per-set con reps/rir/rpe/weight/note + programId/chosenWorkout
 
-\- \*\*Profilo atleta\*\* — dati fisici, obiettivi, attrezzatura, infortuni
+\- \*\*Profilo atleta\*\* — DUE livelli (decisione 16/06): SLIM self-serve in-app (solo nickname) vs intake completo (dati fisici, obiettivi, attrezzatura, infortuni/salute con consenso) nel questionario di CONVERSIONE "Richiedi il coaching". Le colonne profilo complete restano nel DB (nullable)
 
 \- \*\*Admin panel\*\* — gestione atleti, log, libreria esercizi, tab Template
 
@@ -263,5 +300,5 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Onboarding form\*\* — email automatica via Apps Script (in overhaul, vedi TASKS)
 
-\- \*\*(In arrivo)\*\* Funnel trial self-serve (Google); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Peso per-esercizio + Logging isometrici (descrittore per-esercizio); Timer-esercizio a tempo; Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
+\- \*\*(In arrivo)\*\* Landing + hero (riscrittura IT); Accesso email via OTP a codice (sostituisce email/password rotto); Profilo SLIM self-serve (nickname); Layer privacy (Informativa + Termini); Analytics funnel (da dati Supabase); Conversione manuale primi trialist + Stripe (gated); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Peso per-esercizio + Logging isometrici (descrittore per-esercizio); Timer-esercizio a tempo; Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
 

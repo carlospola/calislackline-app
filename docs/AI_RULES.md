@@ -124,7 +124,9 @@
 
 \- `callback.js`: login `?code` -> `/?code=`; recovery (`type=recovery`) -> `/reset?code=`
 
-\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO — intero path (correzione di stato, giugno 2026):\*\* funziona SOLO Google OAuth (PKCE). NON è solo il reset rotto: anche login/signup via email+password non funziona — i doc lo davano erroneamente ok. Il fix copre l'intero percorso email/password (TASKS 🟡 1B): login + `inviteUserByEmail` (invito → set password) + recovery sono LO STESSO MECCANISMO → un solo lavoro.
+\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO — intero path (correzione di stato, giugno 2026):\*\* funziona SOLO Google OAuth (PKCE). NON è solo il reset rotto: anche login/signup via email+password non funziona — i doc lo davano erroneamente ok.
+
+\- \*\*✅ PIANO 1B (16/06) — ACCESSO EMAIL via OTP A CODICE (sostituisce email/password, NON ripara magic-link/PKCE):\*\* OTP a 6 cifre Supabase. Flusso: `signInWithOtp` (template email col \*\*token\*\*, SENZA `emailRedirectTo`) → `verifyOtp({ type:'email' })` → `updateUser({ password })`. Unifica signup/login/reset; il codice si digita IN-APP → NON tocca la macchina di `/reset` né `detectSessionInUrl` (PKCE invariato). \*\*Dipendenza HARD: SMTP custom / provider transazionale\*\* (Resend) — il mailer Supabase di default non basta. \*\*Config NON-repo\*\* (template email Supabase + SMTP custom): il TESTO/template si edita in Supabase, NON nel codice. La mail OTP è \*\*mono-scopo\*\* (niente CTA "Richiedi il coaching" dentro, per deliverability). Il bottone "Crea account con email" resta nascosto/disabilitato finché l'OTP non è pronto (solo-Google nel frattempo). \*\*NON rimettere `detectSessionInUrl: true`.\*\*
 
 \## AI Coach Prompt Rules
 
@@ -280,7 +282,7 @@
 
 \- Se il flusso accesso passa dalle mail Supabase (1A/1B), parti di Apps Script SPARISCONO: non rifare pezzi destinati a morire.
 
-\- \*\*Mail resoconto AI\*\* (🟡) e reminder: cron Vercel UNICO + provider transazionale futuro (gated rebranding). MVP resoconto SENZA immagini (testo + numeri + link Progressi); avanzato QuickChart.
+\- \*\*Mail resoconto AI\*\* (🟡) e reminder: cron Vercel UNICO + provider transazionale (\*\*Resend\*\* raccomandato; non più gated dal rebranding, chiuso 16/06; \*\*CONDIVISO col flusso OTP 1B\*\* che ne ha dipendenza HARD). MVP resoconto SENZA immagini (testo + numeri + link Progressi); avanzato QuickChart.
 
 \## Ottimizzazione costi (regole attive in aiSend)
 
@@ -290,7 +292,7 @@
 
 \- Storico ultime sessioni NON iniettato
 
-\- `athleteContext` (profilo, incl. infortuni) iniettato solo al primo turno (`isFirst`) — non eliminare (sicurezza)
+\- `athleteContext` (profilo) iniettato solo al primo turno (`isFirst`). \*\*⚠️ REGOLA REVISIONATA (16/06, profilo SLIM):\*\* la vecchia nota "incl. infortuni — non eliminare (sicurezza)" NON vale più per il SELF-SERVE — nel self-serve il profilo è SLIM (solo nickname) → `athleteContext` snello/vuoto, niente dati infortuni/salute. La rete di sicurezza self-serve = contenuto di prova a basso rischio (bodyweight) + dolore segnalato in chat + disclaimer medico nei Termini. \*\*Infortuni/limitazioni si raccolgono SOLO nel questionario di CONVERSIONE "Richiedi il coaching" (con consenso esplicito):\*\* per quegli atleti, quando il profilo è popolato, `athleteContext` torna a iniettarli (e lì NON vanno eliminati — sicurezza)
 
 \- \*\*Prompt caching (Leva 2):\*\* motore cachato in `chat.js` — non rompere (vedi Backend Rules). Il motore è cresciuto (\~250 token: precedenza + valutazione range) ma resta nel blocco cachato; i coach\_rules vanno tenuti SNELLI perché viaggiano nel blocco NON cachato.
 
@@ -323,6 +325,8 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 \- `programs.session\_type` / `program\_templates.session\_type`: solo `'bodyweight'` o `'gym'` (NON introdurre `'mixed'` — il caso misto si gestisce col descrittore per-esercizio)
 
 \- `exercises.owner\_id = null` = esercizio globale
+
+\- \*\*✅ Profilo SLIM self-serve (16/06):\*\* la UI self-serve in-app scrive SOLO `name` (= nickname); gli altri campi profilo (biometrie, `infortuni`, salute, obiettivi…) restano NULLABLE e si popolano SOLO dal questionario di CONVERSIONE "Richiedi il coaching". \*\*Semplificazione SOLO-UI → NESSUNA migration\*\* (non droppare colonne). Il consenso salute (Art. 9) è confinato al questionario di conversione (vedi regola `athleteContext` revisionata).
 
 \- \*\*La colonna `workouts` è stata DROPPATA da `programs` e `program\_templates` (14/06)\*\* — source of truth = `workout\_csv`. NON reintrodurla e NON copiarla tra le tabelle né in `repushTemplate`.
 

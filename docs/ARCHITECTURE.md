@@ -76,7 +76,9 @@
 
 \- `callback.js`: login `?code` -> `/?code=`; recovery -> `/reset?code=`.
 
-\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO — intero path (correzione di stato, giugno 2026):\*\* funziona SOLO Google OAuth (PKCE). NON è solo il reset rotto: anche login/signup via email+password non funziona. Fix dell'intero percorso email/password (TASKS 🟡 1B): Supabase ha `inviteUserByEmail` (link → set password) e il recovery di `/reset` — login/"crea password al primo accesso"/"reset" sono LO STESSO MECCANISMO → un solo lavoro.
+\- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO — intero path (correzione di stato, giugno 2026):\*\* funziona SOLO Google OAuth (PKCE). NON è solo il reset rotto: anche login/signup via email+password non funziona.
+
+\- \*\*✅ PIANO (16/06) — ACCESSO EMAIL via OTP A CODICE (sostituisce email/password, TASKS 🟡 1B):\*\* anziché riparare il magic-link/PKCE, si passa a un \*\*OTP a 6 cifre Supabase\*\*. Flusso: form signup `nickname + email` → `signInWithOtp` (template email col \*\*token\*\*, SENZA `emailRedirectTo`) → `verifyOtp({ type:'email' })` → `updateUser({ password })`. Unifica \*\*signup, login e reset\*\* in UN solo meccanismo a codice e \*\*SCAVALCA\*\* la macchina `/reset` rotta (il codice si digita IN-APP, nessun callback → non si tocca PKCE/`detectSessionInUrl`). Le password restano (login durevole); il reset = di nuovo OTP. \*\*DIPENDENZA HARD: SMTP custom / provider transazionale\*\* (il mailer Supabase di default è \~2 mail/ora best-effort, inutilizzabile in produzione) → \*\*Resend\*\* raccomandato (SMTP custom, tier gratuito, SPF/DKIM sul dominio), CONDIVISO con la mail resoconto e il dominio custom. Config NON-repo: template email Supabase col token + SMTP custom. \*\*NON rimettere `detectSessionInUrl: true`.\*\*
 
 \## Database
 
@@ -177,6 +179,15 @@ settings
 ```
 
 > session\_drafts: tabella RIMOSSA — non reintrodurla.
+
+> \*\*✅ Profilo SLIM self-serve (DECISO 16/06):\*\* la UI self-serve in-app raccoglie SOLO `nickname`
+> (→ `name`). Gli altri campi profilo (biometrie, `infortuni`, salute, obiettivi…) restano colonne
+> NULLABLE nel DB ma NON sono chiesti nel self-serve: si popolano SOLO dal questionario di CONVERSIONE
+> "Richiedi il coaching" (con consenso salute esplicito). \*\*Semplificazione SOLO-UI → NESSUNA
+> migration\*\* (le colonne non si toccano). Conseguenza coaching: `athleteContext` resta snello/vuoto
+> nel self-serve (la test session prova già che il motore gira su profilo neutro) → la rete di
+> sicurezza infortuni si sposta su contenuto di prova a basso rischio + segnalazione dolore in chat +
+> disclaimer medico nei Termini. Vedi AI_RULES ("athleteContext") e la sezione Privacy sotto.
 
 &#x20;
 
@@ -349,6 +360,15 @@ FORK CHIUSI (12/06): N=3 (TRIAL_SESSIONS); "sessione consumata" = riga in sessio
 &#x20;   frontend (CTA) + auto-assegnazione (trigger) + Test C live PASSATO (account Google nuovo).
 
 ```
+
+> \*\*✅ POSIZIONAMENTO "Richiedi il coaching" (DECISO 16/06):\*\* su landing FREDDA è un \*\*link
+> secondario\*\* (l'ingresso di prova resta primario — il fossato si capisce provandolo); IN-APP la CTA
+> vive sul `403 trial_exhausted` (già esistente) + eventuale link discreto in dashboard. \*\*NON\*\* va
+> nella mail del codice OTP (mono-scopo per deliverability).
+
+> \*\*✅ CONVERSIONE = MANUALE all'inizio (DECISO 16/06):\*\* i primi 1-3 trialist si convertono a mano
+> (mailto → admin `pending`→`active` + incasso manuale). \*\*Stripe è GATED dietro la prima conversione
+> manuale\*\* — vedi PROJECT_OVERVIEW + TASKS.
 
 &#x20;
 
@@ -726,6 +746,74 @@ client + RLS owner. Niente picker/lista CSV, niente \[SET:] dall'AI. Senza progr
 
 &#x20;
 
+\## (PIANIFICATO) Landing + hero (riscrittura IT)
+
+> Voce TASKS 🟡. Frontend-only (markup + copy in `index.html`). Decisione 16/06.
+
+```
+
+Hero IT — headline: "Il coach AI che adatta ogni serie alla tua fatica"
+
+&#x20; sub: "Calisthenics e palestra. Dichiari quanto è dura una serie e l'AI ricalibra carico, ripetizioni
+
+&#x20;       e recupero in tempo reale, durante l'allenamento non dopo."
+
+&#x20; riga offerta: "Prova gratis: 3 allenamenti reali con il coach AI."
+
+AZIONI: [Accedi con Google] (primaria) + [Crea account con email] (primaria, flusso OTP) +
+
+&#x20;       "Richiedi il coaching" (link SECONDARIO).
+
+FOOTER: link Privacy + Termini + nota consenso al login.
+
+CLAIM: ancorati a ciò che il coach FA davvero (autoregolazione REATTIVA per centrare il target) —
+
+&#x20;      NIENTE promesse su forma o progressione automatica nel durante-sessione.
+
+⚠️ Il bottone "Crea account con email" resta NASCOSTO/disabilitato finché l'OTP (1B) non è pronto
+
+&#x20;   (solo-Google nel frattempo) → non reintrodurre una porta morta.
+
+```
+
+\## (PIANIFICATO) Privacy + analytics (layer minimo)
+
+> Voci TASKS 🟡. Decisione 16/06. Pagine statiche + metriche dai dati esistenti.
+
+```
+
+PRIVACY: pagine statiche Informativa privacy + Termini (link nel footer) + canale cancellazione.
+
+&#x20; Col PROFILO SLIM (solo nickname) NIENTE dati Art. 9 (salute) nel funnel self-serve → niente consenso
+
+&#x20; salute nel funnel, probabilmente NIENTE cookie banner (solo cookie di sessione). Il consenso salute
+
+&#x20; è confinato al questionario di CONVERSIONE. Disclosure responsabili: Google, Supabase, Vercel,
+
+&#x20; Anthropic (incl. trasferimento extra-UE USA + SCC/DPF; nota: l'API Anthropic ELABORA ma non ADDESTRA
+
+&#x20; sui dati — da confermare nel DPA). Età minima 16. Disclaimer medico nei Termini. Testo da
+
+&#x20; redigere/verificare (Iubenda o legale) — ⚠️ NON è consulenza legale.
+
+ANALYTICS: due livelli.
+
+&#x20; L1 (subito, costo privacy ZERO): metriche FUNNEL dai dati Supabase già presenti — signup Google vs
+
+&#x20;    email, sessioni di prova, trial_exhausted, click "Richiedi il coaching", conversioni. Estende la
+
+&#x20;    voce "Admin dashboard metrics".
+
+&#x20; L2 (dopo): analytics di pagina COOKIELESS per comportamento/drop-off — Umami (self-host su Vercel +
+
+&#x20;    Postgres Supabase) o Plausible hosted. EVITARE Google Analytics (cookie + banner). Privacy-first
+
+&#x20;    per preservare il no-banner.
+
+```
+
+&#x20;
+
 \## Hosting \& distribuzione
 
 \- \*\*Frontend + API:\*\* Vercel (deploy automatico da GitHub, branch main)
@@ -746,7 +834,7 @@ client + RLS owner. Niente picker/lista CSV, niente \[SET:] dall'AI. Senza progr
 
 \## Ottimizzazioni costi API (attive)
 
-\- Filtro CSV (Leva 1); troncamento history a 12; niente storico; athleteContext solo primo turno (incl. infortuni — sicurezza).
+\- Filtro CSV (Leva 1); troncamento history a 12; niente storico; athleteContext solo primo turno. \*\*Revisione 16/06 (profilo SLIM):\*\* nel self-serve l'athleteContext è snello/vuoto (solo nickname) → la vecchia nota "incl. infortuni — sicurezza" NON vale più per il self-serve; gli infortuni si raccolgono solo nel questionario di conversione. La rete di sicurezza self-serve = contenuto di prova a basso rischio + dolore segnalato in chat + disclaimer medico.
 
 \- \*\*✅ Leva 2 — Prompt caching:\*\* `cache\_control: ephemeral` sul blocco motore in `chat.js` (\~90% taglio). Il motore è cresciuto di \~250 token (precedenza + valutazione range) ma nel blocco cachato; i coach\_rules MUP/NW dimagriti riducono il blocco NON cachato → sessioni più economiche.
 
@@ -896,7 +984,7 @@ Copre il rischio CRITICO (syntax error = pagina bianca). Il gate manuale Chrome 
 
 \- \*\*Google Fonts\*\* — DM Mono, Syne | \*\*Chart.js\*\* — grafici (CDN)
 
-\- \*\*(FUTURO)\*\* Provider email transazionale (Resend/Postmark/SES) — gated rebranding; condiviso tra mail auth Supabase (SMTP custom) e mail resoconto/reminder. \*\*QuickChart\*\* — eventuali grafici PNG nelle email (avanzato)
+\- \*\*(PROSSIMO — non più gated dal rebranding, chiuso 16/06)\*\* Provider email transazionale: \*\*Resend raccomandato\*\* (SMTP custom su Supabase, tier gratuito, SPF/DKIM sul dominio). \*\*DIPENDENZA HARD del flusso OTP (1B)\*\* — il mailer Supabase di default (\~2 mail/ora) non basta in produzione. CONDIVISO tra: mail auth Supabase (OTP/SMTP custom) + mail resoconto/reminder + dominio email custom. \*\*QuickChart\*\* — eventuali grafici PNG nelle email (avanzato)
 
 \## Variabili d'ambiente (Vercel)
 
