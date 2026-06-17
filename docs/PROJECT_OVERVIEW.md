@@ -163,6 +163,32 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 &#x20; sessione); consenso salute confinato al questionario di conversione. Disclosure responsabili
 &#x20; (Google, Supabase, Vercel, Anthropic), età minima 16, disclaimer medico nei Termini. Vedi TASKS.
 
+\- \*\*✅ Pacchetto landing/privacy — STATO (17/06):\*\* \*\*Step 1\*\* pagine statiche `privacy.html` +
+&#x20; `termini.html` FATTO (commit `41e1b6d`; ⚠️ placeholder `[DATA]` e `[EMAIL-CONTATTO]` ancora da
+&#x20; compilare prima del lancio); \*\*Step 2\*\* footer consenso + link Termini/Privacy nella schermata di
+&#x20; login FATTO (commit `304c891`); \*\*Step 3b\*\* blocco email/password e link "Password dimenticata?"
+&#x20; NASCOSTI (`display:none`, NON cancellati) → login solo-Google (commit `a36d365`); il blocco email/pw
+&#x20; è avvolto in `<div class="login-emailpw">` dentro `#loginScreen` = aggancio per la fase 2 OTP.
+&#x20; \*\*Step 4\*\* (profilo SLIM self-serve, solo nickname) DECISO ma ANCORA DA IMPLEMENTARE.
+
+\- \*\*✅ DECISIONE — Hero elaborato RIMANDATO alla fase i18n (17/06):\*\* la sostituzione della tagline
+&#x20; con headline/sub/offer italiani (Step 3a) è stata \*\*scartata e revertata\*\* (mai committata). La
+&#x20; tagline inglese "AI Coaching · Personalized · Adaptive" RESTA (scelta founder). L'hero elaborato si
+&#x20; farà UNA volta sola, multilingua, dentro la fase i18n — non si scrive due volte.
+
+\- \*\*✅ DECISIONE — i18n (IT/EN/DE) = STRADA A (17/06):\*\* lancio MVP \*\*in italiano ora\*\*,
+&#x20; internazionalizzazione come \*\*fase dedicata e prioritaria SUBITO DOPO\*\*. Approccio: (1) \*\*coaching\*\*
+&#x20; — i prompt in admin restano SOLO in italiano; si salva la lingua scelta dall'utente e `api/chat.js`
+&#x20; aggiunge una direttiva al system ("rispondi all'atleta in {lingua}") → l'AI risponde IT/EN/DE
+&#x20; leggendo il contesto italiano (da decidere: nomi esercizi dal CSV in italiano o tradotti); (2) \*\*UI
+&#x20; statica\*\* via dizionario `STRINGS.it`/`.en`/`.de` + funzione `t()` + switcher; (3) \*\*pagine legali\*\*
+&#x20; almeno IT + DE. Vedi "Internazionalizzazione i18n" in TASKS.
+
+\- \*\*✅ Accesso email via OTP (fase 2 / 1B) — INVARIATO (17/06):\*\* il blocco email/password è solo
+&#x20; nascosto (`login-emailpw`), da \*\*SOSTITUIRE\*\* con la UI OTP. \*\*Dipendenza hard:\*\* provider email
+&#x20; transazionale (Resend raccomandato) da confermare col founder + config Supabase (SMTP + template col
+&#x20; token + DNS). Lancio resta solo-Google. Vedi 1B in TASKS.
+
 \## Problemi Aperti
 
 \- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO (intero path), non solo il reset\*\* — i doc davano email/password funzionante: NON lo è. Funziona SOLO Google OAuth (PKCE). Login/signup via email+password e il reset password sono entrambi rotti. \*\*Piano (16/06): SOSTITUZIONE con flusso OTP a codice\*\* (Supabase `signInWithOtp`/`verifyOtp`/`updateUser`) che unifica signup/login/reset e scavalca il magic-link/PKCE rotto → un solo lavoro, vedi TASKS 🟡 1B. \*\*Dipendenza HARD: SMTP custom / provider transazionale\*\* (il mailer Supabase di default è 2 mail/ora, inutilizzabile in produzione). Non bloccante per il trial funnel (lancio solo-Google)
@@ -300,5 +326,5 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Onboarding form\*\* — email automatica via Apps Script (in overhaul, vedi TASKS)
 
-\- \*\*(In arrivo)\*\* Landing + hero (riscrittura IT); Accesso email via OTP a codice (sostituisce email/password rotto); Profilo SLIM self-serve (nickname); Layer privacy (Informativa + Termini); Analytics funnel (da dati Supabase); Conversione manuale primi trialist + Stripe (gated); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Peso per-esercizio + Logging isometrici (descrittore per-esercizio); Timer-esercizio a tempo; Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
+\- \*\*(In arrivo)\*\* Profilo SLIM self-serve (nickname, Step 4 — unico residuo del pacchetto landing); Fase i18n IT/EN/DE (prioritaria post-lancio; l'hero elaborato si fa qui); Accesso email via OTP a codice (fase 2, sostituisce il blocco email/pw nascosto); Analytics funnel (da dati Supabase); Conversione manuale primi trialist + Stripe (gated); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Peso per-esercizio + Logging isometrici (descrittore per-esercizio); Timer-esercizio a tempo; Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
 
