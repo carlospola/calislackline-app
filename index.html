@@ -713,6 +713,7 @@ var infortuniVal = null;
 var currentSetState = null;
 var sessionLog = null, currentSessionId = null;
 var currentSetNum = null;
+var currentWeighted = false;
 var autosaveChain = Promise.resolve();
 var testSession = false;
 
@@ -1000,7 +1001,7 @@ function beginSession(programName, coachRules, workoutCsv, extraPrompt, sessionT
   document.getElementById('sessionTimerNum').style.color='var(--text)';
   document.getElementById('sessionTimerGo').textContent='\u25B6';
   var wrow = document.getElementById('weightRow');
-  if(wrow) wrow.style.display = (sessionType==='gym') ? 'block' : 'none';
+  if(wrow) wrow.style.display = 'none';
   var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
   var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='\u2014';
   var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='\u2014';
@@ -1028,7 +1029,7 @@ function resumeSession(sessionRow, program){
   document.getElementById('sessionTimerNum').style.color='var(--text)';
   document.getElementById('sessionTimerGo').textContent='▶';
   var wrow = document.getElementById('weightRow');
-  if(wrow) wrow.style.display = (currentProfile.session_type==='gym') ? 'block' : 'none';
+  if(wrow) wrow.style.display = 'none';
   var box=document.getElementById('setInfoBox'); if(box) box.textContent='In attesa...';
   var nb=document.getElementById('setNumBox'); if(nb) nb.textContent='—';
   var tb=document.getElementById('setTargetBox'); if(tb) tb.textContent='—';
@@ -1094,11 +1095,11 @@ function sendMsg(){
   }
   if(selectedRpe!==null) parts.push('Fatica: '+selectedRpe+'/10');
   var wInput = document.getElementById('weightInput');
-  if(wInput && wInput.value && currentProfile.session_type==='gym') parts.push('Peso: '+wInput.value+'kg');
+  if(wInput && wInput.value && currentWeighted) parts.push('Peso: '+wInput.value+'kg');
   if(note) parts.push(note);
   // Tappa 1 — salvataggio permanente di ogni serie (stessa forma di log_data)
   var rpeVal = (selectedRpe!==null) ? selectedRpe : null;
-  var weightVal = (wInput && wInput.value && currentProfile.session_type==='gym') ? parseFloat(wInput.value) : 0;
+  var weightVal = (wInput && wInput.value && currentWeighted) ? parseFloat(wInput.value) : 0;
   var pendingSets = [];
   if(currentSetMode==='superset' && currentExercises.length>=2){
     if(repsAv && parseInt(repsAv)>0) pendingSets.push({name:currentExercises[0], set:{reps:parseInt(repsAv), rir:rirAv?parseInt(rirAv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
@@ -1294,6 +1295,10 @@ function nextSetNum(name){
   return 1;
 }
 
+function exIsWeighted(peso){
+  return !!(peso && (''+peso).trim());
+}
+
 function updateSetInfo(text){
   var boxName = document.getElementById('setInfoBox');
   var boxNum = document.getElementById('setNumBox');
@@ -1333,6 +1338,7 @@ function updateSetInfo(text){
     logName = exerciseName;
   }
   var csvNote = '';
+  var csvPeso = '';
   if(logName){
     var nSet = nextSetNum(logName);
     currentSetNum = nSet;
@@ -1346,6 +1352,7 @@ function updateSetInfo(text){
         for(var _f=0; _f<_fields.length; _f++){
           if(_fields[_f].nome===logName){
             if(_fields[_f].note && !csvNote) csvNote = _fields[_f].note;
+            if(_fields[_f].peso && !csvPeso) csvPeso = _fields[_f].peso;
             if(_fields[_f].sets){
               var _n = parseInt(_fields[_f].sets,10);
               if(!isNaN(_n)){ totSet=_n; break; }
@@ -1368,9 +1375,12 @@ function updateSetInfo(text){
   }
   var tempoMatch = setLine.match(/[Tt]empo:\s*([^\s|]+)/i);
   boxTarget.textContent = repsMatch ? repsMatch[0].trim() : '\u2014';
-  // GYM: sotto le reps mostra il peso target (colonna Note del CSV) invece del Tempo.
-  if(currentProfile && currentProfile.session_type === 'gym'){
-    boxTempo.textContent = csvNote ? csvNote : '\u2014';
+  // Esercizio con peso (colonna peso del CSV): mostra il peso target sotto le reps invece del Tempo.
+  currentWeighted = exIsWeighted(csvPeso);
+  var wrowSet = document.getElementById('weightRow');
+  if(wrowSet) wrowSet.style.display = currentWeighted ? 'block' : 'none';
+  if(currentWeighted){
+    boxTempo.textContent = csvPeso ? csvPeso : '\u2014';
   } else {
     boxTempo.textContent = tempoMatch ? tempoMatch[1] : '\u2014';
   }
@@ -1631,7 +1641,7 @@ function parseWorkoutCsv(csv){
   if(lines.length < 2) return result;
   result.headerLine = lines[0];
   var header = lines[0].split(',').map(function(h){return h.trim().toLowerCase();});
-  var idxWorkout = -1, idxEsercizio = -1, idxSets = -1, idxReps = -1, idxTempo = -1, idxRecupero = -1, idxRir = -1, idxNote = -1;
+  var idxWorkout = -1, idxEsercizio = -1, idxSets = -1, idxReps = -1, idxTempo = -1, idxRecupero = -1, idxRir = -1, idxNote = -1, idxPeso = -1;
   header.forEach(function(h, i){
     if(h === 'workout') idxWorkout = i;
     else if(h === 'esercizio' || h === 'nome') idxEsercizio = i;
@@ -1641,6 +1651,7 @@ function parseWorkoutCsv(csv){
     else if(h === 'recupero' || h === 'riposo') idxRecupero = i;
     else if(h === 'rir') idxRir = i;
     else if(h === 'note') idxNote = i;
+    else if(h === 'peso' || h === 'carico') idxPeso = i;
   });
   for(var i=1; i<lines.length; i++){
     var cells = lines[i].split(',').map(function(c){return c.trim();});
@@ -1655,7 +1666,8 @@ function parseWorkoutCsv(csv){
       tempo: idxTempo >= 0 ? cells[idxTempo] : '',
       recupero: idxRecupero >= 0 ? cells[idxRecupero] : '',
       rir: idxRir >= 0 ? cells[idxRir] : '',
-      note: idxNote >= 0 ? cells[idxNote] : ''
+      note: idxNote >= 0 ? cells[idxNote] : '',
+      peso: idxPeso >= 0 ? cells[idxPeso] : ''
     });
   }
   return result;
@@ -1697,10 +1709,13 @@ function selectExercise(name){
     boxNum.textContent = 'Set '+currentSetNum+(totSet!=null?'/'+totSet:'');
   }
   if(boxTarget) boxTarget.textContent = (field && field.reps) ? field.reps : '—';
-  // GYM: sotto le reps mostra il peso target (colonna Note del CSV) invece del Tempo.
+  // Esercizio con peso (colonna peso del CSV): mostra il peso target sotto le reps invece del Tempo.
   if(boxTempo){
-    if(currentProfile && currentProfile.session_type === 'gym'){
-      boxTempo.textContent = (field && field.note) ? field.note : '—';
+    currentWeighted = exIsWeighted(field && field.peso);
+    var wrowSel = document.getElementById('weightRow');
+    if(wrowSel) wrowSel.style.display = currentWeighted ? 'block' : 'none';
+    if(currentWeighted){
+      boxTempo.textContent = (field && field.peso) ? field.peso : '—';
     } else {
       boxTempo.textContent = (field && field.tempo) ? field.tempo : '—';
     }
