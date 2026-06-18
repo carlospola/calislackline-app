@@ -98,46 +98,13 @@
   </div>
   <div style="flex:1;overflow-y:auto;padding:24px 20px 60px;">
     <div style="max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
-      <div style="font-size:11px;color:var(--muted);line-height:1.8;">Questi dati vengono usati dall'AI coach per personalizzare ogni sessione.</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8;">Scegli il nickname con cui il coach AI ti chiama durante le sessioni.</div>
       <div class="form-section">
-        <div class="form-section-title">Dati personali</div>
-        <div class="form-row cols-2">
-          <div class="form-group"><div class="form-label">Et&agrave;</div><input class="form-input" id="p_eta" type="number" placeholder="25"></div>
-          <div class="form-group"><div class="form-label">Sesso</div><select class="form-select" id="p_sesso"><option value="">-</option><option>Maschile</option><option>Femminile</option><option>Altro</option></select></div>
+        <div class="form-section-title">Profilo</div>
+        <div class="form-group">
+          <div class="form-label">Nickname</div>
+          <input class="form-input" id="p_name" type="text" placeholder="Il tuo nickname">
         </div>
-        <div class="form-row cols-2">
-          <div class="form-group"><div class="form-label">Peso (kg)</div><input class="form-input" id="p_peso" type="number" placeholder="75"></div>
-          <div class="form-group"><div class="form-label">Altezza (cm)</div><input class="form-input" id="p_altezza" type="number" placeholder="178"></div>
-        </div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Allenamento</div>
-        <div class="form-group"><div class="form-label">Livello</div><select class="form-select" id="p_livello"><option value="">-</option><option>Principiante - meno di 6 mesi</option><option>Intermedio - 6 mesi / 2 anni</option><option>Avanzato - piu di 2 anni</option></select></div>
-        <div class="form-group"><div class="form-label">Frequenza</div><select class="form-select" id="p_frequenza"><option value="">-</option><option>1-2 volte a settimana</option><option>3-4 volte a settimana</option><option>5+ volte a settimana</option><option>Non mi alleno regolarmente</option></select></div>
-        <div class="form-group"><div class="form-label">Discipline praticate</div><input class="form-input" id="p_discipline" placeholder="es. Calisthenics, BJJ, Running"></div>
-        <div class="form-group"><div class="form-label">Skill attuali</div><input class="form-input" id="p_skill" placeholder="es. Trazioni, Dip, L-sit"></div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Obiettivi</div>
-        <div class="form-group"><div class="form-label">Obiettivo principale</div><select class="form-select" id="p_obiettivo"><option value="">-</option><option>Forza massimale</option><option>Ipertrofia - massa muscolare</option><option>Skills avanzate</option><option>Perdita peso + composizione corporea</option><option>Mobilita e movimento</option><option>Performance sport specifico</option><option>Forma fisica generale</option></select></div>
-        <div class="form-group"><div class="form-label">Obiettivo a 3 mesi</div><input class="form-input" id="p_obiettivo3m" placeholder="es. primo muscle up, 10 trazioni..."></div>
-        <div class="form-group"><div class="form-label">Disponibilita settimanale</div><select class="form-select" id="p_disponibilita"><option value="">-</option><option>1-2 ore</option><option>3-4 ore</option><option>5-6 ore</option><option>7+ ore</option></select></div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Attrezzatura e luogo</div>
-        <div class="form-group"><div class="form-label">Dove ti alleni</div><select class="form-select" id="p_luogo"><option value="">-</option><option>Parco pubblico / outdoor</option><option>Palestra</option><option>Casa</option><option>Misto outdoor / palestra</option><option>Misto outdoor / casa</option></select></div>
-        <div class="form-group"><div class="form-label">Attrezzatura disponibile</div><input class="form-input" id="p_attrezzatura" placeholder="es. Sbarra, Anelli, Bande elastiche"></div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Salute</div>
-        <div class="form-group"><div class="form-label">Infortuni</div><textarea class="form-textarea" id="p_infortuni" placeholder="es. tendinite spalla... oppure Nessuno"></textarea></div>
-        <div class="form-group"><div class="form-label">Limitazioni fisiche</div><textarea class="form-textarea" id="p_limitazioni" placeholder="es. problemi al ginocchio..."></textarea></div>
-        <div class="form-group"><div class="form-label">Stile di vita</div><select class="form-select" id="p_stile"><option value="">-</option><option>Sedentario - lavoro d'ufficio</option><option>Moderatamente attivo</option><option>Molto attivo - lavoro fisico / outdoor</option></select></div>
-        <div class="form-group"><div class="form-label">Ore di sonno medie</div><select class="form-select" id="p_sonno"><option value="">-</option><option>Meno di 6h</option><option>6-7h</option><option>7-8h</option><option>8h+</option></select></div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Note</div>
-        <div class="form-group"><div class="form-label">Motivazione e note libere</div><textarea class="form-textarea" id="p_motivazione" placeholder="Qualsiasi cosa vuoi che il coach sappia..."></textarea></div>
       </div>
       <div style="font-size:11px;color:var(--red);min-height:16px;" id="profileErr"></div>
       <button onclick="saveProfile()" style="padding:14px;background:var(--accent);border:none;border-radius:9px;color:#000;font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;">Salva profilo</button>
@@ -873,19 +840,19 @@ async function submitNewPassword(){
 }
 
 function showProfile(){
-  showScreen('profileScreen');
-  if(!currentProfile) return;
-  var map = {p_eta:currentProfile.eta,p_sesso:currentProfile.sesso,p_peso:currentProfile.peso,p_altezza:currentProfile.altezza,p_livello:currentProfile.livello,p_frequenza:currentProfile.frequenza,p_discipline:currentProfile.discipline,p_skill:currentProfile.skill,p_obiettivo:currentProfile.obiettivo,p_obiettivo3m:currentProfile.obiettivo3m,p_disponibilita:currentProfile.disponibilita,p_luogo:currentProfile.luogo,p_attrezzatura:currentProfile.attrezzatura,p_infortuni:currentProfile.infortuni,p_limitazioni:currentProfile.limitazioni,p_stile:currentProfile.stile,p_sonno:currentProfile.sonno,p_motivazione:currentProfile.motivazione};
-  Object.entries(map).forEach(function(e){var el=document.getElementById(e[0]); if(el) el.value=e[1]||'';});
   document.getElementById('profileErr').textContent='';
   document.getElementById('profileSuccess').textContent='';
+  var el=document.getElementById('p_name'); if(el) el.value=(currentProfile&&currentProfile.name)||'';
+  showScreen('profileScreen');
 }
 
 async function saveProfile(){
   var errEl=document.getElementById('profileErr'), succEl=document.getElementById('profileSuccess');
   errEl.textContent=''; succEl.textContent='';
+  var nm=document.getElementById('p_name').value; nm=nm?nm.trim():'';
+  if(!nm){errEl.textContent='Inserisci un nickname.'; return;}
   try{
-    var updates={eta:document.getElementById('p_eta').value?parseInt(document.getElementById('p_eta').value):null,sesso:document.getElementById('p_sesso').value||null,peso:document.getElementById('p_peso').value?parseFloat(document.getElementById('p_peso').value):null,altezza:document.getElementById('p_altezza').value?parseFloat(document.getElementById('p_altezza').value):null,livello:document.getElementById('p_livello').value||null,frequenza:document.getElementById('p_frequenza').value||null,discipline:document.getElementById('p_discipline').value||null,skill:document.getElementById('p_skill').value||null,obiettivo:document.getElementById('p_obiettivo').value||null,obiettivo3m:document.getElementById('p_obiettivo3m').value||null,disponibilita:document.getElementById('p_disponibilita').value||null,luogo:document.getElementById('p_luogo').value||null,attrezzatura:document.getElementById('p_attrezzatura').value||null,infortuni:document.getElementById('p_infortuni').value||null,limitazioni:document.getElementById('p_limitazioni').value||null,stile:document.getElementById('p_stile').value||null,sonno:document.getElementById('p_sonno').value||null,motivazione:document.getElementById('p_motivazione').value||null};
+    var updates={name:nm};
     var r = await sb.from('profiles').update(updates).eq('id', currentUser.id);
     if(r.error){errEl.textContent='Errore salvataggio.'; return;}
     Object.assign(currentProfile, updates);
