@@ -128,7 +128,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Leva 2 — Prompt caching (ATTIVO):\*\* `cache\_control: ephemeral` sul blocco motore in `/api/chat.js` (\~90% di taglio sulla porzione statica). Commit `ee173c7`. I coach\_rules snelliti di MUP/NW hanno ridotto anche il blocco non cachato
 
-\- \*\*Target box per tipo:\*\* bodyweight → Tempo; gym → Peso (col Note). I rep range e il "per lato" si vedono correttamente nel box. \*\*Eccezione documentata:\*\* in New Workout la Note contiene le varianti (non il peso) → il box mostra quel testo (accettato: filosofia maxout, il peso lo trova l'atleta)
+\- \*\*Target box per-esercizio (NON più per tipo):\*\* il tipo di box e la visibilità del peso dipendono da `currentWeighted` = cella CSV `peso` non vuota (weighted → box Peso col valore come target; altrimenti box Tempo). I rep range e il "per lato" si vedono correttamente nel box. \*\*Migrazione colonna `peso` COMPLETATA\*\* su tutti i programmi con carico (741 Fitness, Pool Danger Hypertrophy, Bro split, Muscle-Up Pro); bodyweight puro (Body By Rings, "Prova — Full Body") e i casi a Note-varianti (New Workout) restano senza colonna per scelta. La Note dei gym tiene ancora il peso (non più pilota del box; non ripulita).
 
 \- \*\*✅ Bug admin cancellazione sessione — RISOLTO (11/06, commit `7f8315d`):\*\* `deleteLog` ramifica su `role==='admin'` → l'admin resta nel pannello
 

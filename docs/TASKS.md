@@ -93,18 +93,6 @@
 
 &#x20; - \*\*Vincoli tecnici:\*\* vanilla JS, `var`, NO backtick template literals, NO localStorage; non cambiare ID esistenti; dark theme + variabili CSS; onclick in stringhe HTML con escape `\\'`; input utente via `esc()`. NON toccare `/api/chat.js`, `/api/admin.js`, schema DB. Mostra piano/diff prima del codice; non generare HTML senza conferma.
 
-\- \[ ] \*\*Timer esercizio per esercizi a tempo (plank/side plank/mountain climber).\*\* Per gli esercizi prescritti in secondi serve un cronometro anche per il LAVORO, non solo per il recupero.
-
-&#x20; - \*\*Fondazione/prerequisito:\*\* PRIMA il fix del timer recupero a `Date.now()` (= "Timer recupero background"). Diventa il \*\*motore-timer unico a timestamp\*\* che regge sia lavoro sia recupero anche in background. Valutare di farli \*\*insieme\*\*.
-
-&#x20; - \*\*Rilevamento DETERMINISTICO:\*\* regex sul campo Reps del CSV `/\\d+\\s\*(sec|min)/i`, stesso pattern del warm-up. NIENTE colonna nuova/migration: "40 sec", "30 sec", "25-40 sec" matchano da soli.
-
-&#x20; - \*\*UX a due fasi:\*\* quando l'esercizio è a tempo, al posto dello Start recupero compare "Avvia esercizio · Ns" → countdown del lavoro (per i range usa il massimo) → a zero vibra/beep → parte automaticamente il countdown del recupero (stesso motore). I secondi tenuti pre-compilano il campo reps.
-
-&#x20; - \*\*VINCOLO:\*\* NON fare un timer-intervalli configurabile completo → overengineering; il countdown→recupero incatenato basta.
-
-&#x20; - \*\*File:\*\* `index.html` (logica timer). Diff + conferma. \*\*INCATENATO a "Logging esercizi isometrici"\*\* (sotto): stessa regex, il countdown lavoro pre-compila i secondi. DA FARE INSIEME.
-
 \- \[x] \*\*Peso per-esercizio in sessioni miste (bodyweight + gym) — ✅ SHIPPED (via colonna CSV `peso`, NON regex Note).\*\* Il campo peso (`#weightRow`) e il target box sono ora PER-ESERCIZIO, pilotati da `currentWeighted`, NON più da `session\_type`. Meccanismo:
 
 &#x20; - \*\*`weighted` = cella CSV `peso` non vuota\*\* (`exIsWeighted(peso)`); il valore di `peso` è anche il TARGET mostrato nel box. \*\*SUPERATO l'approccio Note\*\* (regex `/N kg/` + fallback `session\_type==='gym'` + gym→Note-come-peso): la Note NON pilota più il box peso. Quirk New Workout (Note=varianti) RISOLTO.
@@ -117,21 +105,25 @@
 
 &#x20; - \*\*Resta aperto:\*\* il lato \*\*isometrici (metric=time)\*\* del descrittore per-esercizio (vedi "Logging esercizi isometrici"). Futuro: anche gli \*\*elastici\*\* (💡) si appoggiano qui (`load:'kg'|'band'|none`).
 
-\- \[ ] \*\*🔴 Migrazione colonna `peso` su TUTTI i programmi con carico — PRIMA del push (segue il peso per-esercizio).\*\* Ora che `weighted` si legge dalla colonna CSV `peso` (non più da `session\_type`), ogni programma con carico DEVE avere la colonna `peso` popolata, altrimenti i suoi esercizi perdono il box peso e il campo peso (regrediscono a corpo libero). \*\*Stato:\*\* Muscle-Up Pro GIÀ fatto; \*\*Pool Danger Hypertrophy e gli altri gym (741 Fitness, Bro split, Upper/Lower Rotation) PENDING.\*\* Si fa nei `workout\_csv` dei TEMPLATE (Table Editor / tab Template + "Applica a tutti"), nessun deploy. \*\*Bloccante per il push frontend del peso per-esercizio.\*\*
+\- \[x] \*\*Migrazione colonna `peso` su TUTTI i programmi con carico — ✅ COMPLETATO (giugno 2026, via tab Template admin + "Applica a tutti", nessun deploy).\*\* Ogni programma con carico ha la colonna `peso` popolata, così `weighted`/`currentWeighted` si leggono dal CSV (vedi "Peso per-esercizio"). \*\*Convenzione colonna:\*\* header `Peso` come ULTIMA colonna; gym = carico verbatim (es. `40 kg`); corpo-libero-zavorrato = zavorra; \*\*vuoto\*\* su warm-up/cardio/accessori a corpo libero. La colonna Note dei gym tiene ANCORA il peso (era la fallback per la finestra pre-push; ora il frontend per-esercizio è pushato, ma la Note non è stata ripulita). \*\*Migrati:\*\* 741 Fitness, Pool Danger Hypertrophy (il piccolo no-name Leg press/Side kick), Bro split; Muscle-Up Pro era già migrato. \*\*Fuori per DECISIONE (non pending):\*\* Body By Rings + "Prova — Full Body" (bodyweight puro, nessuna colonna serve); New Workout (quirk Note=varianti maxout, niente colonna peso) e Upper/Lower Rotation lasciati fuori volutamente.
 
 \- \[ ] \*\*\[BUG] `selectExercise` non azzera la quick-option `[PRONTO]` pendente.\*\* Se l'atleta sceglie un esercizio dalla lista PRIMA di premere "Pronto" (warm-up), il bottone Pronto resta appeso e salta il saluto post-pronto. Fix: `selectExercise` deve ripulire le quick-option pendenti (incl. `[PRONTO]`) prima di preparare l'input del nuovo esercizio. File: `index.html`. Frontend-only.
 
-\- \[ ] \*\*\[FIX COACHING] Tetto-del-range + soglia RIR ambigua (Table Editor, no deploy).\*\* Regressione vista su MUP (Jumping Muscle-Up, 5 reps su range 3-5): il motore (blocco VALUTAZIONE DEL RANGE) ricade nell'errore "tetto del range = sforato". Inoltre i `coach\_rules` MUP hanno una soglia RIR ambigua ("RIR≥2-3"). \*\*Regola da incidere:\*\* reps NEL range estremi inclusi = A TARGET; sforato SOLO se reps > tetto; \*\*RIR<3 = ok\*\*, SOLO \*\*RIR≥3\*\* fa scattare "riduci assistenza". Si edita in `settings` (`coach\_prompt\_global`) + `coach\_rules` MUP, nessun deploy.
+\- \[x] \*\*\[FIX COACHING] 3A — Classificazione meccanica del range — ✅ COMPLETATO (in `coach\_prompt\_global`, Table Editor, no deploy).\*\* Il blocco VALUTAZIONE DEL RANGE è stato riscritto come classificazione MECCANICA min/max, con tetto E pavimento inchiodati ed esempi su range piccoli (3 su 3-5 = a target, 5 su 3-5 = a target, 6 su 3-5 = sopra, 2 su 3-5 = sotto), guardia bidirezionale (il tetto NON è uno sforamento, il pavimento NON è un "sotto"), anti-fotocopia mantenuto. \*\*Verificato:\*\* niente più "sforato" sul tetto, niente più "completa il range" sul pavimento. Vedi AI\_RULES / ARCHITECTURE (descrizione blocco aggiornata).
 
-\- \[ ] \*\*Logging esercizi isometrici (a tempo).\*\* Gli isometrici (plank, L-sit, hold) si misurano in SECONDI tenuti, non reps.
+\- \[ ] \*\*\[FIX COACHING] 3B — Leva-RIR di Muscle-Up Pro — PARCHEGGIATA al "Prompt unico per-esercizio" (punto 5).\*\* I `coach\_rules` MUP sono a v3 (soglia meccanica: RIR 0/1/2/3 = a target, niente leva; solo RIR ≥4 fa scattare "riduci assistenza"), ma il modello NON onora la soglia sul bordo RIR=3 (flaky, testate 3 formulazioni). \*\*Insight load-bearing per il punto 5:\*\* legare la leva a un segnale DETERMINISTICO (`reps > tetto` del range), NON al giudizio RIR del modello in un prompt lungo. Si risolve dentro il prompt unico.
 
-&#x20; - \*\*Rilevamento DETERMINISTICO:\*\* Reps CSV matcha `/\\d+\\s\*(sec|min)/i` → metric=time (STESSO segnale del "Timer-esercizio a tempo").
+\- \[ ] \*\*Esercizio a tempo / isometrici (logging + cronometro) — spec unificata (è il `metric=time` del descrittore per-esercizio, gemella di `weighted=Peso` già shippata).\*\* Fonde le vecchie voci "Logging isometrici" e "Timer esercizio a tempo".
 
-&#x20; - \*\*Input UI per metric=time:\*\* label "Secondi" al posto di "Reps"; NIENTE RIR (non esiste reps-in-riserva su una tenuta); RPE/Fatica opzionale; peso opzionale se zavorrato (vedi voce sopra).
+&#x20; - \*\*Rilevamento DETERMINISTICO:\*\* Reps CSV matcha `/\\d+\\s\*(sec|min)/i` → esercizio a tempo. Nasconde i box reps/RIR/peso normali e mostra un infobox CRONOMETRO.
 
-&#x20; - \*\*Modello dati — DUE strade:\*\* \*\*MVP (raccomandato):\*\* salva i secondi nel campo `reps` esistente (zero cambio shape, backward compatible, combacia col Timer-esercizio che pre-compila i secondi → `reps`; costo: RELABEL per-esercizio dei grafici Progressi, stessa regex). \*\*Avanzato (dopo):\*\* campo `seconds` dedicato (jsonb → niente migration, MA aggiornare tutti i reader: `persistSets`, `renderProgressCharts`, `getExSets`, ripresa/`buildLogSummary`); serve quando la skill-tree diventa centrale.
+&#x20; - \*\*UI/logging:\*\* Play avvia, Stop logga in automatico i secondi tenuti nel campo `reps` (MVP); log manuale sempre disponibile; \*\*guardia partito-per-sbaglio:\*\* se al Stop i secondi sforano troppo il target NON logga.
 
-&#x20; - \*\*File:\*\* input/logging/Progressi in `index.html`. Frontend-only. \*\*Si appoggia al descrittore per-esercizio. INCATENATO al "Timer-esercizio a tempo" → DA FARE INSIEME.\*\* (Lato PROMPT gli isometrici sono GIÀ gestiti nei coach\_rules di Muscle-Up Pro: "tieni Ns", niente RIR, conteggio set esplicito.)
+&#x20; - \*\*Regole:\*\* niente RIR sulle tenute; RPE/Fatica opzionale; peso solo se weighted (colonna `peso`). Timer su `Date.now()`, MAI `setInterval`.
+
+&#x20; - \*\*4 punti aperti (da decidere in fase build):\*\* (a) soglia di sforamento (es. scarta se `elapsed > target × 2`; sui range usa il massimo); (b) cronometro conta-in-su play/stop vs il countdown del lavoro del vecchio task Timer — probabile che la versione conta-su SOSTITUISCA il countdown per gli isometrici; (c) il motore-timer a timestamp `Date.now()` è prerequisito CONDIVISO (col fix "Timer recupero background").
+
+&#x20; - \*\*File:\*\* `index.html`. Frontend-only. Lato PROMPT già coperto nei `coach\_rules` MUP ("tieni Ns", niente RIR, conteggio set esplicito).
 
 \- \[ ] \*\*Editor tabellare programmi (admin, CSV↔tabella) — DA ALZARE (è prerequisito di "Analisi AI progressioni").\*\* Oltre a incollare `workout\_csv` nel textarea (flusso che RESTA), poterlo modificare in vista TABELLARE tipo Excel — click sulla cella, cambi solo quella; al Salva il `workout\_csv` viene riscritto. Due viste dello stesso dato.
 
@@ -183,7 +175,7 @@
 
 \- \[ ] \*\*e1RM stimato\*\* — formula Epley per esercizi con peso.
 
-\- \[ ] \*\*Timer recupero: si ferma se l'app va in background\*\* — calcolare il trascorso dal timestamp (`Date.now()`) invece di decrementare con `setInterval`. \*\*È la FONDAZIONE del "Timer esercizio a tempo"\*\* → valutare di farli insieme. Tocca `index.html`.
+\- \[ ] \*\*Timer recupero: si ferma se l'app va in background\*\* — calcolare il trascorso dal timestamp (`Date.now()`) invece di decrementare con `setInterval`. \*\*È la FONDAZIONE di "Esercizio a tempo / isometrici"\*\* → valutare di farli insieme. Tocca `index.html`.
 
 \- \[ ] \*\*Progressi — "Volume massimo singolo set"\*\* — sostituire "Volume totale" con il volume del set più alto IN ASSOLUTO (`reps × peso`). Tocca `pLblTot` in `renderProgressCharts`. Ora in `progress.js` (refactor fase 1).
 
@@ -588,7 +580,7 @@
 
 \- \*\*Peso per-esercizio\*\* = ✅ SHIPPED via colonna CSV `peso` (`weighted` per-esercizio, `currentWeighted`); `session\_type` ora ristretto al motore + DB. \*\*Resta\*\* il lato \*\*Logging isometrici\*\* (metric=time) del \*\*descrittore per-esercizio\*\*; il motore resta separato. Segue la \*\*migrazione colonna `peso`\*\* (🔴, gym pending) e abilita il \*\*prompt unico per-esercizio\*\* (💡).
 
-\- \*\*Timer esercizio a tempo\*\* è INCATENATO a \*\*Logging isometrici\*\* (stessa regex, il countdown lavoro pre-compila i secondi) e SOPRA il fix \*\*Timer recupero background\*\* (motore-timer unico a `Date.now()`). Stessa lezione del timer \*\*Breathwork\*\*.
+\- \*\*Esercizio a tempo / isometrici\*\* (spec unificata: fonde i vecchi "Logging isometrici" + "Timer esercizio a tempo") è SOPRA il fix \*\*Timer recupero background\*\* (motore-timer unico a `Date.now()`). Stessa lezione del timer \*\*Breathwork\*\*.
 
 \- \*\*Editor tabellare\*\* (🟡, ALZATO) è il PREREQUISITO del meccanismo di apply di \*\*Analisi AI progressioni\*\* (round-trip parse↔serialize = superficie di apply sicura).
 

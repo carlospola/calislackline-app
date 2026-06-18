@@ -210,7 +210,7 @@ only SQL artifact in the repo is the `db/policies.sql` snapshot, see "Repo `db/`
 - `settings` — key/value table backing the **coach prompt engine**, **read only server-side** by
   `api/chat.js` with the service role (there is no browser query and no admin UI for it). Rows:
   `coach_prompt_global` (common behavior) + `coach_prompt_bodyweight` / `coach_prompt_gym` (per-type
-  deltas). Edited via the Supabase **Table Editor**.
+  deltas). Edited via the Supabase **Table Editor**. **Do/learning (giugno 2026):** editing a TEMPLATE's `coach_rules` in the Table Editor does NOT refresh the admin's in-memory template list — the **"Prova"** button uses the stale copy, so **hard-refresh (Ctrl+Shift+R) before testing with Prova**. The motor `coach_prompt_*` rows here are read server-side per request and need no refresh.
 
 **Row-Level Security is enabled on all of these tables.** Policies scope rows to their owner via
 `auth.uid()`, with an `is_admin()` `SECURITY DEFINER` function granting admins full access (the
