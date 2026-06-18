@@ -128,6 +128,12 @@ programs
 
 &#x20; workout\_csv text, session\_type text ('bodyweight'|'gym'), created\_at
 
+&#x20;   <-- session\_type ora RISTRETTO al motore (delta coach\_prompt) + DB; NON pilota più la UI peso
+
+&#x20;       (visibilità #weightRow + box ora PER-ESERCIZIO via colonna CSV `peso`, vedi Descrittore)
+
+&#x20;   <-- workout\_csv: colonne workout, esercizio/nome, reps, tempo, recupero, peso (alias carico), note
+
 &#x20;
 
 program\_templates   <-- SOURCE OF TRUTH (libreria template riassegnabili)
@@ -476,6 +482,10 @@ as $$ select exists (select 1 from public.profiles where id = auth.uid() and rol
 
 parseWorkoutCsv(csv)        -> { headerLine, orderedWorkouts, rowsByWorkout, fieldsByWorkout }
 
+&#x20; fieldsByWorkout\[] include ora il campo `peso` (header CSV `peso`, alias `carico`); retrocompat:
+
+&#x20; CSV senza colonna peso -> field.peso vuoto. Colonne CSV: workout, esercizio/nome, reps, tempo, recupero, peso (alias carico), note.
+
 buildFilteredCsv(csv, nome) -> header + righe del solo workout scelto (fallback: CSV intero)
 
 startSessionWithPrompt(...): se orderedWorkouts.length >= 2 -> showWorkoutPicker, altrimenti beginSession
@@ -504,7 +514,7 @@ nextSetNum(name): conta i set già loggati per `name` in sessionLog.exercises + 
 
 selectExercise(name): chiude overlay; currentSetNum=nextSetNum; mode='single'; renderInputFields;
 
-&#x20; setInputLocked(false); popola i 4 box dal CSV. TARGET BOX PER TIPO (Tempo bodyweight / Peso gym).
+&#x20; setInputLocked(false); popola i 4 box dal CSV. TARGET BOX PER ESERCIZIO (weighted = colonna peso non vuota -> Peso, altrimenti Tempo); currentWeighted = field.peso non vuoto.
 
 updateSetInfo(text): currentSetNum=nextSetNum(logName); N da nextSetNum + TOT dal CSV.
 
@@ -522,13 +532,13 @@ Warm-up non-tappabile: /riscald|warm/i sulla Note -> .wlist-ex-warmup (no onclic
 
 TOPBAR: <- Torna | Titolo | LIVE | lista
 
-INFO BOX (3): \[Esercizio / Set N/TOT] | \[Target reps / TEMPO(bw) o PESO(gym) — es. "12-15 per lato"] | \[RECUPERO / Timer / Start]
+INFO BOX (3): \[Esercizio / Set N/TOT] | \[Target reps / PESO se weighted (colonna peso) altrimenti TEMPO — es. "12-15 per lato"] | \[RECUPERO / Timer / Start]
 
 CHAT: bubble AI (solo feedback testuale)
 
 OVERLAY #workoutPickerOverlay (scelta workout pre-chat) / #workoutListOverlay (esercizi tappabili)
 
-INPUT: \[#inputContainer 1fr 1fr: Reps | RIR] \[#weightRow: Peso kg, solo gym, a destra]
+INPUT: \[#inputContainer 1fr 1fr: Reps | RIR] \[#weightRow: Peso kg, solo se weighted (per-esercizio, colonna peso), a destra]
 
 &#x20;      \[RPE/Fatica 1-10 opzionali] \[note + send]
 
@@ -538,9 +548,9 @@ ANTI-ZOOM: #sessionScreen input,textarea { font-size:16px !important; }
 
 > Topbar SOLO "Torna" + "lista". Chiusura con "Torna".
 
-> (FUTURO) la visibilità del peso e il tipo di box passeranno a un DESCRITTORE PER-ESERCIZIO (sotto).
+> ✅ SHIPPED: la visibilità del peso (#weightRow) e il tipo di box sono PER-ESERCIZIO, pilotati da `currentWeighted` (colonna CSV `peso`), NON da `session_type`. `session_type` resta solo per il motore (delta coach_prompt) e per il DB (vedi sezione "Descrittore per-esercizio").
 
-> Quirk noto: in New Workout la Note = varianti (non peso) -> il box gym mostra quel testo (accettato).
+> Il vecchio quirk "New Workout Note = varianti" è RISOLTO: la Note NON pilota più il box peso (ora dalla colonna `peso` dedicata).
 
 &#x20;
 
@@ -590,37 +600,59 @@ deleteLog (fix 7f8315d): role==='admin' -> solo renderLogTable() (resta su admin
 
 &#x20;
 
-\## (PIANIFICATO) Descrittore per-esercizio — sessioni miste + isometrici
+\## Descrittore per-esercizio — peso ✅ SHIPPED (colonna CSV), isometrici PIANIFICATI
 
-> Voci TASKS "Peso per-esercizio" e "Logging isometrici". Frontend-only, no migration.
+> Voce TASKS "Peso per-esercizio" = ✅ SHIPPED via colonna CSV dedicata `peso`. "Logging isometrici"
 
-> Il lato PROMPT del misto è GIÀ coperto (coach\_rules MUP); qui resta il lato UI.
+> (metric=time) resta PIANIFICATO. Frontend-only, no migration.
+
+> Il lato PROMPT del misto è GIÀ coperto (coach\_rules MUP).
 
 ```
 
-Oggi: session\_type decide A LIVELLO DI SESSIONE peso (#weightRow) e tipo box. Le sessioni MISTE
+✅ PESO PER-ESERCIZIO (SHIPPED). La visibilità del peso (#weightRow) e il tipo di box NON dipendono
 
-(Muscle-Up Pro: corpo libero + zavorrato) non sono gestite lato UI.
+più da session\_type: dipendono da currentWeighted, calcolato PER-ESERCIZIO dalla colonna CSV `peso`.
 
-Futuro: descrittore calcolato DAL CSV per OGNI esercizio:
+&#x20; exIsWeighted(peso): true se la cella `peso` non è vuota; il valore del peso è anche il TARGET nel box.
 
-&#x20; { metric:'reps'|'time', weighted:bool, tempo, recupero, target }
+&#x20; parseWorkoutCsv riconosce l'header `peso` (alias `carico`) -> field.peso (retrocompat: CSV senza
 
-&#x20; - weighted = (session\_type==='gym') || /\\d+\\s\*kg/i nella Note
+&#x20;   colonna -> field.peso vuoto -> esercizio a corpo libero).
 
-&#x20; - metric   = /\\d+\\s\*(sec|min)/i sulle Reps ? 'time' : 'reps'
+&#x20; currentWeighted (NUOVA var globale): impostata in updateSetInfo (da csvPeso del set-line AI; per i
 
-renderInputFields / box / logging leggono il descrittore al posto del session-wide session\_type.
+&#x20;   superset = esercizio PRIMARIO) e in selectExercise (da field.peso). Pilota show/hide #weightRow e
 
-metric='time': label "Secondi", NIENTE RIR, RPE opzionale, peso se weighted.
+&#x20;   il tipo di box; LETTA da sendMsg per il GATING del peso loggato.
 
-MVP isometrici: secondi nel campo `reps` (+ relabel Progressi). Avanzato: campo `seconds` (jsonb).
+&#x20; beginSession e resumeSession resettano #weightRow a display:none all'avvio (visibilità ora
+
+&#x20;   PER-ESERCIZIO, non per-sessione).
+
+&#x20; Box: weighted -> mostra il PESO (= valore colonna peso); altrimenti Tempo (updateSetInfo dal
+
+&#x20;   set-line AI; selectExercise da field.tempo).
+
+SUPERATO l'approccio Note (regex kg + fallback session\_type==='gym' + gym->Note-come-peso): la Note
+
+&#x20; NON pilota più il box peso. Quirk New Workout (Note=varianti) RISOLTO.
+
+session\_type RISTRETTO al motore (delta coach\_prompt in chat.js) e al DB; non pilota più la UI peso.
+
+ISOMETRICI (metric=time) — ANCORA PIANIFICATO:
+
+&#x20; metric = /\\d+\\s\*(sec|min)/i sulle Reps ? 'time' : 'reps'
+
+&#x20; metric='time': label "Secondi", NIENTE RIR, RPE opzionale, peso se weighted.
+
+&#x20; MVP: secondi nel campo `reps` (+ relabel Progressi). Avanzato: campo `seconds` (jsonb).
 
 Il MOTORE resta separato (stile di coaching della sessione, non tipo del singolo esercizio).
 
 NON introdurre session\_type 'mixed'.
 
-(FUTURO 💡 elastici: estensione del descrittore con load:'kg'|'band'|none — parcheggiata in TASKS.)
+(FUTURO 💡 elastici: estensione con load:'kg'|'band'|none — parcheggiata in TASKS.)
 
 ```
 

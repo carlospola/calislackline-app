@@ -2,7 +2,7 @@
 
 &#x20;
 
-\_Aggiornato: 2026-06-17\_
+\_Aggiornato: 2026-06-18\_
 
 &#x20;
 
@@ -105,19 +105,23 @@
 
 &#x20; - \*\*File:\*\* `index.html` (logica timer). Diff + conferma. \*\*INCATENATO a "Logging esercizi isometrici"\*\* (sotto): stessa regex, il countdown lavoro pre-compila i secondi. DA FARE INSIEME.
 
-\- \[ ] \*\*Peso per-esercizio in sessioni miste (bodyweight + gym).\*\* Oggi `session\_type` decide A LIVELLO DI SESSIONE se mostrare il campo peso (`#weightRow` visibile solo se `session\_type==='gym'`) e cosa mostra il target box. Le sessioni MISTE (es. Muscle-Up Pro: corpo libero + esercizi zavorrati) non sono gestite.
+\- \[x] \*\*Peso per-esercizio in sessioni miste (bodyweight + gym) — ✅ SHIPPED (via colonna CSV `peso`, NON regex Note).\*\* Il campo peso (`#weightRow`) e il target box sono ora PER-ESERCIZIO, pilotati da `currentWeighted`, NON più da `session\_type`. Meccanismo:
 
-&#x20; - \*\*Obiettivo:\*\* far comparire il campo peso SOLO sugli esercizi che lo richiedono, PER-ESERCIZIO.
+&#x20; - \*\*`weighted` = cella CSV `peso` non vuota\*\* (`exIsWeighted(peso)`); il valore di `peso` è anche il TARGET mostrato nel box. \*\*SUPERATO l'approccio Note\*\* (regex `/N kg/` + fallback `session\_type==='gym'` + gym→Note-come-peso): la Note NON pilota più il box peso. Quirk New Workout (Note=varianti) RISOLTO.
 
-&#x20; - \*\*Regola:\*\* mostra peso se `session\_type==='gym'` OPPURE la riga CSV è "zavorrata" (token peso nella Note). Preserva pure-gym/pure-bodyweight; aggiunge il caso misto SENZA introdurre un terzo `session\_type 'mixed'`.
+&#x20; - \*\*`parseWorkoutCsv` riconosce l'header `peso` (alias `carico`)\*\* → `field.peso` (retrocompat: CSV senza colonna → vuoto → corpo libero).
 
-&#x20; - \*\*Target box per-esercizio:\*\* zavorrato → peso (dalla Note); a tempo → secondi; reps a corpo libero → tempo.
+&#x20; - \*\*Nuova var globale `currentWeighted`:\*\* impostata in `updateSetInfo` (da `csvPeso`; superset = esercizio PRIMARIO) e `selectExercise` (da `field.peso`); pilota show/hide `#weightRow` + tipo box; letta da `sendMsg` per il GATING del peso loggato. `beginSession`/`resumeSession` resettano `#weightRow` a `none` all'avvio.
 
-&#x20; - \*\*Rilevamento DETERMINISTICO dal CSV\*\* (niente colonna nuova/migration), stesso pattern di warm-up/timer. Convenzione: carico sempre come "N kg" nella Note → punto fragile (disciplina di scrittura).
+&#x20; - \*\*`session\_type` RISTRETTO al motore\*\* (delta `coach\_prompt`) + DB; non pilota più la UI peso. (cleanup codice/DB futuro: vedi task "Prompt unico per-esercizio" in 💡.)
 
-&#x20; - \*\*Insight unificante:\*\* introdurre un \*\*DESCRITTORE PER-ESERCIZIO\*\* calcolato dal CSV, `{ metric:'reps'|'time', weighted:bool, tempo, recupero, target }`, che `renderInputFields`, i box e il logging leggono al posto del session-wide `session\_type`. Il MOTORE resta separato (stile di coaching, non tipo del singolo esercizio).
+&#x20; - \*\*Resta aperto:\*\* il lato \*\*isometrici (metric=time)\*\* del descrittore per-esercizio (vedi "Logging esercizi isometrici"). Futuro: anche gli \*\*elastici\*\* (💡) si appoggiano qui (`load:'kg'|'band'|none`).
 
-&#x20; - \*\*File:\*\* `index.html` (`renderInputFields`, `updateSetInfo`, `selectExercise`, show/hide `#weightRow`). Frontend-only. \*\*Collegamento:\*\* Muscle-Up Pro È il caso misto (lato PROMPT già gestito con la FILOSOFIA MISTA — giugno 2026; qui resta il lato UI). Futuro: anche gli \*\*elastici\*\* (💡) si appoggiano qui (`load:'kg'|'band'|none`).
+\- \[ ] \*\*🔴 Migrazione colonna `peso` su TUTTI i programmi con carico — PRIMA del push (segue il peso per-esercizio).\*\* Ora che `weighted` si legge dalla colonna CSV `peso` (non più da `session\_type`), ogni programma con carico DEVE avere la colonna `peso` popolata, altrimenti i suoi esercizi perdono il box peso e il campo peso (regrediscono a corpo libero). \*\*Stato:\*\* Muscle-Up Pro GIÀ fatto; \*\*Pool Danger Hypertrophy e gli altri gym (741 Fitness, Bro split, Upper/Lower Rotation) PENDING.\*\* Si fa nei `workout\_csv` dei TEMPLATE (Table Editor / tab Template + "Applica a tutti"), nessun deploy. \*\*Bloccante per il push frontend del peso per-esercizio.\*\*
+
+\- \[ ] \*\*\[BUG] `selectExercise` non azzera la quick-option `[PRONTO]` pendente.\*\* Se l'atleta sceglie un esercizio dalla lista PRIMA di premere "Pronto" (warm-up), il bottone Pronto resta appeso e salta il saluto post-pronto. Fix: `selectExercise` deve ripulire le quick-option pendenti (incl. `[PRONTO]`) prima di preparare l'input del nuovo esercizio. File: `index.html`. Frontend-only.
+
+\- \[ ] \*\*\[FIX COACHING] Tetto-del-range + soglia RIR ambigua (Table Editor, no deploy).\*\* Regressione vista su MUP (Jumping Muscle-Up, 5 reps su range 3-5): il motore (blocco VALUTAZIONE DEL RANGE) ricade nell'errore "tetto del range = sforato". Inoltre i `coach\_rules` MUP hanno una soglia RIR ambigua ("RIR≥2-3"). \*\*Regola da incidere:\*\* reps NEL range estremi inclusi = A TARGET; sforato SOLO se reps > tetto; \*\*RIR<3 = ok\*\*, SOLO \*\*RIR≥3\*\* fa scattare "riduci assistenza". Si edita in `settings` (`coach\_prompt\_global`) + `coach\_rules` MUP, nessun deploy.
 
 \- \[ ] \*\*Logging esercizi isometrici (a tempo).\*\* Gli isometrici (plank, L-sit, hold) si misurano in SECONDI tenuti, non reps.
 
@@ -328,6 +332,8 @@
 &#x20; - \*\*⚠️ CAVEAT LOAD-BEARING:\*\* NON puntare al pieno automatico. Il gate "piano/diff prima del codice" resta obbligatorio: è produzione con utenti veri. \*\*PREREQUISITO per la PARTE 2 — ambiente di preview/test: ora SODDISFATTO\*\* (preview locale `vercel dev` ✅ FATTA, 14/06) → la PARTE 2 è SBLOCCATA su questo fronte. \*\*MA\*\* la preview gira sul DB Supabase REALE (env da production), quindi NON è ancora uno staging isolato: un loop "completa tutta TASKS.md da solo" spedirebbe comunque effetti in prod. Coach-in-the-loop obbligatorio.
 
 &#x20; - \*\*Next reasoning:\*\* decidere se attivare la PARTE 1 in un prossimo batch documentale.
+
+\- \[ ] \*\*Prompt unico per-esercizio (unificare i delta motore) — orizzonte, abilitato dal peso per-esercizio.\*\* Unificare i delta `coach\_prompt\_gym` e `coach\_prompt\_bodyweight` in un solo `coach\_prompt\_global` che applica la leva PER-ESERCIZIO leggendo la colonna CSV `peso` (weighted → carico; corpo libero → variante/leva/tempo). \*\*Fattibile SOLO via `settings` (Table Editor):\*\* tutto in `coach\_prompt\_global`, deltas SVUOTATI; `chat.js` intatto (sceglie un delta vuoto), Leva 2 caching intatta. \*\*Effetto:\*\* rende `session\_type` del tutto rimovibile dal motore (cleanup codice/DB futuro). \*\*Dipende\*\* dalla colonna `peso` popolata su tutti i programmi (vedi migrazione 🔴 sopra). \*\*Primo sotto-passo:\*\* rivedere i 3 testi `settings` attuali (global + 2 delta).
 
 \- \[ ] \*\*Avatar coach per-atleta — idea minore, DA VALUTARE (tenuta in parcheggio prima di scartarla).\*\* Personalizzazione visiva del coach AI per atleta. Nessun dettaglio definito, nessuna analisi fatta.
 
@@ -580,7 +586,7 @@
 
 \- \*\*Conteggio set X/Y\*\* + \*\*Fine sessione chiara\*\* ALIMENTANO "Progressione programma" (e la variante avanzata di "sessione consumata" del trial).
 
-\- \*\*Peso per-esercizio\*\* + \*\*Logging isometrici\*\* introducono il \*\*descrittore per-esercizio\*\* (metric/weighted/tempo/recupero/target dal CSV); il motore resta separato.
+\- \*\*Peso per-esercizio\*\* = ✅ SHIPPED via colonna CSV `peso` (`weighted` per-esercizio, `currentWeighted`); `session\_type` ora ristretto al motore + DB. \*\*Resta\*\* il lato \*\*Logging isometrici\*\* (metric=time) del \*\*descrittore per-esercizio\*\*; il motore resta separato. Segue la \*\*migrazione colonna `peso`\*\* (🔴, gym pending) e abilita il \*\*prompt unico per-esercizio\*\* (💡).
 
 \- \*\*Timer esercizio a tempo\*\* è INCATENATO a \*\*Logging isometrici\*\* (stessa regex, il countdown lavoro pre-compila i secondi) e SOPRA il fix \*\*Timer recupero background\*\* (motore-timer unico a `Date.now()`). Stessa lezione del timer \*\*Breathwork\*\*.
 

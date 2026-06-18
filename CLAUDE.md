@@ -268,19 +268,27 @@ carries just that one workout instead of the whole program (**API-cost reduction
      see below), **not** parsed from the AI's tag; only `TOT` is read from the CSV (with the AI tag's
      `/TOT` as fallback). `currentSetNum` (used for dedup on write) is set from `nextSetNum`, never
      from the model's number.
-   - **Target box per session type:** in both `updateSetInfo()` (the `[SET:]` path) and
-     `selectExercise()` (the tap path), **gym** programs (`currentProfile.session_type==='gym'`)
-     show the target **weight** (CSV **Note** column) in the box under the reps **instead of the
-     Tempo**; bodyweight is unchanged. No per-row label, no element-ID change.
+   - **Target box per esercizio (peso via colonna CSV `peso`, NOT `session_type`):** in both
+     `updateSetInfo()` (the `[SET:]` path) and `selectExercise()` (the tap path), a **weighted**
+     exercise (its CSV **`peso`** column non-empty → `currentWeighted` true) shows the target
+     **weight** in the box under the reps **instead of the Tempo**; otherwise it shows the Tempo.
+     `currentWeighted` is set per-exercise (from `csvPeso`/`field.peso`; for a superset = the
+     **primary** exercise). No per-row label, no element-ID change. **`session_type` no longer drives
+     this** — it's restricted to the motor (per-type `coach_prompt` delta) and the DB; the weight UI is
+     now per-exercise. The old "Note column = weight" + `/kg/` regex + `gym→Note` approach is
+     superseded (the New Workout `Note`=varianti quirk is resolved).
    - **Inline input row (reps · RIR · weight).** The single-mode `renderInputFields()` output and the
      `#weightRow` block live in **one flex wrapper** (`gap:8px`, `align-items:flex-end`), so the row
      reads **[ Reps ] [ RIR ] [ Peso ]** with widths **1:1:1** (`#inputContainer` `flex:2` wrapping an
      inner `1fr 1fr` grid for reps/RIR, + `#weightRow` `flex:1`). The weight (`#weightRow`) is
-     **appended on the right** and shown **only when `session_type==='gym'`** — keeping it last means
-     reps/RIR stay in a **fixed position in both modes** (**do not move the weight to the left** — it
-     breaks the bodyweight/gym consistency). The JS show/hide of the weight is **unchanged**
-     (`wrow.style.display = 'block'/'none'`; the inline `flex:1` survives because the JS only touches
-     `.display`). Each of the 3 box labels carries `min-height:30px` + `display:flex;
+     **appended on the right** and shown **only when the exercise is weighted** (`currentWeighted`,
+     per-exercise from the CSV `peso` column — no longer `session_type==='gym'`) — keeping it last
+     means reps/RIR stay in a **fixed position in both modes** (**do not move the weight to the left**
+     — it breaks the bodyweight/weighted consistency). The JS show/hide of the weight toggles
+     `wrow.style.display` per exercise (set in `updateSetInfo`/`selectExercise`, and reset to `none`
+     at start by `beginSession`/`resumeSession`); the inline `flex:1` survives because the JS only
+     touches `.display`. `sendMsg` reads `currentWeighted` to gate whether the logged weight is
+     attached. Each of the 3 box labels carries `min-height:30px` + `display:flex;
      align-items:flex-end;justify-content:center;text-align:center;` so the 1- and 2-line labels
      (e.g. "RIPETIZIONI" vs "RIPETIZIONI IN RISERVA") bottom-align and center over their box.
      **Keyboards & anti-zoom:** reps/RIR (`#reps_a/b`, `#rir_a/b`) use
@@ -361,10 +369,14 @@ prepare an input), `nextSetNum` (which owns the deterministic `currentSetNum`), 
 
 ### Convenzioni CSV workout
 
+- **Colonna `peso` dedicata (alias `carico`).** Il carico va nella colonna **`peso`**, non nelle
+  **Note**. `parseWorkoutCsv` la riconosce → `field.peso`; una cella `peso` non vuota rende
+  l'esercizio **weighted** (mostra il campo peso + il box mostra quel valore come target).
+  Retrocompat: CSV senza colonna `peso` → tutti gli esercizi a corpo libero. È **per-esercizio**:
+  un CSV misto (alcune righe con `peso`, altre vuote) gestisce correttamente le sessioni miste.
 - **Monolaterali = UN esercizio, non un superset.** A single-limb exercise is one CSV row / one
   `[SET:]`, **never** a `[SUPERSET:]`. "**N per lato**" goes in the **Reps** column (e.g. `8 per
-  lato`), **not** in **Note** — in `gym` the **Note column is the target weight** (see the
-  target-box rule above).
+  lato`), **not** in **Note**.
 - **Rep range ~3 for hypertrophy programs** (e.g. 8–11): the coach's feedback reasons on "within
   range / above / below" the target, so keep the spread meaningful.
 

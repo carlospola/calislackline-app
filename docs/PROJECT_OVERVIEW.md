@@ -201,7 +201,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Prerequisito/hardening admin per `/api/chat.js`:\*\* oggi l'admin deve avere `status='active'` (fix dati applicato). Hardening opzionale ANCORA APERTO: gate `status==='active' || role==='admin'` (il gate trial 1A è ora implementato; questo bypass admin resta separato e non urgente, il fix dati basta)
 
-\- \*\*Sessioni miste (bodyweight + gym) non gestite per-esercizio LATO UI\*\* → descrittore per-esercizio (peso/isometrici dal CSV). Il lato PROMPT del misto è già coperto (filosofia MUP). Vedi TASKS
+\- \*\*✅ Peso per-esercizio / sessioni miste (bodyweight + gym) — SHIPPED via colonna CSV `peso`.\*\* La visibilità del campo peso e il target box sono ora PER-ESERCIZIO (`currentWeighted` = cella `peso` non vuota), NON più pilotati da `session\_type` (ristretto al motore + DB). Quirk New Workout (Note=varianti) risolto. \*\*Resta aperto solo il lato isometrici (metric=time)\*\* del descrittore per-esercizio. Il lato PROMPT del misto è già coperto (filosofia MUP). Vedi ARCHITECTURE/TASKS
 
 \- \*\*Apps Script da rivedere pesantemente\*\* (questionario + mail richiesta coaching, doppia mail, contenuti; dipendenza GEMINI API ora documentata in ARCHITECTURE) — vedi TASKS 🟡; non costruirci sopra nuove feature
 
