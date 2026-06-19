@@ -2,7 +2,7 @@
 
 &#x20;
 
-\_Aggiornato: 2026-06-18\_
+\_Aggiornato: 2026-06-19\_
 
 &#x20;
 
@@ -107,11 +107,7 @@
 
 \- \[x] \*\*Migrazione colonna `peso` su TUTTI i programmi con carico — ✅ COMPLETATO (giugno 2026, via tab Template admin + "Applica a tutti", nessun deploy).\*\* Ogni programma con carico ha la colonna `peso` popolata, così `weighted`/`currentWeighted` si leggono dal CSV (vedi "Peso per-esercizio"). \*\*Convenzione colonna:\*\* header `Peso` come ULTIMA colonna; gym = carico verbatim (es. `40 kg`); corpo-libero-zavorrato = zavorra; \*\*vuoto\*\* su warm-up/cardio/accessori a corpo libero. La colonna Note dei gym tiene ANCORA il peso (era la fallback per la finestra pre-push; ora il frontend per-esercizio è pushato, ma la Note non è stata ripulita). \*\*Migrati:\*\* 741 Fitness, Pool Danger Hypertrophy (il piccolo no-name Leg press/Side kick), Bro split; Muscle-Up Pro era già migrato. \*\*Fuori per DECISIONE (non pending):\*\* Body By Rings + "Prova — Full Body" (bodyweight puro, nessuna colonna serve); New Workout (quirk Note=varianti maxout, niente colonna peso) e Upper/Lower Rotation lasciati fuori volutamente.
 
-\- \[ ] \*\*\[BUG] `selectExercise` non azzera la quick-option `[PRONTO]` pendente.\*\* Se l'atleta sceglie un esercizio dalla lista PRIMA di premere "Pronto" (warm-up), il bottone Pronto resta appeso e salta il saluto post-pronto. Fix: `selectExercise` deve ripulire le quick-option pendenti (incl. `[PRONTO]`) prima di preparare l'input del nuovo esercizio. File: `index.html`. Frontend-only.
-
 \- \[x] \*\*\[FIX COACHING] 3A — Classificazione meccanica del range — ✅ COMPLETATO (in `coach\_prompt\_global`, Table Editor, no deploy).\*\* Il blocco VALUTAZIONE DEL RANGE è stato riscritto come classificazione MECCANICA min/max, con tetto E pavimento inchiodati ed esempi su range piccoli (3 su 3-5 = a target, 5 su 3-5 = a target, 6 su 3-5 = sopra, 2 su 3-5 = sotto), guardia bidirezionale (il tetto NON è uno sforamento, il pavimento NON è un "sotto"), anti-fotocopia mantenuto. \*\*Verificato:\*\* niente più "sforato" sul tetto, niente più "completa il range" sul pavimento. Vedi AI\_RULES / ARCHITECTURE (descrizione blocco aggiornata).
-
-\- \[ ] \*\*\[FIX COACHING] 3B — Leva-RIR di Muscle-Up Pro — PARCHEGGIATA al "Prompt unico per-esercizio" (punto 5).\*\* I `coach\_rules` MUP sono a v3 (soglia meccanica: RIR 0/1/2/3 = a target, niente leva; solo RIR ≥4 fa scattare "riduci assistenza"), ma il modello NON onora la soglia sul bordo RIR=3 (flaky, testate 3 formulazioni). \*\*Insight load-bearing per il punto 5:\*\* legare la leva a un segnale DETERMINISTICO (`reps > tetto` del range), NON al giudizio RIR del modello in un prompt lungo. Si risolve dentro il prompt unico.
 
 \- \[ ] \*\*Esercizio a tempo / isometrici (logging + cronometro) — spec unificata (è il `metric=time` del descrittore per-esercizio, gemella di `weighted=Peso` già shippata).\*\* Fonde le vecchie voci "Logging isometrici" e "Timer esercizio a tempo".
 
@@ -297,6 +293,10 @@
 
 &#x20; - \*\*Analisi:\*\* sinergia reale e coerente, MA i concetti (periodizzazione/double progression/deload/buffer) sono scienza standard → la spesa si giustifica su CREDENZIALE + METODO COERENTE; l'app è il bonus forte, non il motivo unico. Rendere la sinergia CONCRETA: \*\*tesina = caso AILISTENICS\*\* (blocco forza/ipertrofia di 6 settimane fatto girare nell'app su un atleta beta) → deliverable del corso e validazione dell'app = lo stesso lavoro. Workflow: appunti modulo per modulo → artefatti dell'app.
 
+&#x20; - \*\*SCOPE coaching (chiarito giugno 2026):\*\* la parte IN-SESSIONE che il corso alimenta = modulazione del \*\*RIR target per livello atleta e per tipo esercizio\*\* dentro il MOTORE + ripulitura mirata degli SCHEMI DI FEEDBACK. \*\*FUORI scope (GATED):\*\* la progressione TRA le sessioni (doppia progressione, deload) NON è coaching in-sessione → resta dentro "Analisi AI progressioni + deload" (🟢, Periodizzazione AI).
+
+&#x20; - \*\*Sotto-item APERTO (frontend del motore, `settings`):\*\* ripulire il FRASEGGIO dello schema di feedback per gli esercizi a CORPO LIBERO — dopo l'unificazione dei delta (vedi "Prompt unico per-esercizio", Completati) il ramo corpo-libero può ECHEGGIARE frasi pescate dal ramo con carico (es. "vicino al limite"). Da rivedere nel testo `coach\_prompt\_global` (Table Editor, no deploy).
+
 &#x20; - \*\*Next reasoning:\*\* decidere se/quando iscriversi alla prossima finestra, legandolo a quando il coaching fa reddito e al costo-opportunità (50h+tesina+esame vs costruire). NON aspettare il corso per i task ungated.
 
 &#x20; - \*\*CROSS-REF:\*\* Analisi AI progressioni + deload, Progressione programma, Sblocco skill ad albero, Video tutorial esercizi, Onboarding AI.
@@ -325,8 +325,6 @@
 
 &#x20; - \*\*Next reasoning:\*\* decidere se attivare la PARTE 1 in un prossimo batch documentale.
 
-\- \[ ] \*\*Prompt unico per-esercizio (unificare i delta motore) — orizzonte, abilitato dal peso per-esercizio.\*\* Unificare i delta `coach\_prompt\_gym` e `coach\_prompt\_bodyweight` in un solo `coach\_prompt\_global` che applica la leva PER-ESERCIZIO leggendo la colonna CSV `peso` (weighted → carico; corpo libero → variante/leva/tempo). \*\*Fattibile SOLO via `settings` (Table Editor):\*\* tutto in `coach\_prompt\_global`, deltas SVUOTATI; `chat.js` intatto (sceglie un delta vuoto), Leva 2 caching intatta. \*\*Effetto:\*\* rende `session\_type` del tutto rimovibile dal motore (cleanup codice/DB futuro). \*\*Dipende\*\* dalla colonna `peso` popolata su tutti i programmi (vedi migrazione 🔴 sopra). \*\*Primo sotto-passo:\*\* rivedere i 3 testi `settings` attuali (global + 2 delta).
-
 \- \[ ] \*\*Avatar coach per-atleta — idea minore, DA VALUTARE (tenuta in parcheggio prima di scartarla).\*\* Personalizzazione visiva del coach AI per atleta. Nessun dettaglio definito, nessuna analisi fatta.
 
 - [ ] 💡 **Log multi-disciplina + timer attivita + calendario multicolore — PARCHEGGIATA (idea, BS 16/06/2026).** Registro allenamenti OLTRE AILISTENICS: timer di durata per BJJ e altre discipline, log che compare nei Progressi con media/settimana, totale mese e totale storico PER disciplina; calendario con un colore per disciplina e cella splittata in 2-3 quando nello stesso giorno ci sono piu discipline; sessioni AILISTENICS incluse come una delle discipline.
@@ -339,6 +337,16 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — Prompt unico per-esercizio + fix bug Pronto + chiusura 3B (giugno 2026)
+
+\- \[x] \*\*\[BUG] `selectExercise` non azzera la quick-option `[PRONTO]` pendente — RISOLTO (commit `675f89e`).\*\* Se l'atleta sceglieva un esercizio dalla lista PRIMA di premere "Pronto" (warm-up), il bottone Pronto restava appeso e saltava il saluto post-pronto. Fix: `selectExercise` ora rimuove la quick-option pendente all'inizio, subito dopo la chiusura dell'overlay, replicando il pattern già presente in `addBubble`. \*\*`#quickOptions` è il container DOM UNICO di TUTTE le quick-option\*\* (bottone Pronto del warm-up + option-chip) → ripulito sia da `addBubble` sia ora da `selectExercise`. Solo `index.html`, frontend-only.
+
+\- \[x] \*\*Prompt unico per-esercizio (unificare i delta motore) — FATTO (`settings`, Table Editor, no deploy).\*\* I due delta `coach\_prompt\_gym` e `coach\_prompt\_bodyweight` sono stati \*\*SVUOTATI\*\* e il comportamento peso/tempo è ora interamente in `coach\_prompt\_global`, deciso \*\*PER-ESERCIZIO\*\* dalla colonna `Peso` del CSV (cella valorizzata = CON CARICO; cella vuota = A CORPO LIBERO). Aggiunti al global i blocchi \*\*CARICO O CORPO LIBERO\*\* e \*\*LEVA DI DIFFICOLTÀ\*\*. \*\*`chat.js` e la Leva 2 (prompt caching) intatti:\*\* `chat.js` concatena un delta vuoto, la struttura a blocchi cachati non cambia. `session\_type` non è più usato dal motore per il comportamento (resta nel DB/codice → rimozione = cleanup futuro). \*\*Effetto:\*\* il caso misto è gestito per-esercizio senza `session\_type`.
+
+\- \[x] \*\*\[FIX COACHING] 3B — Leva-RIR di Muscle-Up Pro — CHIUSA (`coach\_prompt\_global` + `coach\_rules`, Table Editor, no deploy).\*\* La leva di difficoltà sugli esercizi a corpo libero si attiva ora su un trigger \*\*DETERMINISTICO `reps > tetto` del range\*\* (nel MOTORE), NON sul giudizio RIR del modello (che era flaky sul bordo RIR=3). `coach\_rules` Muscle-Up Pro snelliti: \*\*rimossa la soglia RIR delle leve e la filosofia-peso-via-Note\*\*; tenuti ISOMETRICI e la scala leve (riduci assistenza → eccentrica → variante).
+
+\- \[x] \*\*\[FIX COACHING] coach\_rules Frau Medici - Palestra (Petra) snelliti (`coach\_rules`, Table Editor).\*\* Rimossa la regola che toglieva peso su RIR basso (causava il feedback errato "togli peso" su ripetizioni a target); tenuto e preservato il blocco \*\*LINGUAGGIO SEMPLICE\*\*. Learning: i `coach\_rules` a linguaggio semplice devono evitare i termini vietati ANCHE nelle istruzioni interne, non solo in output, o il modello li echeggia. Dopo l'unificazione i `coach\_rules` collassano a residui specifici per-programma (Petra = linguaggio semplice; Muscle-Up Pro = isometrici + scala leve).
 
 \## ✅ Completati — E2E funnel trial (Playwright) (16 giugno 2026)
 

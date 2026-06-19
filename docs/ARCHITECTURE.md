@@ -42,7 +42,7 @@
 
 &#x20; - \*\*⚠️ PREREQUISITO ADMIN:\*\* il pending-gate vale ANCHE per l'admin. La test session "Prova" parte dall'account admin, quindi l'admin DEVE avere `profiles.status='active'` (sennò 403). Risolto via `update profiles set status='active' where role='admin'`. Hardening opzionale ANCORA APERTO (TASKS 🟢): gate = `status==='active' || role==='admin'` (il gate trial 1A è ora implementato — vedi sotto; questo bypass admin resta separato e non urgente, il fix dati basta).
 
-&#x20; - \*\*✅ MOTORE-PROMPT (ATTIVO — COMPLETO, giugno 2026):\*\* `chat.js`, DOPO i gate e PRIMA di Anthropic, legge da `settings` (service role): comune `coach\_prompt\_global` + delta per tipo (`coach\_prompt\_gym` | `coach\_prompt\_bodyweight`) scelto da `body.session\_type` (typeKey HARDCODED -> no injection). `motor = \[global, delta].filter(p=>p).join('\\n\\n')`. Fallback non bloccante (`motor=''`). Il MOTORE include: il \*\*WARM-UP OBBLIGATORIO\*\*, il blocco \*\*"PRECEDENZA — FILOSOFIA DI PROGRAMMA"\*\* (i coach\_rules che dichiarano una filosofia propria — maxout, mista — prevalgono sui punti in conflitto; il resto resta regolato dal motore) e il blocco \*\*"VALUTAZIONE DEL RANGE"\*\* + anti-fotocopia (riscritto giugno 2026 come CLASSIFICAZIONE MECCANICA min/max: pavimento E tetto inchiodati; estremi inclusi = a target; reps > tetto = sopra; reps < pavimento = sotto; esempi su range piccoli; guardia bidirezionale tetto≠sforato e pavimento≠sotto; vietata la frase identica su esercizi/set diversi). \*\*NOTA (correzione doc):\*\* la regola "autoregolazione reattiva sì / progressione proattiva no" NON è un blocco dedicato — è espressa NEGLI SCHEMI FEEDBACK (global + delta). TUTTI i 9 programmi girano sul motore; New Workout (maxout) e Muscle-Up Pro (misto) hanno coach\_rules snelli con override di filosofia (vedi AI\_RULES).
+&#x20; - \*\*✅ MOTORE-PROMPT (ATTIVO — COMPLETO, giugno 2026):\*\* `chat.js`, DOPO i gate e PRIMA di Anthropic, legge da `settings` (service role): comune `coach\_prompt\_global` + delta per tipo (`coach\_prompt\_gym` | `coach\_prompt\_bodyweight`) scelto da `body.session\_type` (typeKey HARDCODED -> no injection). `motor = \[global, delta].filter(p=>p).join('\\n\\n')`. Fallback non bloccante (`motor=''`). \*\*✅ PROMPT UNICO PER-ESERCIZIO (giugno 2026):\*\* i due delta `coach\_prompt\_gym` e `coach\_prompt\_bodyweight` sono ora \*\*SVUOTATI\*\* — tutto il comportamento vive in `coach\_prompt\_global`. Il meccanismo `chat.js` è INTATTO (concatena un delta vuoto: `[global, ''].filter(p=>p)` = solo global) e la \*\*Leva 2 (prompt caching) intatta\*\*. Il discriminante peso/tempo non è più `session\_type` ma è \*\*PER-ESERCIZIO sulla colonna CSV `Peso`\*\*, via i due NUOVI blocchi del global: \*\*"CARICO O CORPO LIBERO"\*\* (cella `Peso` valorizzata = peso target + intro col peso + peso fuori dalla riga del set; cella vuota = corpo libero, reps + tempo se presente, "per lato") e \*\*"LEVA DI DIFFICOLTÀ"\*\* (trigger DETERMINISTICO `reps > tetto`, NON il giudizio RIR — chiude la 3B di Muscle-Up Pro). `session\_type` NON guida più il comportamento del motore (resta nel DB/codice → rimozione = cleanup futuro). Il MOTORE include inoltre: il \*\*WARM-UP OBBLIGATORIO\*\*, il blocco \*\*"PRECEDENZA — FILOSOFIA DI PROGRAMMA"\*\* (i coach\_rules che dichiarano una filosofia propria — maxout, mista — prevalgono sui punti in conflitto; il resto resta regolato dal motore) e il blocco \*\*"VALUTAZIONE DEL RANGE"\*\* + anti-fotocopia (riscritto giugno 2026 come CLASSIFICAZIONE MECCANICA min/max: pavimento E tetto inchiodati; estremi inclusi = a target; reps > tetto = sopra; reps < pavimento = sotto; esempi su range piccoli; guardia bidirezionale tetto≠sforato e pavimento≠sotto; vietata la frase identica su esercizi/set diversi). \*\*NOTA (correzione doc):\*\* la regola "autoregolazione reattiva sì / progressione proattiva no" NON è un blocco dedicato — è espressa NEGLI SCHEMI FEEDBACK (ora nel global, dopo lo svuotamento dei delta). TUTTI i 9 programmi girano sul motore; dopo l'unificazione i coach\_rules collassano a residui specifici (es. Muscle-Up Pro = isometrici + scala leve senza soglia RIR; Frau Medici/Petra = linguaggio semplice) + gli override di filosofia maxout/misto via PRECEDENZA (vedi AI\_RULES).
 
 &#x20; - \*\*✅ LEVA 2 — PROMPT CACHING (ATTIVO):\*\* `system` = ARRAY di blocchi quando `motor` non vuoto:
 
@@ -178,11 +178,19 @@ settings
 
 &#x20; -- letta SOLO dal backend (chat.js, service role); si modifica dal Table Editor, NON dal codice
 
+&#x20; -- ✅ giugno 2026 (Prompt unico per-esercizio): 'coach\_prompt\_bodyweight' e 'coach\_prompt\_gym'
+
+&#x20; --  ora SVUOTATI ('') -> tutto in 'coach\_prompt\_global'. chat.js concatena un delta vuoto.
+
 &#x20; -- 'coach\_prompt\_global' contiene ora: warm-up OBBLIGATORIO (+ eccezione ripresa),
+
+&#x20; --  blocco CARICO O CORPO LIBERO (peso/tempo PER-ESERCIZIO dalla colonna CSV Peso),
+
+&#x20; --  blocco LEVA DI DIFFICOLTA' (trigger deterministico reps > tetto, non RIR),
 
 &#x20; --  blocco PRECEDENZA — FILOSOFIA DI PROGRAMMA, blocco VALUTAZIONE DEL RANGE + anti-fotocopia.
 
-&#x20; --  La regola reattiva/proattiva vive NEGLI SCHEMI FEEDBACK (global + delta), non come blocco.
+&#x20; --  La regola reattiva/proattiva vive NEGLI SCHEMI FEEDBACK (nel global, dopo lo svuotamento dei delta).
 
 ```
 
@@ -514,7 +522,7 @@ nextSetNum(name): conta i set già loggati per `name` in sessionLog.exercises + 
 
 &#x20; IL FRONTEND POSSIEDE IL setNum su tap E tag AI. NON parsare la "Set N/TOT" dell'AI per il LOGGING.
 
-selectExercise(name): chiude overlay; currentSetNum=nextSetNum; mode='single'; renderInputFields;
+selectExercise(name): chiude overlay; ripulisce la quick-option pendente (#quickOptions, commit 675f89e); currentSetNum=nextSetNum; mode='single'; renderInputFields;
 
 &#x20; setInputLocked(false); popola i 4 box dal CSV. TARGET BOX PER ESERCIZIO (weighted = colonna peso non vuota -> Peso, altrimenti Tempo); currentWeighted = field.peso non vuoto.
 

@@ -131,7 +131,16 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   **not in code**; the per-program **RIR target belongs in the program's `coach_rules`, not in the
   motor** (the motor is shared across athletes/programs). Landed in commits `ab18084`, `f1d4245`.
   Reuses the existing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` env vars — no new
-  variable.
+  variable. **✅ Prompt unico per-esercizio (giugno 2026 — `settings`, Table Editor, no deploy):**
+  both deltas `coach_prompt_bodyweight` and `coach_prompt_gym` are now **EMPTIED** — all behavior
+  lives in `coach_prompt_global`. The `chat.js` mechanism is **unchanged** (`[global, ''].filter(p=>p)`
+  joins just the global; the **prompt-caching block structure is intact**). The weight/tempo
+  discriminator is no longer `session_type` but **per-exercise on the CSV `Peso` column**, via two new
+  global blocks: **"CARICO O CORPO LIBERO"** (Peso cell filled = weight target + intro line with the
+  weight + weight off the set line; Peso empty = bodyweight, reps + tempo if present, "per lato") and
+  **"LEVA DI DIFFICOLTÀ"** (**deterministic trigger `reps > tetto`, NOT RIR** — closes the
+  Muscle-Up Pro 3B). `session_type` **no longer drives motor behavior** (it stays in the DB/code →
+  removal = future cleanup). **Do not reintroduce the gym/bodyweight deltas.**
 
   **Motor behavioral contract (lives in `coach_prompt_global`, edited in `settings` — not code).**
   (a) **Warm-up obbligatorio:** at every session start the coach describes a warm-up (from the CSV if
@@ -210,7 +219,9 @@ only SQL artifact in the repo is the `db/policies.sql` snapshot, see "Repo `db/`
 - `settings` — key/value table backing the **coach prompt engine**, **read only server-side** by
   `api/chat.js` with the service role (there is no browser query and no admin UI for it). Rows:
   `coach_prompt_global` (common behavior) + `coach_prompt_bodyweight` / `coach_prompt_gym` (per-type
-  deltas). Edited via the Supabase **Table Editor**. **Do/learning (giugno 2026):** editing a TEMPLATE's `coach_rules` in the Table Editor does NOT refresh the admin's in-memory template list — the **"Prova"** button uses the stale copy, so **hard-refresh (Ctrl+Shift+R) before testing with Prova**. The motor `coach_prompt_*` rows here are read server-side per request and need no refresh.
+  deltas — **now both EMPTIED**, giugno 2026: all behavior moved into `coach_prompt_global`, which
+  carries the new **CARICO O CORPO LIBERO** + **LEVA DI DIFFICOLTÀ** blocks; `session_type` no longer
+  drives motor behavior — see the Coach prompt engine entry). Edited via the Supabase **Table Editor**. **Do/learning (giugno 2026):** editing a TEMPLATE's `coach_rules` in the Table Editor does NOT refresh the admin's in-memory template list — the **"Prova"** button uses the stale copy, so **hard-refresh (Ctrl+Shift+R) before testing with Prova**. The motor `coach_prompt_*` rows here are read server-side per request and need no refresh.
 
 **Row-Level Security is enabled on all of these tables.** Policies scope rows to their owner via
 `auth.uid()`, with an `is_admin()` `SECURITY DEFINER` function granting admins full access (the
@@ -301,7 +312,10 @@ carries just that one workout instead of the whole program (**API-cost reduction
 **lista**. **lista** (`showWorkoutList()`, ~line 1733) opens an overlay listing every exercise from
 the program CSV (grouped by workout). Tapping a row calls `selectExercise(name)` (~line 1704), which
 prepares the single-exercise input **as if the AI had emitted `[SET:name]`** — without calling the
-model: it sets `currentExercises=[name]`, fills the set-info box (target reps/tempo from the CSV),
+model: it **clears the pending quick-option** (commit `675f89e` — same pattern as `addBubble`; `#quickOptions`
+is the single DOM container for **all** quick-options, including the warm-up "Pronto" button, so picking an
+exercise from the list before pressing "Pronto" no longer leaves the button dangling), sets
+`currentExercises=[name]`, fills the set-info box (target reps/tempo from the CSV),
 calls `setInputLocked(false)`, and sets `currentSetNum = nextSetNum(name)`. This lets the athlete log
 exercises in **any order** instead of following the AI's sequence. **Warm-up rows are not tappable**:
 a row is treated as warm-up when its CSV **Note** field matches `/riscald|warm/i` — it renders with
