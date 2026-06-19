@@ -714,6 +714,11 @@ var currentSetState = null;
 var sessionLog = null, currentSessionId = null;
 var currentSetNum = null;
 var currentWeighted = false;
+var currentTimed = false;
+var currentHoldTarget = 0;
+var holdStart = 0;
+var holdInterval = null;
+var holdElapsed = 0;
 var autosaveChain = Promise.resolve();
 var testSession = false;
 
@@ -1055,6 +1060,23 @@ function inputFieldHTML(id, label){
 function renderInputFields(mode, exercises){
   currentSetMode=mode; currentExercises=exercises;
   var container=document.getElementById('inputContainer'); if(!container) return;
+  if(currentTimed && mode==='single'){
+    // Esercizio a tempo (isometrico): cronometro conta-in-su al posto di reps/RIR.
+    // reps_a resta come input nascosto cosi' sendMsg continua a funzionare senza modifiche.
+    container.innerHTML='<input type="hidden" id="reps_a">'
+      +'<div style="display:flex;flex-direction:column;gap:6px;">'
+      +'<div style="font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;text-align:center;">Tenuta</div>'
+      +'<div id="holdNum" style="font-family:var(--mono);font-size:30px;color:var(--accent);text-align:center;line-height:1;">00:00</div>'
+      +'<div style="display:flex;gap:8px;">'
+      +'<button id="holdGo" onclick="holdToggle()" style="flex:2;background:var(--accent);border:none;border-radius:8px;padding:11px;color:#0c1100;font-family:var(--mono);font-size:15px;font-weight:600;cursor:pointer;">Avvia</button>'
+      +'<button onclick="holdReset()" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:15px;cursor:pointer;">Reset</button>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;align-items:center;">'
+      +'<input type="number" inputmode="numeric" id="holdManual" placeholder="secondi" min="0" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);font-family:var(--mono);font-size:15px;text-align:center;outline:none;">'
+      +'<button onclick="holdLog()" style="flex:1;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:10px;color:var(--accent);font-family:var(--mono);font-size:15px;cursor:pointer;">Registra</button>'
+      +'</div></div>';
+    return;
+  }
   if(mode==='superset'&&exercises.length>=2){
     container.innerHTML='<div style="display:flex;gap:8px;align-items:stretch;">'+inputFieldHTML('a',exercises[0])+'<div style="width:1px;background:var(--border2);flex-shrink:0;margin:4px 0;"></div>'+inputFieldHTML('b',exercises[1])+'</div>';
   }else{
@@ -1283,6 +1305,46 @@ function sessionTimerReset(){
   document.getElementById('sessionTimerGo').textContent='Start';
 }
 
+// Cronometro conta-in-su per gli esercizi a tempo (isometrici).
+// Il tempo si misura dal diff di Date.now(), non accumulando i tick:
+// resta corretto anche con la tab in background.
+function holdToggle(){
+  if(holdInterval===null){
+    holdStart = Date.now();
+    var b=document.getElementById('holdGo'); if(b) b.textContent='Stop';
+    holdInterval = setInterval(function(){
+      holdElapsed = Math.floor((Date.now()-holdStart)/1000);
+      var el=document.getElementById('holdNum'); if(el) el.textContent = fmtTime(holdElapsed);
+    },200);
+  } else {
+    clearInterval(holdInterval); holdInterval=null;
+    holdElapsed = Math.round((Date.now()-holdStart)/1000);
+    var el2=document.getElementById('holdNum'); if(el2) el2.textContent = fmtTime(holdElapsed);
+    var b2=document.getElementById('holdGo'); if(b2) b2.textContent='Avvia';
+    var m=document.getElementById('holdManual'); if(m) m.value = holdElapsed;
+  }
+}
+
+function holdReset(){
+  if(holdInterval){clearInterval(holdInterval); holdInterval=null;}
+  holdElapsed=0;
+  var el=document.getElementById('holdNum'); if(el) el.textContent='00:00';
+  var b=document.getElementById('holdGo'); if(b) b.textContent='Avvia';
+  var m=document.getElementById('holdManual'); if(m) m.value='';
+}
+
+function holdLog(){
+  var m=document.getElementById('holdManual');
+  var secs = (m && m.value!=='') ? parseInt(m.value,10) : holdElapsed;
+  if(!secs || secs<=0) return;
+  if(currentHoldTarget>0 && secs > currentHoldTarget*2){
+    if(!confirm('Tenuta molto lunga ('+secs+'s). Registro?')) return;
+  }
+  var r=document.getElementById('reps_a'); if(r) r.value = secs;
+  sendMsg();
+  holdReset();
+}
+
 // Numerazione deterministica del set: conta i set gia' loggati per 'name'
 // in sessionLog e ritorna il prossimo numero. Funzione pura, nessun side effect.
 function nextSetNum(name){
@@ -1297,6 +1359,26 @@ function nextSetNum(name){
 
 function exIsWeighted(peso){
   return !!(peso && (''+peso).trim());
+}
+
+function isTimedReps(reps){
+  return !!(reps && (''+reps).match(/\d+\s*(sec|min)/i));
+}
+
+// Secondi target da una stringa reps tipo "20-30 sec", "1 min", "45sec".
+// Range -> valore massimo; "min" -> numeri * 60; nessun numero -> 0.
+function parseHoldTarget(reps){
+  if(!reps) return 0;
+  var s = ''+reps;
+  var nums = s.match(/\d+/g);
+  if(!nums || !nums.length) return 0;
+  var mult = /min/i.test(s) ? 60 : 1;
+  var max = 0;
+  for(var i=0;i<nums.length;i++){
+    var v = parseInt(nums[i],10);
+    if(!isNaN(v) && v>max) max = v;
+  }
+  return max * mult;
 }
 
 function updateSetInfo(text){
@@ -1339,6 +1421,7 @@ function updateSetInfo(text){
   }
   var csvNote = '';
   var csvPeso = '';
+  var csvReps = '';
   if(logName){
     var nSet = nextSetNum(logName);
     currentSetNum = nSet;
@@ -1353,6 +1436,7 @@ function updateSetInfo(text){
           if(_fields[_f].nome===logName){
             if(_fields[_f].note && !csvNote) csvNote = _fields[_f].note;
             if(_fields[_f].peso && !csvPeso) csvPeso = _fields[_f].peso;
+            if(_fields[_f].reps && !csvReps) csvReps = _fields[_f].reps;
             if(_fields[_f].sets){
               var _n = parseInt(_fields[_f].sets,10);
               if(!isNaN(_n)){ totSet=_n; break; }
@@ -1377,6 +1461,9 @@ function updateSetInfo(text){
   boxTarget.textContent = repsMatch ? repsMatch[0].trim() : '\u2014';
   // Esercizio con peso (colonna peso del CSV): mostra il peso target sotto le reps invece del Tempo.
   currentWeighted = exIsWeighted(csvPeso);
+  currentTimed = isTimedReps(csvReps);
+  currentHoldTarget = currentTimed ? parseHoldTarget(csvReps) : 0;
+  if(currentTimed && csvReps) boxTarget.textContent = csvReps;
   var wrowSet = document.getElementById('weightRow');
   if(wrowSet) wrowSet.style.display = currentWeighted ? 'block' : 'none';
   if(currentWeighted){
@@ -1690,7 +1777,6 @@ function selectExercise(name){
   var oldOpts = document.getElementById('quickOptions'); if(oldOpts) oldOpts.remove();
   currentSetNum = nextSetNum(name);
   currentSetMode = 'single'; currentExercises = [name]; currentSetState = name;
-  renderInputFields('single',[name]);
   setInputLocked(false);
   // Target dal CSV (fieldsByWorkout, stesso accesso di showWorkoutList).
   var field = null;
@@ -1714,6 +1800,8 @@ function selectExercise(name){
   // Esercizio con peso (colonna peso del CSV): mostra il peso target sotto le reps invece del Tempo.
   if(boxTempo){
     currentWeighted = exIsWeighted(field && field.peso);
+    currentTimed = isTimedReps(field && field.reps);
+    currentHoldTarget = currentTimed ? parseHoldTarget(field && field.reps) : 0;
     var wrowSel = document.getElementById('weightRow');
     if(wrowSel) wrowSel.style.display = currentWeighted ? 'block' : 'none';
     if(currentWeighted){
@@ -1722,6 +1810,9 @@ function selectExercise(name){
       boxTempo.textContent = (field && field.tempo) ? field.tempo : '—';
     }
   }
+  // renderInputFields DOPO il calcolo di currentTimed/currentWeighted/currentHoldTarget,
+  // cosi' il widget cronometro viene reso per gli esercizi a tempo.
+  renderInputFields('single',[name]);
 }
 
 function showWorkoutList(){
