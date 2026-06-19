@@ -707,7 +707,7 @@ var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{flowType:
 var currentUser = null, currentProfile = null, sessionHistory = [], sessionWorkout = null, selectedRpe = null, busy = false;
 var currentSetMode = 'single', currentExercises = [];
 var sessionFirstSetDone = false;
-var sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft = 0, sessionTimerTotal = 0;
+var sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft = 0, sessionTimerTotal = 0, sessionTimerEndAt = 0;
 var athleteProgramsUserId = null;
 var infortuniVal = null;
 var currentSetState = null;
@@ -1277,23 +1277,32 @@ function sessionTimerSet(seconds){
 
 function sessionTimerToggle(){
   if(sessionTimerRunning){
-    clearInterval(sessionTimerInterval); sessionTimerRunning=false;
+    // Pausa: congela il rimanente ricalcolandolo dal timestamp di fine.
+    if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval=null; }
+    sessionTimerLeft = Math.max(0, Math.ceil((sessionTimerEndAt - Date.now())/1000));
+    sessionTimerRunning=false;
+    document.getElementById('sessionTimerNum').textContent=fmtTime(sessionTimerLeft);
     document.getElementById('sessionTimerGo').textContent='Resume';
     document.getElementById('sessionTimerNum').style.color='var(--text)';
   }else{
     if(sessionTimerLeft<=0) sessionTimerLeft=sessionTimerTotal||90;
+    sessionTimerEndAt = Date.now() + sessionTimerLeft*1000;
     sessionTimerRunning=true;
     document.getElementById('sessionTimerGo').textContent='Pausa';
     document.getElementById('sessionTimerNum').style.color='var(--accent)';
     sessionTimerInterval=setInterval(function(){
-      sessionTimerLeft--;
-      document.getElementById('sessionTimerNum').textContent=fmtTime(sessionTimerLeft);
-      if(sessionTimerLeft<=0){
-        clearInterval(sessionTimerInterval); sessionTimerRunning=false;
+      var left = Math.ceil((sessionTimerEndAt - Date.now())/1000);
+      if(left<=0){
+        sessionTimerLeft=0;
+        document.getElementById('sessionTimerNum').textContent=fmtTime(0);
+        clearInterval(sessionTimerInterval); sessionTimerInterval=null; sessionTimerRunning=false;
         document.getElementById('sessionTimerGo').textContent='OK';
         document.getElementById('sessionTimerNum').style.color='var(--accent)';
+      } else {
+        sessionTimerLeft=left;
+        document.getElementById('sessionTimerNum').textContent=fmtTime(left);
       }
-    },1000);
+    },250);
   }
 }
 
