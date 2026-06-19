@@ -1686,6 +1686,8 @@ function buildFilteredCsv(csv, workoutName){
 function selectExercise(name){
   var overlay = document.getElementById('workoutListOverlay');
   if(overlay) overlay.classList.remove('open');
+  // Tap dalla lista = scelta esplicita: ripulisci le quick-option pendenti (incl. il bottone "Pronto" del warm-up).
+  var oldOpts = document.getElementById('quickOptions'); if(oldOpts) oldOpts.remove();
   currentSetNum = nextSetNum(name);
   currentSetMode = 'single'; currentExercises = [name]; currentSetState = name;
   renderInputFields('single',[name]);
