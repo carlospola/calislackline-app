@@ -1351,6 +1351,15 @@ function holdLog(){
   }
   var r=document.getElementById('reps_a'); if(r) r.value = secs;
   sendMsg();
+  // Avanza il contatore set in modo deterministico: gli esercizi a tempo non
+  // sempre ricevono un nuovo [SET:] dall'AI, quindi non dipendere dal tag.
+  var nm = (currentExercises && currentExercises[0]) || currentSetState;
+  var tot = holdTotSet(nm);
+  if(tot==null || currentSetNum < tot){
+    currentSetNum = (currentSetNum||0) + 1;
+    var bn = document.getElementById('setNumBox');
+    if(bn) bn.textContent = 'Set ' + currentSetNum + (tot!=null ? '/'+tot : '');
+  }
   holdReset();
 }
 
@@ -1388,6 +1397,24 @@ function parseHoldTarget(reps){
     if(!isNaN(v) && v>max) max = v;
   }
   return max * mult;
+}
+
+// Numero di set totali (colonna sets del CSV) per l'esercizio corrente,
+// stesso accesso di updateSetInfo. null se non trovato/non numerico.
+function holdTotSet(name){
+  var csv = currentProfile && currentProfile.workout_csv ? currentProfile.workout_csv : '';
+  if(!csv.trim() || !name) return null;
+  var p = parseWorkoutCsv(csv);
+  for(var w=0; w<p.orderedWorkouts.length; w++){
+    var fields = p.fieldsByWorkout[p.orderedWorkouts[w]];
+    for(var f=0; f<fields.length; f++){
+      if(fields[f].nome===name && fields[f].sets){
+        var n = parseInt(fields[f].sets,10);
+        if(!isNaN(n)) return n;
+      }
+    }
+  }
+  return null;
 }
 
 function updateSetInfo(text){
