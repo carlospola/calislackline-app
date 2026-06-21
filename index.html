@@ -262,7 +262,7 @@
         <div style="position:relative;height:160px;"><canvas id="chartReps"></canvas></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:4px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Reps totali sessione</div>
+        <div id="pChartTotalRepsTitle" style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Reps totali sessione</div>
         <div style="position:relative;height:120px;"><canvas id="chartTotalReps"></canvas></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
@@ -1129,7 +1129,9 @@ function sendMsg(){
   } else {
     if(repsv && parseInt(repsv)>0){
       var setName = (currentExercises && currentExercises[0]) || currentSetState || 'Esercizio';
-      pendingSets.push({name:setName, set:{reps:parseInt(repsv), rir:rirv?parseInt(rirv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum}});
+      var singleSet = {reps:parseInt(repsv), rir:rirv?parseInt(rirv):null, rpe:rpeVal, weight:weightVal, note:note||'', setNum:currentSetNum};
+      if(currentTimed) singleSet.metric='time';
+      pendingSets.push({name:setName, set:singleSet});
     }
   }
   if(pendingSets.length) queueAutosave(pendingSets);
