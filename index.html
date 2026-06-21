@@ -1061,19 +1061,22 @@ function renderInputFields(mode, exercises){
   currentSetMode=mode; currentExercises=exercises;
   var container=document.getElementById('inputContainer'); if(!container) return;
   if(currentTimed && mode==='single'){
-    // Esercizio a tempo (isometrico): cronometro conta-in-su al posto di reps/RIR.
-    // reps_a resta come input nascosto cosi' sendMsg continua a funzionare senza modifiche.
-    container.innerHTML='<input type="hidden" id="reps_a">'
-      +'<div style="display:flex;flex-direction:column;gap:6px;">'
+    // Esercizio a tempo (isometrico): cronometro + campo secondi sullo stesso piano.
+    // Il campo secondi E' reps_a (visibile): un solo percorso di log via aeroplanino (sendMsg).
+    container.innerHTML='<div style="display:flex;flex-direction:column;gap:8px;">'
+      +'<div style="display:flex;gap:8px;align-items:flex-end;">'
+      +'<div style="flex:1;display:flex;flex-direction:column;gap:6px;">'
       +'<div style="font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;text-align:center;">Tenuta</div>'
       +'<div id="holdNum" style="font-family:var(--mono);font-size:30px;color:var(--accent);text-align:center;line-height:1;">00:00</div>'
+      +'</div>'
+      +'<div style="flex:1;display:flex;flex-direction:column;gap:6px;">'
+      +'<div style="font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;text-align:center;">Secondi</div>'
+      +'<input type="number" inputmode="numeric" id="reps_a" placeholder="sec" min="0" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:18px;text-align:center;outline:none;width:100%;">'
+      +'</div>'
+      +'</div>'
       +'<div style="display:flex;gap:8px;">'
       +'<button id="holdGo" onclick="holdToggle()" style="flex:2;background:var(--accent);border:none;border-radius:8px;padding:11px;color:#0c1100;font-family:var(--mono);font-size:15px;font-weight:600;cursor:pointer;">Avvia</button>'
       +'<button onclick="holdReset()" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px;color:var(--text);font-family:var(--mono);font-size:15px;cursor:pointer;">Reset</button>'
-      +'</div>'
-      +'<div style="display:flex;gap:8px;align-items:center;">'
-      +'<input type="number" inputmode="numeric" id="holdManual" placeholder="secondi" min="0" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);font-family:var(--mono);font-size:15px;text-align:center;outline:none;">'
-      +'<button onclick="holdLog()" style="flex:1;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:10px;color:var(--accent);font-family:var(--mono);font-size:15px;cursor:pointer;">Registra</button>'
       +'</div></div>';
     return;
   }
@@ -1135,6 +1138,18 @@ function sendMsg(){
     }
   }
   if(pendingSets.length) queueAutosave(pendingSets);
+  // Esercizi a tempo: avanzamento contatore set deterministico (ex holdLog),
+  // gated single + timed, poi azzera il cronometro. L'AI non riemette sempre [SET:].
+  if(currentTimed && currentSetMode==='single' && pendingSets.length){
+    var tNm = (currentExercises && currentExercises[0]) || currentSetState;
+    var tTot = holdTotSet(tNm);
+    if(tTot==null || currentSetNum < tTot){
+      currentSetNum = (currentSetNum||0) + 1;
+      var tBn = document.getElementById('setNumBox');
+      if(tBn) tBn.textContent = 'Set ' + currentSetNum + (tTot!=null ? '/'+tTot : '');
+    }
+    holdReset();
+  }
   var txt = parts.join(' - ');
   if(n) n.value='';
   document.querySelectorAll('.rpe-btn').forEach(function(b){b.classList.remove('sel');});
@@ -1332,7 +1347,7 @@ function holdToggle(){
     holdElapsed = Math.round((Date.now()-holdStart)/1000);
     var el2=document.getElementById('holdNum'); if(el2) el2.textContent = fmtTime(holdElapsed);
     var b2=document.getElementById('holdGo'); if(b2) b2.textContent='Avvia';
-    var m=document.getElementById('holdManual'); if(m) m.value = holdElapsed;
+    var r=document.getElementById('reps_a'); if(r) r.value = holdElapsed;
   }
 }
 
@@ -1341,28 +1356,7 @@ function holdReset(){
   holdElapsed=0;
   var el=document.getElementById('holdNum'); if(el) el.textContent='00:00';
   var b=document.getElementById('holdGo'); if(b) b.textContent='Avvia';
-  var m=document.getElementById('holdManual'); if(m) m.value='';
-}
-
-function holdLog(){
-  var m=document.getElementById('holdManual');
-  var secs = (m && m.value!=='') ? parseInt(m.value,10) : holdElapsed;
-  if(!secs || secs<=0) return;
-  if(currentHoldTarget>0 && secs > currentHoldTarget*2){
-    if(!confirm('Tenuta molto lunga ('+secs+'s). Registro?')) return;
-  }
-  var r=document.getElementById('reps_a'); if(r) r.value = secs;
-  sendMsg();
-  // Avanza il contatore set in modo deterministico: gli esercizi a tempo non
-  // sempre ricevono un nuovo [SET:] dall'AI, quindi non dipendere dal tag.
-  var nm = (currentExercises && currentExercises[0]) || currentSetState;
-  var tot = holdTotSet(nm);
-  if(tot==null || currentSetNum < tot){
-    currentSetNum = (currentSetNum||0) + 1;
-    var bn = document.getElementById('setNumBox');
-    if(bn) bn.textContent = 'Set ' + currentSetNum + (tot!=null ? '/'+tot : '');
-  }
-  holdReset();
+  var r=document.getElementById('reps_a'); if(r) r.value='';
 }
 
 // Numerazione deterministica del set: conta i set gia' loggati per 'name'
