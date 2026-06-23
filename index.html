@@ -1114,7 +1114,7 @@ function sendMsg(){
     // Ordine libero: il messaggio nomina l'esercizio cosi' l'AI sa quale e' stato loggato.
     var singleName = (currentExercises && currentExercises[0]) || currentSetState || '';
     if(repsv && singleName) parts.push('Esercizio: '+singleName);
-    if(repsv) parts.push('Reps: '+repsv);
+    if(repsv) parts.push(currentTimed ? 'Tenuta: '+repsv+' sec' : 'Reps: '+repsv);
     if(rirv) parts.push('RIR: '+rirv);
     if(reps) reps.value=''; if(rir) rir.value='';
   }
@@ -1156,7 +1156,7 @@ function sendMsg(){
   selectedRpe = null;
   var wi = document.getElementById('weightInput'); if(wi) wi.value='';
   addBubble('user', txt);
-  var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
+  var hasReps = parts.some(function(p){return p.match(/Reps:\s*\d+/) || p.match(/Tenuta:\s*\d+/) || p.match(/[A-Za-z]+:\s*\d+\s*reps/);});
   if(hasReps){
     sessionFirstSetDone = true;
     if(sessionTimerRunning){ clearInterval(sessionTimerInterval); sessionTimerRunning=false; }
