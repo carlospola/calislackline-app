@@ -170,7 +170,7 @@ async function saveEditProgram(programId){
   var rules=document.getElementById('editRules_'+programId).value.trim();
   var csv=document.getElementById('editCsv_'+programId).value.trim();
   var prompt=document.getElementById('editPrompt_'+programId).value.trim();
-  if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
+  if(!name){alert('Inserisci almeno il nome.'); return;}
   var editType=document.getElementById('editType_'+programId); var sType=editType?editType.value:'bodyweight';
   var r=await adminFetch({action:'editProgram',programId:programId,program_name:name,coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType});
   var data=await r.json();
@@ -183,7 +183,7 @@ async function addProgram(){
   var rules=document.getElementById('newProgRules').value.trim();
   var csv=document.getElementById('newProgCsv').value.trim();
   var prompt=document.getElementById('newProgPrompt').value.trim();
-  if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
+  if(!name){alert('Inserisci almeno il nome.'); return;}
   var progType=document.getElementById('newProgType').value||'bodyweight';
   var r=await adminFetch({action:'addProgram',userId:athleteProgramsUserId,program_name:name,coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:progType});
   var data=await r.json();
@@ -269,7 +269,7 @@ async function saveTemplate(){
   var csv=document.getElementById('tplCsv').value.trim();
   var prompt=document.getElementById('tplPrompt').value.trim();
   var sType=document.getElementById('tplType').value||'bodyweight';
-  if(!name||!rules){alert('Inserisci almeno nome e coach rules.'); return;}
+  if(!name){alert('Inserisci almeno il nome.'); return;}
   var payload;
   if(editingTemplateId){
     payload={action:'editTemplate',templateId:editingTemplateId,program_name:name,coach_rules:rules,workout_csv:csv,ai_prompt:prompt,session_type:sType};
@@ -292,6 +292,7 @@ async function deleteTemplate(id){
 }
 
 var assigningTemplateId = null;
+var assignInFlight = false;
 
 async function openAssignModal(templateId){
   assigningTemplateId=templateId;
@@ -310,16 +311,25 @@ async function openAssignModal(templateId){
 }
 
 async function confirmAssign(){
+  if(assignInFlight) return;
   var userId=document.getElementById('assignAthleteSelect').value;
   if(!userId){alert('Seleziona un atleta.'); return;}
   var t=window._templates?window._templates.find(function(x){return x.id===assigningTemplateId;}):null;
   if(!t){alert('Template non trovato.'); return;}
-  var r=await adminFetch({action:'assignTemplate',userId:userId,templateId:assigningTemplateId,program_name:t.program_name,coach_rules:t.coach_rules,workout_csv:t.workout_csv,ai_prompt:t.ai_prompt,session_type:t.session_type});
-  var data=await r.json();
-  if(data.error){alert('Errore: '+data.error); return;}
-  closeModal('assignModal');
-  await renderTemplates();
-  alert('Template assegnato');
+  assignInFlight=true;
+  var btn=document.querySelector('#assignModal .modal-save');
+  if(btn) btn.disabled=true;
+  try{
+    var r=await adminFetch({action:'assignTemplate',userId:userId,templateId:assigningTemplateId,program_name:t.program_name,coach_rules:t.coach_rules,workout_csv:t.workout_csv,ai_prompt:t.ai_prompt,session_type:t.session_type});
+    var data=await r.json();
+    if(data.error){alert('Errore: '+data.error); return;}
+    closeModal('assignModal');
+    await renderTemplates();
+    alert('Template assegnato');
+  }finally{
+    assignInFlight=false;
+    if(btn) btn.disabled=false;
+  }
 }
 
 async function applyToAll(templateId){

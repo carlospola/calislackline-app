@@ -29,13 +29,14 @@ export default async function handler(req, res) {
     // usare la chat AI. 'pending'/'inactive' -> 403. Stessa service role di admin.js,
     // qui si legge profiles.status invece di profiles.role.
     const pRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${u.id}&select=status`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${u.id}&select=status,role`,
       { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
     );
     const rows = await pRes.json();
     const status = (Array.isArray(rows) && rows[0]) ? rows[0].status : null;
-    if (status === 'active') {
-      // profilo attivo -> passa (invariato)
+    const role = (Array.isArray(rows) && rows[0]) ? rows[0].role : null;
+    if (status === 'active' || role === 'admin') {
+      // profilo attivo (o admin) -> passa (l'admin bypassa il pending-gate)
     } else if (status === 'pending') {
       // --- Gate trial: un profilo 'pending' puo' usare la chat per le prime
       // TRIAL_SESSIONS sessioni. Conta le righe di `sessions` dell'utente

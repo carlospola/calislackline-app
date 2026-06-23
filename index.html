@@ -645,7 +645,7 @@
 <div class="modal-overlay" id="templateFormModal">
   <div class="modal" style="max-width:720px;">
     <div class="modal-title" id="templateFormTitle">Nuovo template</div>
-    <div class="modal-field"><div class="modal-label">Nome template</div><input class="modal-input" id="tplName" placeholder="es. Body By Rings - Fase 1"></div>
+    <div class="modal-field"><div class="modal-label">Nome template</div><input class="modal-input" id="tplName"></div>
     <div class="modal-field">
       <div class="modal-label">Tipo sessione</div>
       <select class="modal-input" id="tplType" style="cursor:pointer;">
@@ -655,15 +655,15 @@
     </div>
     <div class="modal-field">
       <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Coach Rules</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Regole comportamentali AI</span></div>
-      <textarea class="modal-textarea" id="tplRules" style="min-height:130px;" placeholder="- Usa [SET:NomeEsercizio] prima di ogni esercizio&#10;- Feedback massimo 5 parole&#10;- Recupero formato mm:ss&#10;- Niente incoraggiamenti"></textarea>
+      <textarea class="modal-textarea" id="tplRules" style="min-height:130px;"></textarea>
     </div>
     <div class="modal-field">
       <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Workout</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">Esercizio, Set, Reps, RIR, Recupero</span></div>
-      <textarea class="modal-textarea" id="tplCsv" style="min-height:150px;font-size:11px;" placeholder="Esercizio, Set, Reps, RIR, Recupero&#10;Ring Dip, 4, 6-8, 2, 02:00&#10;Trazioni, 4, 5-7, 2, 02:00"></textarea>
+      <textarea class="modal-textarea" id="tplCsv" style="min-height:150px;font-size:11px;"></textarea>
     </div>
     <div class="modal-field">
       <div class="modal-label" style="display:flex;justify-content:space-between;"><span>Note extra</span><span style="font-size:9px;color:var(--muted);font-weight:normal;letter-spacing:0;text-transform:none;">opzionali</span></div>
-      <textarea class="modal-textarea" id="tplPrompt" style="min-height:70px;" placeholder="Indicazioni aggiuntive per il coach AI..."></textarea>
+      <textarea class="modal-textarea" id="tplPrompt" style="min-height:70px;"></textarea>
     </div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('templateFormModal')">Annulla</button>
