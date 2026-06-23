@@ -46,7 +46,7 @@
   - **Vista dettaglio (programDetailScreen):** tap sul programma in showDash -> openProgram: <2 workout = beginSession diretto, altrimenti openProgramDetail (async, ri-query sessions). Giorno fatto smorzato + tag "fatto"; giorno continua con anello accent + "Continua"; tap -> beginSession col nome COMPLETO. Fasi superiori non raggiunte -> riga muta "Fase N bloccata".
   - **Rimosso:** vecchia funzione programProgress (rotazione "dopo l'ultimo", dead code) e pannello dashboard "Prossimo allenamento" (#programProgressPanel).
   - **Supera** la vecchia convenzione "S1 · Push / Sett. N": ora il prefisso di fase e' "Fase N - <sessione>".
-  - **GAP NOTO:** avanzamento automatico di fase NON ancora implementato (le fasi superiori restano "bloccate" nella vista).
+  - **GAP NOTO:** avanzamento automatico di fase NON ancora implementato (le fasi superiori restano "bloccate" nella vista). Sfumatura: un meccanismo di gating di fase esisteva nel codice, ma ATTUALMENTE la lista programma e' piatta e self-serve (funziona bene cosi') -> da rivedere se/quando reintrodurre il gating di fase.
   - **FORK ANCORA APERTO (carichi, ortogonale alla navigazione):** carichi scritti dal coach nel CSV (default MVP) VS app che suggerisce i carichi (= periodizzazione attiva). In attesa decisione Carlo.
 
 \- \[x] \*\*Landing + hero — STATO 17/06: footer/consenso FATTO, hero elaborato RIMANDATO alla fase i18n.\*\* Footer consenso + link Termini/Privacy nel login FATTI (commit `304c891`); blocco email/password + "Crea account con email" + "Password dimenticata?" NASCOSTI (`display:none`, wrapper `login-emailpw` dentro `#loginScreen`) → login solo-Google (commit `a36d365`). \*\*L'hero ELABORATO è RIMANDATO alla fase i18n:\*\* la sostituzione tagline→headline/sub/offer IT (Step 3a) è stata SCARTATA e revertata (mai committata); la tagline EN "AI Coaching · Personalized · Adaptive" RESTA (scelta founder); l'hero si farà UNA volta sola, multilingua, dentro la fase i18n. \_(Resta sotto come riferimento la copy IT proposta il 16/06.)\_ Riscrittura dell'hero in italiano, lingua coerente. \*\*Headline:\*\* "Il coach AI che adatta ogni serie alla tua fatica". \*\*Sub:\*\* "Calisthenics e palestra. Dichiari quanto è dura una serie e l'AI ricalibra carico, ripetizioni e recupero in tempo reale, durante l'allenamento non dopo." \*\*Riga offerta:\*\* "Prova gratis: 3 allenamenti reali con il coach AI." \*\*Azioni:\*\* "Accedi con Google" (primaria) + "Crea account con email" (primaria, flusso OTP) + "Richiedi il coaching" (link SECONDARIO). \*\*Il blocco email/password rotto va SOSTITUITO dal flusso OTP\*\* (vedi 1B), non solo nascosto. \*\*Footer\*\* con link Privacy + Termini + nota consenso al login. \*\*Claim ancorati a ciò che il coach FA davvero\*\* (autoregolazione REATTIVA per centrare il target) — NIENTE promesse su forma o progressione automatica nel durante-sessione. \*\*Sequenza:\*\* il pacchetto landing+hero+profilo-slim+privacy è a rischio basso, NESSUNA dipendenza email → si fa PRIMA dell'OTP (nel frattempo "Crea account con email" resta nascosto/disabilitato, solo-Google). Frontend-only (`index.html` markup + copy).
@@ -109,18 +109,6 @@
 
 \- \[x] \*\*\[FIX COACHING] 3A — Classificazione meccanica del range — ✅ COMPLETATO (in `coach\_prompt\_global`, Table Editor, no deploy).\*\* Il blocco VALUTAZIONE DEL RANGE è stato riscritto come classificazione MECCANICA min/max, con tetto E pavimento inchiodati ed esempi su range piccoli (3 su 3-5 = a target, 5 su 3-5 = a target, 6 su 3-5 = sopra, 2 su 3-5 = sotto), guardia bidirezionale (il tetto NON è uno sforamento, il pavimento NON è un "sotto"), anti-fotocopia mantenuto. \*\*Verificato:\*\* niente più "sforato" sul tetto, niente più "completa il range" sul pavimento. Vedi AI\_RULES / ARCHITECTURE (descrizione blocco aggiornata).
 
-\- \[ ] \*\*Esercizio a tempo / isometrici (logging + cronometro) — spec unificata (è il `metric=time` del descrittore per-esercizio, gemella di `weighted=Peso` già shippata).\*\* Fonde le vecchie voci "Logging isometrici" e "Timer esercizio a tempo".
-
-&#x20; - \*\*Rilevamento DETERMINISTICO:\*\* Reps CSV matcha `/\\d+\\s\*(sec|min)/i` → esercizio a tempo. Nasconde i box reps/RIR/peso normali e mostra un infobox CRONOMETRO.
-
-&#x20; - \*\*UI/logging:\*\* Play avvia, Stop logga in automatico i secondi tenuti nel campo `reps` (MVP); log manuale sempre disponibile; \*\*guardia partito-per-sbaglio:\*\* se al Stop i secondi sforano troppo il target NON logga.
-
-&#x20; - \*\*Regole:\*\* niente RIR sulle tenute; RPE/Fatica opzionale; peso solo se weighted (colonna `peso`). Timer su `Date.now()`, MAI `setInterval`.
-
-&#x20; - \*\*4 punti aperti (da decidere in fase build):\*\* (a) soglia di sforamento (es. scarta se `elapsed > target × 2`; sui range usa il massimo); (b) cronometro conta-in-su play/stop vs il countdown del lavoro del vecchio task Timer — probabile che la versione conta-su SOSTITUISCA il countdown per gli isometrici; (c) il motore-timer a timestamp `Date.now()` è prerequisito CONDIVISO (col fix "Timer recupero background").
-
-&#x20; - \*\*File:\*\* `index.html`. Frontend-only. Lato PROMPT già coperto nei `coach\_rules` MUP ("tieni Ns", niente RIR, conteggio set esplicito).
-
 \- \[ ] \*\*Editor tabellare programmi (admin, CSV↔tabella) — DA ALZARE (è prerequisito di "Analisi AI progressioni").\*\* Oltre a incollare `workout\_csv` nel textarea (flusso che RESTA), poterlo modificare in vista TABELLARE tipo Excel — click sulla cella, cambi solo quella; al Salva il `workout\_csv` viene riscritto. Due viste dello stesso dato.
 
 &#x20; - \*\*Perché:\*\* oggi per cambiare una cosa (recupero, range, peso) tocca ri-promptare Claude o editare il CSV grezzo a mano (fragile: una virgola rompe il parsing). Tabella = modifiche chirurgiche senza rischio strutturale; UX naturale col SaaS.
@@ -171,7 +159,7 @@
 
 \- \[ ] \*\*e1RM stimato\*\* — formula Epley per esercizi con peso.
 
-\- \[ ] \*\*Timer recupero: si ferma se l'app va in background\*\* — calcolare il trascorso dal timestamp (`Date.now()`) invece di decrementare con `setInterval`. \*\*È la FONDAZIONE di "Esercizio a tempo / isometrici"\*\* → valutare di farli insieme. Tocca `index.html`.
+\- \[ ] \*\*\[KNOWN GAP] "Assegna" non idempotente\*\* — un doppio tap sul bottone "Assegna" crea DUE righe `programs` duplicate (capitato su Fit active, deduplicato via SQL una-tantum). Valutare un debounce sul bottone (disabilitarlo durante la chiamata) o un unique constraint DB `(user\_id, template\_id)`. Tocca `admin-ui.js` (debounce) e/o migration (constraint).
 
 \- \[ ] \*\*Progressi — "Volume massimo singolo set"\*\* — sostituire "Volume totale" con il volume del set più alto IN ASSOLUTO (`reps × peso`). Tocca `pLblTot` in `renderProgressCharts`. Ora in `progress.js` (refactor fase 1).
 
@@ -337,6 +325,22 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — Isometrici a tempo + timer a timestamp + fix motore base (giugno 2026)
+
+\- \[x] \*\*Esercizio a tempo / isometrici (logging + cronometro) — SHIPPED (giugno 2026).\*\* È il `metric=time` del descrittore per-esercizio, gemella di `weighted=Peso`. \*\*Rilevamento DETERMINISTICO:\*\* `isTimedReps(reps)` = `/\\d+\\s\*(sec|min)/i` sul campo Reps → `currentTimed` + `currentHoldTarget` (`parseHoldTarget`: range → max; "min" → ×60). \*\*Cronometro CONTA-SU su `Date.now()`\*\* (`holdStart`/`holdInterval`/`holdElapsed`; `holdToggle`/`holdReset`), MAI `setInterval` decrementale. \*\*UI ridisegnata:\*\* widget cronometro (label "Tenuta" + `holdNum`) e infobox Secondi (input `reps\_a` VISIBILE, placeholder "sec") sullo stesso piano; sotto i bottoni Avvia/Stop (`holdGo`) + Reset stesso piano. \*\*UN solo percorso di log:\*\* l'aeroplanino Invia (`sendBtn` → `sendMsg`); RIMOSSI il bottone Registra, l'input `holdManual` e la funzione `holdLog`. \*\*Logging:\*\* secondi nel campo `reps` (MVP) + marker OPZIONALE `metric:'time'` nel set di `log\_data` (jsonb, niente migration; retrocompat: log vecchi senza marker = reps). \*\*Avanzamento contatore set\*\* deterministico in `sendMsg`, gated `currentTimed && currentSetMode==='single' && pendingSets.length`, via `holdTotSet`, poi `holdReset`. \*\*Etichetta log "Tenuta: N sec"\*\* (invece di "Reps: N") quando `currentTimed`; `hasReps` matcha anche `/Tenuta:\s\*\d+/` → il timer recupero si ferma anche sulle tenute. Box Target = `csvReps` (es. "40-50 sec") quando timed. Niente RIR sulle tenute, RPE opzionale, peso se weighted. Helper: `isTimedReps`, `parseHoldTarget`, `holdTotSet`. \*\*EDGE noti:\*\* superset di tenute → input manuale (raro); isometrico zavorrato (peso>0) → resta nel ramo peso (kg), relabel secondi solo se non weighted; formato misto "1 min 30 sec" mal-parsato da `parseHoldTarget` (raro); tenuta 0s → bubble innocuo; log vecchi senza marker `metric:'time'` non rietichettati in secondi. Lato PROMPT già coperto nei `coach\_rules` MUP. Solo `index.html`, frontend-only.
+
+\- \[x] \*\*Timer recupero in background — SHIPPED (giugno 2026).\*\* Riscritto da `setInterval` decrementale a `Date.now()`: `sessionTimerEndAt` + ricalcolo del rimanente dal diff con `ceil`; la pausa congela il rimanente, il resume ricalcola `endAt`; tick 250ms solo repaint → robusto col tab in background. È il \*\*motore-timer unico a timestamp\*\*, base CONDIVISA col cronometro delle tenute (isometrici). Tocca `index.html`.
+
+\- \[x] \*\*Progressi in secondi — SHIPPED (giugno 2026).\*\* `renderProgressCharts` rietichetta per esercizio a tempo: TENUTA MAX / MEDIA / TOT SECONDI, titolo "Media secondi per set", secondo titolo "Secondi totali sessione" via nuovo id HTML `pChartTotalRepsTitle`, valori col suffisso "s". Detection `isTimedExercise(name, filtered)` (prima dal marker `metric:'time'` nel log, fallback al CSV corrente via `isTimedReps`). Edge: isometrico zavorrato resta nel ramo peso (kg); log vecchi senza marker non rietichettati. Ora in `progress.js`.
+
+\- \[x] \*\*Fix motore — guardia all'ordine (ORDINE LIBERO rafforzato).\*\* In `coach\_prompt\_global` (Table Editor, no deploy, già live): il prefisso "Esercizio: <nome>" è AUTORITATIVO e prevale sull'ordine del CSV e sul default "primo esercizio", ANCHE subito dopo il warm-up; vietato fare la guardia all'ordine, chiedere conferma del cambio, dire "siamo ancora su X" / "torniamo a X" / "prima completa Y", elencare i mancanti, o dire che un esercizio è "l'ultimo" per rimandarlo; ancora nel blocco WARM-UP (dopo "pronto", se il primo messaggio nomina un esercizio col prefisso "Esercizio:", parti da quello).
+
+\- \[x] \*\*Fix dati BBR — archer alternati.\*\* Rimosso "L&R" dai 3 archer ALTERNATI (Archer Pushup Fase 1 Push 1, Archer Pushup Fase 2 Push 1, Archer Chinup Fase 2 Pull 2): negli alternati le reps si contano sul TOTALE, non per lato; i "Same Side" restano per-lato. Aggiunta clausola ALTERNATI nei `coach\_rules` BBR (template + 5 copie collegate; NON in BBR Test): su esercizi "Alternating" reps e RIR si contano sul TOTALE alternato (mai "per lato"), e la fascia RIR valida diventa 0-6 (non 0-3) perché ~3 di riserva per lato ≈ ~6 sul totale.
+
+\- \[x] \*\*Fix motore — feedback "reps sotto il range".\*\* In `coach\_prompt\_global`: stima il massimo a quel carico ≈ reps + RIR confrontato col pavimento; reps+RIR ≥ pavimento o RIR non dichiarato → "completa il range, stesso carico"; reps+RIR < pavimento → con carico "abbassa il peso", a corpo libero "variante più facile / più assistenza".
+
+> \*\*⚠️ NOTA:\*\* i tre fix motore/dati sopra (guardia ordine, BBR alternati, feedback sotto il range) sono correzioni di BASE separate. NON sono il \*\*Punto 6 inVictus\*\* (modulazione del RIR target per livello atleta e tipo esercizio), che resta PARCHEGGIATO nelle task/idee future con la cornice "studio prima, implemento incrementale".
 
 \## ✅ Completati — Prompt unico per-esercizio + fix bug Pronto + chiusura 3B (giugno 2026)
 
@@ -588,7 +592,7 @@
 
 \- \*\*Peso per-esercizio\*\* = ✅ SHIPPED via colonna CSV `peso` (`weighted` per-esercizio, `currentWeighted`); `session\_type` ora ristretto al motore + DB. \*\*Resta\*\* il lato \*\*Logging isometrici\*\* (metric=time) del \*\*descrittore per-esercizio\*\*; il motore resta separato. Segue la \*\*migrazione colonna `peso`\*\* (🔴, gym pending) e abilita il \*\*prompt unico per-esercizio\*\* (💡).
 
-\- \*\*Esercizio a tempo / isometrici\*\* (spec unificata: fonde i vecchi "Logging isometrici" + "Timer esercizio a tempo") è SOPRA il fix \*\*Timer recupero background\*\* (motore-timer unico a `Date.now()`). Stessa lezione del timer \*\*Breathwork\*\*.
+\- \*\*Esercizio a tempo / isometrici\*\* (spec unificata: fonde i vecchi "Logging isometrici" + "Timer esercizio a tempo") = ✅ SHIPPED (giugno 2026), insieme al fix \*\*Timer recupero background\*\* (motore-timer unico a `Date.now()`, base condivisa col cronometro tenute). Stessa lezione del timer \*\*Breathwork\*\*.
 
 \- \*\*Editor tabellare\*\* (🟡, ALZATO) è il PREREQUISITO del meccanismo di apply di \*\*Analisi AI progressioni\*\* (round-trip parse↔serialize = superficie di apply sicura).
 

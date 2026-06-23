@@ -148,7 +148,7 @@
 
 - **Il workout e' scelto PRIMA della chat:** il prompt NON deve far scegliere il workout; l'AI parte col warm-up poi col primo esercizio. (Meccanica UI: per i PROGRAMMI il giorno della fase corrente e' scelto dalla vista dettaglio programDetailScreen e passato a beginSession col nome completo "Fase N - ..."; il picker pre-chat sopravvive SOLO per la test session admin "Prova". In entrambi i casi all'AI arriva un workout gia' scelto.)
 
-\- \*\*Ordine libero:\*\* l'atleta può cambiare esercizio tappando la lista; il messaggio arriva prefissato "Esercizio: <nome>". L'AI NON deve fare la guardia all'ordine.
+\- \*\*Ordine libero (motore rafforzato, giugno 2026):\*\* l'atleta può cambiare esercizio tappando la lista; il messaggio arriva prefissato "Esercizio: <nome>". \*\*Il prefisso "Esercizio:" è AUTORITATIVO\*\* e prevale sull'ordine del CSV e sul default "primo esercizio", ANCHE subito dopo il warm-up. L'AI NON deve fare la guardia all'ordine: vietato chiedere conferma del cambio ("vuoi saltare?"/"era un errore?"), dire "siamo ancora su X" / "torniamo a X" / "prima completa Y", elencare gli esercizi mancanti, o dire che un esercizio è "l'ultimo" per rimandarlo.
 
 \- \*\*RIR e Fatica (RPE) sono OPZIONALI:\*\* se l'atleta indica solo le ripetizioni, registra e prosegui. NON bloccare; al massimo chiedi UNA volta per esercizio.
 
@@ -184,13 +184,15 @@
 
 \- \*\*✅ ESERCIZI MONOLATERALI (dx/sx):\*\* sono UN esercizio, NON un superset (il superset è per due esercizi DIVERSI). Ogni set = un lato poi l'altro senza pausa; il recupero parte DOPO entrambi i lati (è UNA serie, non serve riga "0 rest" tra i lati). Si scrive `N per lato` nella \*\*colonna Reps\*\* (es. `12-15 per lato`) — NON nelle Note (in gym sono il peso). Reso correttamente nel box target (verificato). Se mai il box tagliasse il testo: spostare il cue nei `coach\_rules` (NON nel nome esercizio, per non spezzare lo storico Progressi che aggrega per nome).
 
+\- \*\*✅ ESERCIZI ALTERNATI (Note "Alternating"):\*\* reps e RIR si contano sul TOTALE alternato, MAI "per lato" né "L&R" (diverso dai monolaterali "Same Side", che restano per-lato). È una regola PER-PROGRAMMA nei `coach\_rules` (es. clausola alternati di BBR), NON globale; lì la fascia RIR valida si raddoppia (es. 0-6 invece di 0-3, perché ~3 di riserva per lato ≈ ~6 sul totale).
+
 \- \*\*✅ REP RANGE (non numeri fissi) per i programmi a ipertrofia:\*\* preferire range che spaziano \~3 (es. `10-13`, `12-15`) invece di un numero secco. Motivo TECNICO: il feedback del coach ragiona su "reps nel range / sopra / sotto" → con un numero fisso quel range è degenere. Schema usato su 741: compound 10-13, isolamenti 12-15, core 15-18 / 17-20, cardio invariato (es. `10 min`). I numeri restano una scelta del coach per-programma. (La valutazione "tetto = successo" è ora codificata nel motore — VALUTAZIONE DEL RANGE.)
 
 \## Descrittore per-esercizio (peso ✅ SHIPPED via colonna CSV; isometrici futuri)
 
 \- \*\*✅ PESO PER-ESERCIZIO (SHIPPED):\*\* il `weighted` è calcolato PER-ESERCIZIO dalla \*\*colonna CSV `peso`\*\* (alias header `carico`), NON da `session\_type`. `exIsWeighted(peso)` = cella `peso` non vuota → mostra `#weightRow` + box=peso (il valore è anche il target). `parseWorkoutCsv` espone `field.peso` (retrocompat: CSV senza colonna → vuoto → corpo libero). \*\*Nuova var `currentWeighted`:\*\* impostata in `updateSetInfo` (da `csvPeso`; superset = esercizio PRIMARIO) e `selectExercise` (da `field.peso`); pilota show/hide `#weightRow` + tipo box; letta da `sendMsg` per il gating del peso loggato. `beginSession`/`resumeSession` resettano `#weightRow` a `none` all'avvio. SUPERATO l'approccio Note (`/N kg/` + fallback `session\_type==='gym'` + gym→Note-come-peso); quirk New Workout (Note=varianti) RISOLTO. \*\*✅ Anche il MOTORE è ora per-esercizio sulla colonna `Peso` (giugno 2026, "Prompt unico per-esercizio"):\*\* i delta `coach\_prompt\_gym`/`bodyweight` sono SVUOTATI e il blocco CARICO O CORPO LIBERO in `coach\_prompt\_global` decide carico/tempo per-esercizio → `session\_type` NON guida più né la UI né il motore (resta solo nel DB/codice, cleanup futuro possibile).
 
-\- \*\*Isometrici (metric=time) — ANCORA FUTURO:\*\* `metric=time` se Reps matcha `/\\d+\\s\*(sec|min)/i`. Label "Secondi" al posto di "Reps"; NIENTE RIR; RPE/Fatica opzionale; peso opzionale se weighted. MVP: salva i secondi nel campo `reps` esistente (+ relabel Progressi). Avanzato: campo `seconds` dedicato (jsonb, niente migration, ma aggiornare tutti i reader). (Il lato PROMPT degli isometrici è GIÀ coperto nei coach\_rules MUP.)
+\- \*\*Isometrici (metric=time) — ✅ SHIPPED (giugno 2026):\*\* `metric=time` se Reps matcha `/\\d+\\s\*(sec|min)/i` (`isTimedReps`). Widget cronometro conta-su (`Date.now()`) + infobox Secondi (input `reps\_a` VISIBILE, placeholder "sec"); i secondi vivono nel campo `reps` + marker OPZIONALE `metric:'time'` nel set (retrocompat: log vecchi senza marker = reps). Log via aeroplanino Invia (`sendMsg`); RIMOSSI bottone Registra/`holdManual`/`holdLog`. Etichetta del log "Tenuta: N sec"; `hasReps` esteso a `/Tenuta:\s\*\d+/`. Avanzamento contatore set in `sendMsg` (gated `currentTimed && single`, via `holdTotSet`). NIENTE RIR sulle tenute; RPE/Fatica opzionale; peso se weighted. Avanzato: campo `seconds` dedicato (jsonb, niente migration, ma aggiornare tutti i reader). (Il lato PROMPT degli isometrici è GIÀ coperto nei coach\_rules MUP.)
 
 \- Il MOTORE resta separato dal descrittore (il motore è lo STILE di coaching della sessione, non il tipo del singolo esercizio). Estensione futura 💡: `load:'kg'|'band'|none` per gli elastici (parcheggiata in TASKS).
 
@@ -236,7 +238,7 @@
 
 \- `fmtText(text)` rimuove tag \[SET:]/\[SUPERSET:]/\[CUE:]/\[PRONTO]/\[LOG\_DATA:] e righe set-info (la strip di `\[CUE:]` è DIFENSIVA: feature rimossa, strip intenzionale → lasciarla); se ritorna null/vuoto -> bubble NON renderizzato. `extractOptions(text)` ritorna \[] se il testo contiene \[SET:]/\[SUPERSET:]/\[PRONTO].
 
-\- \*\*Salvataggio PER-SERIE:\*\* `sendMsg` costruisce i set con `reps > 0` (RIR `null` se vuoto, RPE/Fatica `null` se nessun bottone, uno 0 dichiarato resta 0), `setNum = currentSetNum` -> `queueAutosave` -> `persistSets` (INSERT prima serie, UPDATE con dedup nome+setNum). La scrittura `sessions` vive in `persistSetsWrite` (ritorna true/false); su scrittura fallita `persistSets` fa `sb.auth.refreshSession()` + 1 retry della scrittura (token scaduto da tab in background, cfr `aiSend` `d87ecfe`; commit `3088677`). \*\*Sessioni demo NON persistite\*\* (`if(currentProfile.\_isDemo) return;` in `persistSets`) — usate dall'onboarding E dalla test session admin. \*\*Le FUTURE sessioni trial (1A) invece PERSISTONO: niente `\_isDemo`.\*\*
+\- \*\*Salvataggio PER-SERIE:\*\* `sendMsg` costruisce i set con `reps > 0` (RIR `null` se vuoto, RPE/Fatica `null` se nessun bottone, uno 0 dichiarato resta 0), `setNum = currentSetNum` -> `queueAutosave` -> `persistSets` (INSERT prima serie, UPDATE con dedup nome+setNum). La scrittura `sessions` vive in `persistSetsWrite` (ritorna true/false); su scrittura fallita `persistSets` fa `sb.auth.refreshSession()` + 1 retry della scrittura (token scaduto da tab in background, cfr `aiSend` `d87ecfe`; commit `3088677`). \*\*Sessioni demo NON persistite\*\* (`if(currentProfile.\_isDemo) return;` in `persistSets`) — usate dall'onboarding E dalla test session admin. \*\*Le FUTURE sessioni trial (1A) invece PERSISTONO: niente `\_isDemo`.\*\* \*\*Isometrici:\*\* nel ramo single il log è etichettato "Tenuta: N sec" (invece di "Reps: N") quando `currentTimed`, e `hasReps` matcha anche `/Tenuta:\s\*\d+/` così il timer recupero si ferma anche sulle tenute.
 
 \- \*\*Chiusura con "Torna":\*\* `showDash` ferma il timer recupero, ripristina `\_orig` se demo, e — se `testSession` — torna ad `adminScreen` tab Template (non alla dashboard atleta). \*\*Topbar: SOLO "Torna" + "lista".\*\*
 
@@ -248,9 +250,9 @@
 
 \## Timer — regole (fix background + timer-esercizio)
 
-\- \*\*Fix timer recupero background:\*\* calcolare il tempo trascorso dal timestamp (`Date.now()`), NON decrementare con `setInterval`. Diventa il \*\*motore-timer unico a timestamp\*\*.
+\- \*\*✅ Fix timer recupero background — SHIPPED (giugno 2026):\*\* il trascorso si calcola dal timestamp `Date.now()` (`sessionTimerEndAt` + ricalcolo dal diff con `ceil`; pausa congela il rimanente, resume ricalcola `endAt`; tick 250ms solo repaint), NON più `setInterval` decrementale. È il \*\*motore-timer unico a timestamp\*\*, base condivisa col cronometro delle tenute.
 
-\- \*\*Timer-esercizio a tempo (task):\*\* rilevamento DETERMINISTICO via regex sul campo Reps `/\\d+\\s\*(sec|min)/i` (NIENTE colonna/migration). UX a due fasi: "Avvia esercizio · Ns" → countdown lavoro (per i range usa il massimo) → a zero vibra/beep → parte il countdown recupero; i secondi tenuti pre-compilano reps. \*\*VINCOLO:\*\* NON un timer-intervalli configurabile completo. \*\*INCATENATO a "Logging isometrici"\*\* (stessa regex, secondi → `reps`). Diff + conferma. Da fare SOPRA il fix background.
+\- \*\*✅ Timer-esercizio a tempo — SHIPPED (giugno 2026):\*\* rilevamento DETERMINISTICO via regex sul campo Reps `/\\d+\\s\*(sec|min)/i` (NIENTE colonna/migration). Realizzato come \*\*cronometro CONTA-SU\*\* (`Date.now()`, Avvia/Stop): i secondi tenuti vivono nel campo `reps`, base CONDIVISA col fix timer recupero. \*\*VINCOLO mantenuto:\*\* NON un timer-intervalli configurabile completo. Vedi "Descrittore per-esercizio" (isometrici).
 
 \## Breathwork — Respirazione a cicli (regole feature)
 
@@ -320,7 +322,7 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- RIR/RPE `null` = non dichiarato (escluso dai grafici via `numOrNull`); uno 0 dichiarato resta valido. `weight` 0 = corpo libero (valido).
 
-\- \*\*Isometrici (MVP):\*\* i secondi vivono nel campo `reps` (→ relabel Progressi). Avanzato: campo `seconds` dedicato.
+\- \*\*Isometrici (✅ SHIPPED):\*\* i secondi vivono nel campo `reps` + campo OPZIONALE `metric:'time'` nel set (retrocompat: log vecchi senza marker = reps) → relabel Progressi in secondi. Avanzato: campo `seconds` dedicato.
 
 \## Database Rules
 
@@ -379,6 +381,10 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 \- Non aggiungere `\[CUE:]` tag; non reintrodurre il "Generatore prompt AI"
 
 \- Non reintrodurre la scelta workout nei prompt (la fa il picker)
+
+\- \*\*Non reintrodurre la guardia all'ordine\*\*, nemmeno in forma gentile o come richiesta di conferma del cambio esercizio (il prefisso "Esercizio:" è autoritativo, anche post-warm-up); niente "siamo ancora su X" / "torniamo a X" / elenco mancanti / "è l'ultimo"
+
+\- \*\*Non rietichettare gli isometrici come "Reps"\*\* — il log delle tenute usa "Tenuta: N sec"
 
 \- Non reintrodurre il bottone "fine" ne' la generazione del log dall'AI; non reintrodurre "skip"/`qSend`/`buildSkipMessage`; non reintrodurre `session\_drafts`
 

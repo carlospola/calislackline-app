@@ -333,6 +333,9 @@ logged set is written to `sessions` immediately:
   `[SET:]` tag). **RIR is `null` when the field is blank; RPE/Fatica is `null` when
   no fatigue button is selected** — a *declared* `0` stays `0`. Charts treat `null` as "not declared"
   and exclude it, while `0` is a real value (see `getExSets` / `buildLogSummary` and the chart code).
+  **Isometrici (timed exercises):** in the single branch the logged line is labelled `Tenuta: N sec`
+  (instead of `Reps: N`) when `currentTimed`, and the `hasReps` guard also matches `/Tenuta:\s*\d+/`
+  so the recovery timer stops on holds too; the set may carry an optional `metric:'time'` marker.
 - It calls `queueAutosave()` → `persistSets()` (~line 1335), serialized through a promise chain so
   rapid sets never race. On the **first** set, `persistSets` **INSERTs** a new `sessions` row
   (`{user_id, workout_name, log_data: sessionLog}`) and stores its id in `currentSessionId`; on every
@@ -391,6 +394,10 @@ prepare an input), `nextSetNum` (which owns the deterministic `currentSetNum`), 
 - **Monolaterali = UN esercizio, non un superset.** A single-limb exercise is one CSV row / one
   `[SET:]`, **never** a `[SUPERSET:]`. "**N per lato**" goes in the **Reps** column (e.g. `8 per
   lato`), **not** in **Note**.
+- **Alternati (Note "Alternating").** Su un esercizio alternato reps e RIR si contano sul **TOTALE**
+  alternato, **mai** "per lato" né "L&R" (diverso dai monolaterali "Same Side", che restano per-lato).
+  È una regola **per-programma** nei `coach_rules` (es. clausola alternati di BBR; lì la fascia RIR si
+  raddoppia, es. 0-6 invece di 0-3), **non** globale.
 - **Rep range ~3 for hypertrophy programs** (e.g. 8–11): the coach's feedback reasons on "within
   range / above / below" the target, so keep the spread meaningful.
 
@@ -502,9 +509,11 @@ DB** (`trg_assign_trial_program`, AFTER INSERT su `profiles`), **NON frontend**.
 
 ## Item aperti (TODO)
 
-- **Timer recupero in background:** the recovery timer stops when the tab is backgrounded
-  (interval throttling). Fix by computing elapsed time from a stored **timestamp** instead of
-  counting ticks.
+- **Timer recupero in background — ✅ SHIPPED (giugno 2026):** rewritten from a decremental
+  `setInterval` to `Date.now()` (`sessionTimerEndAt` + recompute remaining from the diff with
+  `ceil`; pause freezes the remainder, resume recomputes `endAt`; the 250ms tick only repaints) →
+  robust when the tab is backgrounded. It is the **single timestamp timer engine**, shared base with
+  the holds stopwatch (isometrics).
 - **Reset password NON funzionante:** the password-reset flow (`reset.html` / `/reset`, recovery
   redirect) **does not currently work** — earlier assumed OK, now confirmed broken. Da diagnosticare.
 - **Validazione `coach_rules` non vuoto:** the admin form blocks saving an empty `coach_rules`.
@@ -537,12 +546,13 @@ DB** (`trg_assign_trial_program`, AFTER INSERT su `profiles`), **NON frontend**.
   `setInterval`), disclaimer di sicurezza obbligatorio al primo uso, naming **"Breathwork"** (NON "Wim
   Hof Method"). Player guidato da un oggetto-dati ("descrittore") per estendere a pranayama in futuro.
   v2 (salvataggio tempi) separata.
-- **Timer-esercizio per esercizi a tempo** (plank/side plank/mountain climber): **incatenato** al fix
-  del timer recupero a `Date.now()` (motore-timer unico a timestamp, da fare **per primo**).
-  Rilevamento deterministico via regex sul campo Reps `/\d+\s*(sec|min)/i` (niente colonna/migration).
-  UX: "Avvia esercizio · Ns" → countdown lavoro (range = max) → beep/vibra → countdown recupero
-  incatenato; i secondi pre-compilano le reps. **Vincolo: niente timer-intervalli configurabile
-  completo.**
+- **Timer-esercizio per esercizi a tempo** (plank/side plank/mountain climber) — **✅ SHIPPED
+  (giugno 2026).** Rilevamento deterministico via regex sul campo Reps `/\d+\s*(sec|min)/i`
+  (`isTimedReps`, niente colonna/migration). Realizzato come **cronometro CONTA-SU su `Date.now()`**
+  (Avvia/Stop): i secondi tenuti vivono nel campo `reps`, log "Tenuta: N sec", widget cronometro +
+  infobox Secondi, avanzamento contatore set in `sendMsg` (via `holdTotSet`). Condivide la base
+  `Date.now()` col timer recupero (motore-timer unico a timestamp). **Vincolo mantenuto: niente
+  timer-intervalli configurabile completo.**
 
 ## Roadmap (contesto — NON implementare finché non richiesto; i FORK restano aperti)
 
@@ -552,8 +562,9 @@ open forks.**
 - **Descrittore per-esercizio.** A per-exercise descriptor `{metric:'reps'|'time', weighted, tempo,
   recupero, target}` computed **from the CSV**, read by `renderInputFields` / the set box / logging
   **instead of the session-level `session_type`** (handles **mixed** sessions + isometrics). **Do
-  NOT introduce a `session_type:'mixed'`.** Isometrics MVP: **seconds in the reps field** + relabel
-  on Progressi.
+  NOT introduce a `session_type:'mixed'`.** Isometrics MVP — **✅ SHIPPED (giugno 2026):** **seconds
+  in the reps field** + optional `metric:'time'` marker on the set + relabel on Progressi (the weight
+  side was already shipped via the CSV `peso` column).
 - **Progressione programma (PHASE model, SHIPPED):** multi-phase periodized programs live in one CSV with workouts prefixed "Fase N - " (`phaseOf`/`stripPhase`). `programDayStates(program, sessions)` computes the current phase's days and their state via MIN-COUNT (done = count > min; "continua" = first day, CSV order, with count == min). Detail view `programDetailScreen` (via `openProgram`/`openProgramDetail`); tapping a day -> `beginSession` with the FULL name. The old `programProgress` and the "Prossimo allenamento" dashboard panel are REMOVED. **Picker alive only via the admin "Prova" test session** (`admin-ui.js` -> `startSessionWithPrompt` -> `showWorkoutPicker`): NOT an orphan, do not remove; `.wpick-btn`/`.wpick-sub` are reused by `openProgramDetail`. **FORK OPEN (loads):** loads-in-CSV vs auto-progression.
 - **Editor tabellare CSV ↔ tabella:** **lossless** round-trip (parse ↔ serialize), reusing
   `parseWorkoutCsv` / `editProgram`. Prerequisite for applying periodization.
@@ -598,7 +609,10 @@ These are mandatory working rules for this repository. Follow them on every chan
    `setNum` is frontend-owned via `nextSetNum` (the AI number is display-only); (c) never set the
    Supabase client's `detectSessionInUrl` back to `true` (see the PKCE note above); (d) **the AI must
    not police exercise order** — free order is enforced by the frontend (the athlete picks from
-   `lista`), not by `coach_rules`; (e) the legacy **`[CUE:]`** bracket tag is **no longer emitted**
+   `lista`), not by `coach_rules`; this also covers **asking to confirm the switch** and phrases like
+   "siamo ancora su X" / "torniamo a X" / "è l'ultimo" — the `Esercizio: <name>` prefix is
+   **authoritative** and wins over the CSV order, **even right after the warm-up** (motore `ORDINE
+   LIBERO` rafforzato, giugno 2026); (e) the legacy **`[CUE:]`** bracket tag is **no longer emitted**
    by the AI — do not reintroduce it into prompts/`coach_rules`, but the **defensive strip** of
    `[CUE:]` in `fmtText()` (~line 1525) is **intentional — leave it in place** (it only guards a
    stray legacy tag).

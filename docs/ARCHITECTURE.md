@@ -42,7 +42,7 @@
 
 &#x20; - \*\*⚠️ PREREQUISITO ADMIN:\*\* il pending-gate vale ANCHE per l'admin. La test session "Prova" parte dall'account admin, quindi l'admin DEVE avere `profiles.status='active'` (sennò 403). Risolto via `update profiles set status='active' where role='admin'`. Hardening opzionale ANCORA APERTO (TASKS 🟢): gate = `status==='active' || role==='admin'` (il gate trial 1A è ora implementato — vedi sotto; questo bypass admin resta separato e non urgente, il fix dati basta).
 
-&#x20; - \*\*✅ MOTORE-PROMPT (ATTIVO — COMPLETO, giugno 2026):\*\* `chat.js`, DOPO i gate e PRIMA di Anthropic, legge da `settings` (service role): comune `coach\_prompt\_global` + delta per tipo (`coach\_prompt\_gym` | `coach\_prompt\_bodyweight`) scelto da `body.session\_type` (typeKey HARDCODED -> no injection). `motor = \[global, delta].filter(p=>p).join('\\n\\n')`. Fallback non bloccante (`motor=''`). \*\*✅ PROMPT UNICO PER-ESERCIZIO (giugno 2026):\*\* i due delta `coach\_prompt\_gym` e `coach\_prompt\_bodyweight` sono ora \*\*SVUOTATI\*\* — tutto il comportamento vive in `coach\_prompt\_global`. Il meccanismo `chat.js` è INTATTO (concatena un delta vuoto: `[global, ''].filter(p=>p)` = solo global) e la \*\*Leva 2 (prompt caching) intatta\*\*. Il discriminante peso/tempo non è più `session\_type` ma è \*\*PER-ESERCIZIO sulla colonna CSV `Peso`\*\*, via i due NUOVI blocchi del global: \*\*"CARICO O CORPO LIBERO"\*\* (cella `Peso` valorizzata = peso target + intro col peso + peso fuori dalla riga del set; cella vuota = corpo libero, reps + tempo se presente, "per lato") e \*\*"LEVA DI DIFFICOLTÀ"\*\* (trigger DETERMINISTICO `reps > tetto`, NON il giudizio RIR — chiude la 3B di Muscle-Up Pro). `session\_type` NON guida più il comportamento del motore (resta nel DB/codice → rimozione = cleanup futuro). Il MOTORE include inoltre: il \*\*WARM-UP OBBLIGATORIO\*\*, il blocco \*\*"PRECEDENZA — FILOSOFIA DI PROGRAMMA"\*\* (i coach\_rules che dichiarano una filosofia propria — maxout, mista — prevalgono sui punti in conflitto; il resto resta regolato dal motore) e il blocco \*\*"VALUTAZIONE DEL RANGE"\*\* + anti-fotocopia (riscritto giugno 2026 come CLASSIFICAZIONE MECCANICA min/max: pavimento E tetto inchiodati; estremi inclusi = a target; reps > tetto = sopra; reps < pavimento = sotto; esempi su range piccoli; guardia bidirezionale tetto≠sforato e pavimento≠sotto; vietata la frase identica su esercizi/set diversi). \*\*NOTA (correzione doc):\*\* la regola "autoregolazione reattiva sì / progressione proattiva no" NON è un blocco dedicato — è espressa NEGLI SCHEMI FEEDBACK (ora nel global, dopo lo svuotamento dei delta). TUTTI i 9 programmi girano sul motore; dopo l'unificazione i coach\_rules collassano a residui specifici (es. Muscle-Up Pro = isometrici + scala leve senza soglia RIR; Frau Medici/Petra = linguaggio semplice) + gli override di filosofia maxout/misto via PRECEDENZA (vedi AI\_RULES).
+&#x20; - \*\*✅ MOTORE-PROMPT (ATTIVO — COMPLETO, giugno 2026):\*\* `chat.js`, DOPO i gate e PRIMA di Anthropic, legge da `settings` (service role): comune `coach\_prompt\_global` + delta per tipo (`coach\_prompt\_gym` | `coach\_prompt\_bodyweight`) scelto da `body.session\_type` (typeKey HARDCODED -> no injection). `motor = \[global, delta].filter(p=>p).join('\\n\\n')`. Fallback non bloccante (`motor=''`). \*\*✅ PROMPT UNICO PER-ESERCIZIO (giugno 2026):\*\* i due delta `coach\_prompt\_gym` e `coach\_prompt\_bodyweight` sono ora \*\*SVUOTATI\*\* — tutto il comportamento vive in `coach\_prompt\_global`. Il meccanismo `chat.js` è INTATTO (concatena un delta vuoto: `[global, ''].filter(p=>p)` = solo global) e la \*\*Leva 2 (prompt caching) intatta\*\*. Il discriminante peso/tempo non è più `session\_type` ma è \*\*PER-ESERCIZIO sulla colonna CSV `Peso`\*\*, via i due NUOVI blocchi del global: \*\*"CARICO O CORPO LIBERO"\*\* (cella `Peso` valorizzata = peso target + intro col peso + peso fuori dalla riga del set; cella vuota = corpo libero, reps + tempo se presente, "per lato") e \*\*"LEVA DI DIFFICOLTÀ"\*\* (trigger DETERMINISTICO `reps > tetto`, NON il giudizio RIR — chiude la 3B di Muscle-Up Pro). `session\_type` NON guida più il comportamento del motore (resta nel DB/codice → rimozione = cleanup futuro). Il MOTORE include inoltre: il \*\*WARM-UP OBBLIGATORIO\*\*, il blocco \*\*"ORDINE LIBERO" (rafforzato giugno 2026):\*\* il prefisso `Esercizio: <nome>` è AUTORITATIVO e prevale sull'ordine del CSV e sul default "primo esercizio", ANCHE subito dopo il warm-up; vietato fare la guardia all'ordine, chiedere conferma del cambio ("vuoi saltare?"/"era un errore?"), dire "siamo ancora su X" / "torniamo a X" / "prima completa Y", elencare gli esercizi mancanti, o dire che un esercizio è "l'ultimo" per rimandarlo; ancora nel blocco WARM-UP — dopo "pronto", se il primo messaggio nomina un esercizio col prefisso "Esercizio:", parti da quello. Inoltre il blocco \*\*"PRECEDENZA — FILOSOFIA DI PROGRAMMA"\*\* (i coach\_rules che dichiarano una filosofia propria — maxout, mista — prevalgono sui punti in conflitto; il resto resta regolato dal motore) e il blocco \*\*"VALUTAZIONE DEL RANGE"\*\* + anti-fotocopia (riscritto giugno 2026 come CLASSIFICAZIONE MECCANICA min/max: pavimento E tetto inchiodati; estremi inclusi = a target; reps > tetto = sopra; reps < pavimento = sotto; esempi su range piccoli; guardia bidirezionale tetto≠sforato e pavimento≠sotto; vietata la frase identica su esercizi/set diversi). \*\*NOTA (correzione doc):\*\* la regola "autoregolazione reattiva sì / progressione proattiva no" NON è un blocco dedicato — è espressa NEGLI SCHEMI FEEDBACK (ora nel global, dopo lo svuotamento dei delta). TUTTI i 9 programmi girano sul motore; dopo l'unificazione i coach\_rules collassano a residui specifici (es. Muscle-Up Pro = isometrici + scala leve senza soglia RIR; Frau Medici/Petra = linguaggio semplice) + gli override di filosofia maxout/misto via PRECEDENZA (vedi AI\_RULES).
 
 &#x20; - \*\*✅ LEVA 2 — PROMPT CACHING (ATTIVO):\*\* `system` = ARRAY di blocchi quando `motor` non vuoto:
 
@@ -592,6 +592,10 @@ Logging PER-SERIE (niente "fine"):
 
 &#x20; sendMsg costruisce i set con reps>0; RIR/RPE null se non dichiarati; setNum=currentSetNum
 
+&#x20; ramo single: log etichettato "Tenuta: N sec" quando currentTimed (altrimenti "Reps: N"); la guardia
+
+&#x20;   hasReps matcha anche /Tenuta:\s*\d+/ -> il timer recupero si ferma anche sulle tenute
+
 &#x20; queueAutosave -> persistSets (merge in sessionLog, fuori da try/catch) -> persistSetsWrite (INSERT 1ª serie -> currentSessionId; poi UPDATE con dedup nome+setNum; ritorna true se ok)
 
 &#x20; persistSetsWrite fallita (error sull'UPDATE / throw di .single() sull'INSERT) -> sb.auth.refreshSession() + 1 retry della scrittura (token scaduto da tab in background su mobile, cfr aiSend d87ecfe; commit 3088677)
@@ -610,11 +614,11 @@ deleteLog (fix 7f8315d): role==='admin' -> solo renderLogTable() (resta su admin
 
 &#x20;
 
-\## Descrittore per-esercizio — peso ✅ SHIPPED (colonna CSV), isometrici PIANIFICATI
+\## Descrittore per-esercizio — peso ✅ SHIPPED (colonna CSV), isometrici ✅ SHIPPED
 
-> Voce TASKS "Peso per-esercizio" = ✅ SHIPPED via colonna CSV dedicata `peso`. "Logging isometrici"
+> Voce TASKS "Peso per-esercizio" = ✅ SHIPPED via colonna CSV dedicata `peso`. "Esercizio a tempo /
 
-> (metric=time) resta PIANIFICATO. Frontend-only, no migration.
+> isometrici (metric=time)" = ✅ SHIPPED (giugno 2026). Frontend-only, no migration.
 
 > Il lato PROMPT del misto è GIÀ coperto (coach\_rules MUP).
 
@@ -650,13 +654,43 @@ SUPERATO l'approccio Note (regex kg + fallback session\_type==='gym' + gym->Note
 
 session\_type RISTRETTO al motore (delta coach\_prompt in chat.js) e al DB; non pilota più la UI peso.
 
-ISOMETRICI (metric=time) — ANCORA PIANIFICATO:
+ISOMETRICI (metric=time) — ✅ SHIPPED (giugno 2026):
 
-&#x20; metric = /\\d+\\s\*(sec|min)/i sulle Reps ? 'time' : 'reps'
+&#x20; Rilevamento: isTimedReps(reps) = /\\d+\\s\*(sec|min)/i sul campo Reps -> currentTimed +
 
-&#x20; metric='time': label "Secondi", NIENTE RIR, RPE opzionale, peso se weighted.
+&#x20;   currentHoldTarget (parseHoldTarget: range -> max; "min" -> *60).
 
-&#x20; MVP: secondi nel campo `reps` (+ relabel Progressi). Avanzato: campo `seconds` (jsonb).
+&#x20; Cronometro CONTA-SU su Date.now() (holdStart/holdInterval/holdElapsed; holdToggle = Avvia/Stop,
+
+&#x20;   holdReset). Niente setInterval decrementale.
+
+&#x20; UI: widget cronometro (label "Tenuta" + holdNum) e infobox Secondi (input reps_a VISIBILE,
+
+&#x20;   placeholder "sec") sullo stesso piano; sotto i bottoni Avvia/Stop (holdGo) + Reset stesso piano.
+
+&#x20;   UN solo percorso di log: l'aeroplanino Invia (sendBtn -> sendMsg). RIMOSSI: bottone Registra,
+
+&#x20;   input holdManual, funzione holdLog.
+
+&#x20; Box Target: mostra csvReps (es. "40-50 sec") quando timed.
+
+&#x20; Logging: i secondi vivono nel campo `reps` (MVP) + marker OPZIONALE metric:'time' nel set di
+
+&#x20;   log_data (jsonb, niente migration; retrocompat: log vecchi senza marker = reps). Avanzamento
+
+&#x20;   contatore set DETERMINISTICO in sendMsg, gated currentTimed && currentSetMode==='single' &&
+
+&#x20;   pendingSets.length, via holdTotSet, poi holdReset.
+
+&#x20; Regole: NIENTE RIR sulle tenute, RPE opzionale, peso se weighted. Helper: isTimedReps,
+
+&#x20;   parseHoldTarget, holdTotSet.
+
+&#x20; EDGE noti: superset di tenute -> input manuale (raro); isometrico zavorrato (peso>0) -> resta nel
+
+&#x20;   ramo peso di Progressi (kg), il relabel secondi vale solo se non weighted; formato misto "1 min
+
+&#x20;   30 sec" mal-parsato da parseHoldTarget (raro); tenuta 0s -> bubble innocuo.
 
 Il MOTORE resta separato (stile di coaching della sessione, non tipo del singolo esercizio).
 
@@ -914,7 +948,17 @@ ANALYTICS: due livelli.
 
 \- RIR/RPE `null` esclusi (`numOrNull`); 0 dichiarato valido.
 
-> (FUTURO) per gli isometrici (secondi in `reps`): relabel per-esercizio della stat/grafico.
+> ✅ SHIPPED (giugno 2026) per gli isometrici: `isTimedExercise(name, filtered)` (prima dal marker
+
+> `metric:'time'` nel log, fallback al CSV corrente via `isTimedReps`) rietichetta per-esercizio:
+
+> TENUTA MAX / MEDIA / TOT SECONDI, titolo "Media secondi per set", secondo titolo "Secondi totali
+
+> sessione" via nuovo id HTML `pChartTotalRepsTitle`, valori col suffisso "s". EDGE: l'isometrico
+
+> zavorrato (peso>0) resta nel ramo peso (kg) — il relabel secondi vale solo se non weighted; i log
+
+> vecchi senza marker `metric:'time'` non vengono rietichettati in secondi.
 
 &#x20;
 
@@ -926,21 +970,25 @@ Nuovo: exercises\[].sets = \[{reps, rir, rpe, weight, note, setNum}]
 
 Vecchio: exercises\[].reps/rir/sets (number)
 
-Isometrici (MVP): secondi nel campo reps (+ relabel Progressi); avanzato: campo seconds dedicato.
+Isometrici (✅ SHIPPED): secondi nel campo reps + marker OPZIONALE metric:'time' nel set (jsonb,
+
+niente migration; retrocompat: log vecchi senza marker = reps). Avanzato: campo seconds dedicato.
 
 ```
 
 &#x20;
 
-\## (PIANIFICATO) Timer unico a timestamp
+\## ✅ Timer unico a timestamp (SHIPPED giugno 2026)
 
-> Il fix del "timer recupero in background" (da `setInterval` decrementale a `Date.now()`) diventa il
+> Il timer recupero è stato riscritto da `setInterval` decrementale a `Date.now()`: `sessionTimerEndAt`
 
-> MOTORE-TIMER unico, base sia del recupero sia del timer-esercizio a tempo (plank ecc.), anche in
+> + ricalcolo del rimanente dal diff con `ceil`; la pausa congela il rimanente, il resume ricalcola
 
-> background. INCATENATO a "Logging isometrici" (stessa regex, secondi -> reps). Stessa lezione del
+> `endAt`; il tick a 250ms fa SOLO repaint → robusto col tab in background. È il MOTORE-TIMER unico a
 
-> timer della Breathwork.
+> timestamp, base sia del recupero sia del cronometro delle tenute (isometrici, vedi "Descrittore
+
+> per-esercizio") — entrambi su `Date.now()`. Stessa lezione del timer della Breathwork.
 
 &#x20;
 

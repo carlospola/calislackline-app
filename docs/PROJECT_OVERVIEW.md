@@ -128,7 +128,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Leva 2 — Prompt caching (ATTIVO):\*\* `cache\_control: ephemeral` sul blocco motore in `/api/chat.js` (\~90% di taglio sulla porzione statica). Commit `ee173c7`. I coach\_rules snelliti di MUP/NW hanno ridotto anche il blocco non cachato
 
-\- \*\*Target box per-esercizio (NON più per tipo):\*\* il tipo di box e la visibilità del peso dipendono da `currentWeighted` = cella CSV `peso` non vuota (weighted → box Peso col valore come target; altrimenti box Tempo). I rep range e il "per lato" si vedono correttamente nel box. \*\*Migrazione colonna `peso` COMPLETATA\*\* su tutti i programmi con carico (741 Fitness, Pool Danger Hypertrophy, Bro split, Muscle-Up Pro); bodyweight puro (Body By Rings, "Prova — Full Body") e i casi a Note-varianti (New Workout) restano senza colonna per scelta. La Note dei gym tiene ancora il peso (non più pilota del box; non ripulita).
+\- \*\*Target box per-esercizio (NON più per tipo):\*\* il tipo di box e la visibilità del peso dipendono da `currentWeighted` = cella CSV `peso` non vuota (weighted → box Peso col valore come target; altrimenti box Tempo). I rep range e il "per lato" si vedono correttamente nel box. \*\*Migrazione colonna `peso` COMPLETATA\*\* su tutti i programmi con carico (741 Fitness, Pool Danger Hypertrophy, Bro split, Muscle-Up Pro); bodyweight puro (Body By Rings, "Prova — Full Body") e i casi a Note-varianti (New Workout) restano senza colonna per scelta. La Note dei gym tiene ancora il peso (non più pilota del box; non ripulita). \*\*✅ Isometrici a tempo SHIPPED (giugno 2026):\*\* esercizio rilevato a tempo via regex sul campo Reps → box Target = i secondi del CSV, cronometro conta-su (`Date.now()`) + infobox Secondi, log delle tenute via aeroplanino con marker `metric:'time'`.
 
 \- \*\*✅ Bug admin cancellazione sessione — RISOLTO (11/06, commit `7f8315d`):\*\* `deleteLog` ramifica su `role==='admin'` → l'admin resta nel pannello
 
@@ -201,7 +201,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Prerequisito/hardening admin per `/api/chat.js`:\*\* oggi l'admin deve avere `status='active'` (fix dati applicato). Hardening opzionale ANCORA APERTO: gate `status==='active' || role==='admin'` (il gate trial 1A è ora implementato; questo bypass admin resta separato e non urgente, il fix dati basta)
 
-\- \*\*✅ Peso per-esercizio / sessioni miste (bodyweight + gym) — SHIPPED via colonna CSV `peso`.\*\* La visibilità del campo peso e il target box sono ora PER-ESERCIZIO (`currentWeighted` = cella `peso` non vuota), NON più pilotati da `session\_type` (ristretto al motore + DB). Quirk New Workout (Note=varianti) risolto. \*\*Resta aperto solo il lato isometrici (metric=time)\*\* del descrittore per-esercizio. Il lato PROMPT del misto è già coperto (filosofia MUP). Vedi ARCHITECTURE/TASKS
+\- \*\*✅ Peso per-esercizio / sessioni miste (bodyweight + gym) — SHIPPED via colonna CSV `peso`.\*\* La visibilità del campo peso e il target box sono ora PER-ESERCIZIO (`currentWeighted` = cella `peso` non vuota), NON più pilotati da `session\_type` (ristretto al motore + DB). Quirk New Workout (Note=varianti) risolto. \*\*✅ Anche il lato isometrici (metric=time) del descrittore per-esercizio è ora SHIPPED (giugno 2026):\*\* rilevamento regex sul campo Reps (`isTimedReps`), secondi nel campo reps + marker opzionale `metric:'time'` nel set, widget cronometro+secondi (`reps\_a` visibile), log via aeroplanino (niente bottone Registra), etichetta "Tenuta: N sec". Il lato PROMPT del misto è già coperto (filosofia MUP). Vedi ARCHITECTURE/TASKS
 
 \- \*\*Apps Script da rivedere pesantemente\*\* (questionario + mail richiesta coaching, doppia mail, contenuti; dipendenza GEMINI API ora documentata in ARCHITECTURE) — vedi TASKS 🟡; non costruirci sopra nuove feature
 
@@ -211,9 +211,11 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- Nessuna notifica push / reminder allenamento (è anche il "valore nativo" per l'App Store)
 
-\- \*\*Timer recupero si ferma se l'app va in background\*\* → fix con `Date.now()`; è la FONDAZIONE del timer-esercizio a tempo
+\- \*\*✅ Timer recupero in background — SHIPPED (giugno 2026):\*\* riscritto su `Date.now()` (`sessionTimerEndAt` + ricalcolo dal diff con `ceil`, pausa congela il rimanente / resume ricalcola, tick 250ms solo repaint) → robusto col tab in background. È il \*\*motore-timer unico a timestamp\*\*, base condivisa col cronometro delle tenute (isometrici)
 
 \- \*\*Validazione `coach\_rules` non vuoto\*\* → da togliere (utile per il SaaS). NB: il guard della test session già controlla `workout\_csv`, non i coach\_rules
+
+\- \*\*"Assegna" non idempotente:\*\* un doppio tap sul bottone crea DUE righe `programs` duplicate (capitato su Fit active, deduplicato via SQL una-tantum) → valutare un debounce sul bottone o un unique constraint `(user\_id, template\_id)`
 
 
 \- \*\*Open question strategiche (non task, vedi TASKS 💡):\*\* ~~rebranding del nome~~ \*\*✅ CHIUSA (16/06): AILISTENICS confermato come nome prodotto, COAICH scartato\*\* → il "Dominio email personalizzato" non è più gated dal rebranding; resta aperta solo la doppia source-of-truth dei doc (ponte git `/docs` + `@`-import in CLAUDE.md)
@@ -326,5 +328,5 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Onboarding form\*\* — email automatica via Apps Script (in overhaul, vedi TASKS)
 
-\- \*\*(In arrivo)\*\* Profilo SLIM self-serve (nickname, Step 4 — unico residuo del pacchetto landing); Fase i18n IT/EN/DE (prioritaria post-lancio; l'hero elaborato si fa qui); Accesso email via OTP a codice (fase 2, sostituisce il blocco email/pw nascosto); Analytics funnel (da dati Supabase); Conversione manuale primi trialist + Stripe (gated); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Peso per-esercizio + Logging isometrici (descrittore per-esercizio); Timer-esercizio a tempo; Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
+\- \*\*(In arrivo)\*\* Profilo SLIM self-serve (nickname, Step 4 — unico residuo del pacchetto landing); Fase i18n IT/EN/DE (prioritaria post-lancio; l'hero elaborato si fa qui); Accesso email via OTP a codice (fase 2, sostituisce il blocco email/pw nascosto); Analytics funnel (da dati Supabase); Conversione manuale primi trialist + Stripe (gated); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
 
