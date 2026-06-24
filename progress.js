@@ -3,6 +3,7 @@
 // ============================================================
 var progressData = [];
 var chartRepsInst = null, chartTotalRepsInst = null, chartRPEInst = null;
+var chartSetsInst = null;
 var chartRIRPieInst = null;
 var chartOvRPEInst = null;
 var calCurrentMonth = null;
@@ -198,6 +199,67 @@ function renderProgressCharts(){
   if(ttlTotal) ttlTotal.textContent = isWeighted ? 'Volume per sessione (kg)' : (isTimed ? 'Secondi totali sessione' : 'Reps totali sessione');
   chartRPEInst = destroyChart(chartRPEInst);
   chartRPEInst = new Chart(document.getElementById('chartRPE').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRPEData, backgroundColor:'rgba(255,100,60,0.2)', borderColor:'rgba(255,100,60,0.6)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts({ min:0, max:10 }) });
+
+  renderSetDetailChart(filtered, isWeighted, isTimed);
+}
+
+// Grafico "Dettaglio set per-esercizio": asse X = ogni singolo set del periodo,
+// barra per tipo esercizio (volume kg / secondi / reps), linea RIR su secondo asse.
+function renderSetDetailChart(filtered, isWeighted, isTimed){
+  var exerciseName = document.getElementById('progressExerciseSelect').value;
+  var labels = [], barData = [], rirData = [], tipData = [];
+  filtered.forEach(function(s){
+    var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
+    if(!ex) return;
+    var sets = getExSets(ex);
+    if(!sets.length) return;
+    var d = new Date(s.created_at);
+    var dm = d.getDate() + '/' + (d.getMonth()+1);
+    sets.forEach(function(st, idx){
+      labels.push(dm + ' #' + (idx+1));
+      var val = isWeighted ? (st.weight * st.reps) : st.reps;
+      barData.push(Math.round(val*10)/10);
+      rirData.push(isTimed ? null : numOrNull(st.rir));
+      tipData.push({ reps: st.reps, weight: st.weight });
+    });
+  });
+
+  // cap difensivo: solo gli ultimi 60 set (code allineate)
+  if(labels.length > 60){
+    labels = labels.slice(-60);
+    barData = barData.slice(-60);
+    rirData = rirData.slice(-60);
+    tipData = tipData.slice(-60);
+  }
+
+  // linea RIR presente solo se non-timed e almeno un rir dichiarato
+  var hasRir = false;
+  if(!isTimed){
+    for(var i=0;i<rirData.length;i++){ if(rirData[i] != null){ hasRir = true; break; } }
+  }
+
+  var datasets = [{ type:'bar', data:barData, backgroundColor:'rgba(200,240,96,0.15)', borderColor:'#c8f060', borderWidth:1.5, borderRadius:4, yAxisID:'y' }];
+  var opts = makeBarOpts();
+  if(hasRir){
+    datasets.push({ type:'line', data:rirData, borderColor:'rgba(255,100,60,0.8)', backgroundColor:'rgba(255,100,60,0.8)', borderWidth:1.5, pointRadius:2, spanGaps:false, tension:0.2, yAxisID:'yRir' });
+    opts.scales.yRir = { position:'right', min:0, max:10, ticks:{ color:'#555', font:{ family:'DM Mono, monospace', size:9 } }, grid:{ display:false }, border:{ color:'rgba(255,255,255,0.05)' } };
+  }
+
+  // tooltip barra "reps x kg" solo per esercizi con peso (altrimenti default)
+  if(isWeighted){
+    opts.plugins = opts.plugins || {};
+    opts.plugins.tooltip = { callbacks: { label: function(ctx){
+      if(ctx.dataset && ctx.dataset.type === 'line'){ return 'RIR: ' + ctx.parsed.y; }
+      var t = tipData[ctx.dataIndex] || {};
+      return t.reps + ' x ' + t.weight + ' kg';
+    } } };
+  }
+
+  var ttl = document.getElementById('pChartSetsTitle');
+  if(ttl) ttl.textContent = isWeighted ? 'Dettaglio set - volume (kg)' : (isTimed ? 'Dettaglio set - secondi' : 'Dettaglio set - reps');
+
+  chartSetsInst = destroyChart(chartSetsInst);
+  chartSetsInst = new Chart(document.getElementById('chartSets').getContext('2d'), { data:{ labels:labels, datasets:datasets }, options:opts });
 }
 
 function calNavMonth(dir){
