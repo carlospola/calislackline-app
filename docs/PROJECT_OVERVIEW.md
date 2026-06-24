@@ -134,11 +134,18 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- Admin panel: gestione atleti, sessioni, libreria esercizi 49+, \*\*tab Template\*\*
 
-\- Progressi: grafici per esercizio + overview
+\- Progressi: grafici per esercizio + overview. \*\*✅ Batch 1 Progressi SHIPPED (24/06, commit `91ff228`):\*\* nel ramo CON PESO il grafico "Peso massimo (kg)" è sostituito da \*\*"1RM stimato (kg)"\*\* (Epley `peso*(1+reps/30)`, MAX e1RM per sessione, canvas `chartReps`; il peso max resta nella stat-card `pStatPR`); nuovo grafico \*\*"Volume per sessione"\*\* (somma `peso*reps` per sessione, canvas `chartTotalReps`; titolo per-ramo: weighted "Volume per sessione (kg)" / isometrici "Secondi totali sessione" / corpo libero "Reps totali sessione"); la stat-card ex "VOLUME" → \*\*"MIGLIOR SET"\*\* (`max(reps*peso)`, suffisso kg); rename "RPE medio" → \*\*"Fatica percepita media"\*\* (grafici `chartRPE`/`chartOvRPE`, stat `ovStatRPE`). Rami corpo libero e isometrici invariati
 
 \- Ottimizzazioni costi API attive (troncamento history, no storico, contesto atleta solo primo turno, filtro CSV, prompt caching)
 
 \- \*\*Sviluppo via Claude Code\*\* sul repo locale (CLAUDE.md nel repo) + git/GitHub → deploy automatico Vercel
+
+\- \*\*✅ Profilo SLIM self-serve — CHIUSO/GIÀ IMPLEMENTATO (verifica codice 24/06):\*\* la verifica diretta ha
+&#x20; trovato che il form self-serve in `profileScreen` raccoglie GIÀ SOLO il nickname (input `p_name`;
+&#x20; `saveProfile` valida solo il nickname) e che il form completo (nome/cognome/telefono/infortuni…) vive
+&#x20; in `onboardScreen` ed È il questionario di CONVERSIONE, distinto e voluto → niente da implementare.
+&#x20; \*\*Conseguenza:\*\* unico residuo pre-lancio del pacchetto landing/privacy = compilare i placeholder
+&#x20; `[DATA]`/`[EMAIL-CONTATTO]` in `privacy.html`/`termini.html`. _(Decisione originale 16/06 sotto.)_
 
 \- \*\*✅ DECISIONE — Profilo SLIM self-serve (16/06):\*\* il profilo in-app self-serve = \*\*SOLO nickname\*\*.
 &#x20; Tolti dalla UI self-serve nome, cognome, telefono, biometrie e dati salute. Coaching
@@ -322,11 +329,11 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Admin panel\*\* — gestione atleti, log, libreria esercizi, tab Template
 
-\- \*\*Schermata Progressi\*\* — tab Esercizio + Overview
+\- \*\*Schermata Progressi\*\* — tab Esercizio + Overview (✅ Batch 1 Progressi 24/06: 1RM stimato, Volume per sessione, Miglior set, label "Fatica percepita media")
 
 \- \*\*Libreria esercizi\*\* — 49+ esercizi
 
 \- \*\*Onboarding form\*\* — email automatica via Apps Script (in overhaul, vedi TASKS)
 
-\- \*\*(In arrivo)\*\* Profilo SLIM self-serve (nickname, Step 4 — unico residuo del pacchetto landing); Fase i18n IT/EN/DE (prioritaria post-lancio; l'hero elaborato si fa qui); Accesso email via OTP a codice (fase 2, sostituisce il blocco email/pw nascosto); Analytics funnel (da dati Supabase); Conversione manuale primi trialist + Stripe (gated); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
+\- \*\*(In arrivo)\*\* Compilazione placeholder legali `[DATA]`/`[EMAIL-CONTATTO]` (unico residuo pre-lancio del pacchetto landing — il profilo SLIM self-serve è ✅ già implementato, verifica 24/06); Dettaglio set per-esercizio (grafico per-set, piano approvato 24/06); Fase i18n IT/EN/DE (prioritaria post-lancio; l'hero elaborato si fa qui); Accesso email via OTP a codice (fase 2, sostituisce il blocco email/pw nascosto); Analytics funnel (da dati Supabase); Conversione manuale primi trialist + Stripe (gated); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
 

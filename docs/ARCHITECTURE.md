@@ -196,6 +196,12 @@ settings
 
 > session\_drafts: tabella RIMOSSA — non reintrodurla.
 
+> \*\*✅ Profilo SLIM self-serve — CHIUSO/GIÀ IMPLEMENTATO (verifica codice 24/06):\*\* il form self-serve
+> in `profileScreen` raccoglie GIÀ SOLO il nickname (input `p_name`; `saveProfile` valida solo il
+> nickname); il form completo (nome/cognome/telefono/infortuni…) vive in `onboardScreen` ed È il
+> questionario di CONVERSIONE, distinto e voluto → niente da implementare. _(Decisione originale 16/06
+> sotto.)_
+
 > \*\*✅ Profilo SLIM self-serve (DECISO 16/06):\*\* la UI self-serve in-app raccoglie SOLO `nickname`
 > (→ `name`). Gli altri campi profilo (biometrie, `infortuni`, salute, obiettivi…) restano colonne
 > NULLABLE nel DB ma NON sono chiesti nel self-serve: si popolano SOLO dal questionario di CONVERSIONE
@@ -942,9 +948,11 @@ ANALYTICS: due livelli.
 
 `renderProgressCharts` rileva set con `weight > 0`:
 
-\- Con peso: PESO MAX / MEDIO / VOLUME; grafico "Peso massimo (kg)" (pLblPR/pLblAvg/pLblTot/pChartRepsTitle)
+\- Con peso: PESO MAX / MEDIO / \*\*MIGLIOR SET\*\* (stat-card ex "VOLUME", `pLblTot`/`pStatTotalReps` = `max(reps*peso)`, suffisso kg, fallback trattino); grafico \*\*"1RM stimato (kg)"\*\* (canvas `chartReps`/`pChartRepsTitle`; Epley `e1RM = peso*(1+reps/30)`, MAX e1RM per sessione) — \*\*sostituisce nel GRAFICO il vecchio "Peso massimo (kg)"\*\*, il peso max resta nella stat-card `pStatPR` (`pLblPR`/`pLblAvg`)
 
 \- A corpo libero: MASSIMALE / MEDIA / TOT REPS; grafico "Media reps per set"
+
+\- \*\*✅ Batch 1 Progressi (24/06, commit `91ff228`):\*\* aggiunto il grafico \*\*"Volume per sessione"\*\* (ramo con peso = somma `peso*reps` per sessione; canvas `chartTotalReps`; titolo per-ramo: weighted "Volume per sessione (kg)" / isometrici "Secondi totali sessione" / corpo libero "Reps totali sessione"), la stat \*\*"MIGLIOR SET"\*\* (sopra) e il rename "RPE medio" → \*\*"Fatica percepita media"\*\* (grafici `chartRPE`/`chartOvRPE`, stat `ovStatRPE`). Rami corpo libero e isometrici INVARIATI. ⚠️ Nota: per la ZAVORRA 1RM e volume ignorano il peso corporeo (numero assoluto impreciso, trend ok — vedi idea 💡 "Colonna CSV tipologia esercizio" in TASKS). \*\*Residuo tecnico non-bug:\*\* var `totalVolume` in `renderProgressCharts` ora morta (sommata ma non mostrata), cleanup futuro innocuo.
 
 \- RIR/RPE `null` esclusi (`numOrNull`); 0 dichiarato valido.
 

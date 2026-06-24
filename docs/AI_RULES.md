@@ -334,7 +334,7 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- `exercises.owner\_id = null` = esercizio globale
 
-\- \*\*✅ Profilo SLIM self-serve (16/06):\*\* la UI self-serve in-app scrive SOLO `name` (= nickname); gli altri campi profilo (biometrie, `infortuni`, salute, obiettivi…) restano NULLABLE e si popolano SOLO dal questionario di CONVERSIONE "Richiedi il coaching". \*\*Semplificazione SOLO-UI → NESSUNA migration\*\* (non droppare colonne). Il consenso salute (Art. 9) è confinato al questionario di conversione (vedi regola `athleteContext` revisionata).
+\- \*\*✅ Profilo SLIM self-serve — CHIUSO/GIÀ IMPLEMENTATO (verifica codice 24/06):\*\* la UI self-serve in-app (`profileScreen`) scrive GIÀ SOLO `name` (= nickname; input `p_name`, `saveProfile` valida solo il nickname); il form completo (nome/cognome/telefono/infortuni…) vive in `onboardScreen` ed È il questionario di CONVERSIONE "Richiedi il coaching", distinto e voluto → niente da implementare. Gli altri campi profilo (biometrie, `infortuni`, salute, obiettivi…) restano NULLABLE e si popolano SOLO dal questionario di conversione. \*\*Semplificazione SOLO-UI → NESSUNA migration\*\* (non droppare colonne). Il consenso salute (Art. 9) è confinato al questionario di conversione (vedi regola `athleteContext` revisionata).
 
 \- \*\*La colonna `workouts` è stata DROPPATA da `programs` e `program\_templates` (14/06)\*\* — source of truth = `workout\_csv`. NON reintrodurla e NON copiarla tra le tabelle né in `repushTemplate`.
 
