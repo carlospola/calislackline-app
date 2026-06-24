@@ -204,11 +204,15 @@ function renderProgressCharts(){
   renderSetDetailChart(filtered, isWeighted, isTimed);
 }
 
-// Grafico "Dettaglio set per-esercizio": asse X = ogni singolo set del periodo,
-// barra per tipo esercizio (volume kg / secondi / reps), linea RIR su secondo asse.
+// Grafico "Dettaglio serie per serie": asse X = ogni singolo set del periodo.
+// Multi-metrica con controlli on/off + stile (barre/punti/linea) per metrica.
+// Stato metriche RICREATO a ogni render (nessuna persistenza).
 function renderSetDetailChart(filtered, isWeighted, isTimed){
   var exerciseName = document.getElementById('progressExerciseSelect').value;
-  var labels = [], barData = [], rirData = [], tipData = [];
+  var accent = '#c8f060', accentDim = 'rgba(200,240,96,0.15)';
+
+  // lista piatta dei set: arrai grezzi allineati
+  var labels = [], repsArr = [], weightArr = [], rirArr = [], rpeArr = [];
   filtered.forEach(function(s){
     var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
     if(!ex) return;
@@ -218,49 +222,152 @@ function renderSetDetailChart(filtered, isWeighted, isTimed){
     var dm = d.getDate() + '/' + (d.getMonth()+1);
     sets.forEach(function(st, idx){
       labels.push(dm + ' #' + (idx+1));
-      var val = isWeighted ? (st.weight * st.reps) : st.reps;
-      barData.push(Math.round(val*10)/10);
-      rirData.push(isTimed ? null : numOrNull(st.rir));
-      tipData.push({ reps: st.reps, weight: st.weight });
+      repsArr.push(st.reps);
+      weightArr.push(st.weight);
+      rirArr.push(numOrNull(st.rir));
+      rpeArr.push(numOrNull(st.rpe));
     });
   });
 
-  // cap difensivo: solo gli ultimi 60 set (code allineate)
+  // cap difensivo: solo gli ultimi 60 set (code allineate su ogni serie)
   if(labels.length > 60){
     labels = labels.slice(-60);
-    barData = barData.slice(-60);
-    rirData = rirData.slice(-60);
-    tipData = tipData.slice(-60);
+    repsArr = repsArr.slice(-60);
+    weightArr = weightArr.slice(-60);
+    rirArr = rirArr.slice(-60);
+    rpeArr = rpeArr.slice(-60);
   }
 
-  // linea RIR presente solo se non-timed e almeno un rir dichiarato
-  var hasRir = false;
-  if(!isTimed){
-    for(var i=0;i<rirData.length;i++){ if(rirData[i] != null){ hasRir = true; break; } }
+  // metriche disponibili per tipo. axis: 'y' sinistra, 'yE'/'yEffort' destra.
+  var metrics = [];
+  function addMetric(key, label, color, bg, axis, on, compute){
+    metrics.push({ key:key, label:label, color:color, bg:bg, axis:axis, on:on, style:'bar', compute:compute });
   }
-
-  var datasets = [{ type:'bar', data:barData, backgroundColor:'rgba(200,240,96,0.15)', borderColor:'#c8f060', borderWidth:1.5, borderRadius:4, yAxisID:'y' }];
-  var opts = makeBarOpts();
-  if(hasRir){
-    datasets.push({ type:'line', data:rirData, borderColor:'rgba(255,100,60,0.8)', backgroundColor:'rgba(255,100,60,0.8)', borderWidth:1.5, pointRadius:2, spanGaps:false, tension:0.2, yAxisID:'yRir' });
-    opts.scales.yRir = { position:'right', min:0, max:10, ticks:{ color:'#555', font:{ family:'DM Mono, monospace', size:9 } }, grid:{ display:false }, border:{ color:'rgba(255,255,255,0.05)' } };
-  }
-
-  // tooltip barra "reps x kg" solo per esercizi con peso (altrimenti default)
   if(isWeighted){
+    addMetric('tonn','Tonnellaggio',accent,accentDim,'y',true, function(i){ return Math.round(weightArr[i]*repsArr[i]*10)/10; });
+    addMetric('e1rm','Massimale stimato','rgba(122,200,255,1)','rgba(122,200,255,0.15)','yE',false, function(i){ var r = (rirArr[i] != null ? rirArr[i] : 0); return Math.round(weightArr[i]*(1+(repsArr[i]+r)/30)*10)/10; });
+    addMetric('reps','Reps','rgba(200,155,255,1)','rgba(200,155,255,0.15)','y',false, function(i){ return repsArr[i]; });
+    addMetric('rir','RIR','rgba(255,138,92,1)','rgba(255,138,92,0.15)','yEffort',true, function(i){ return rirArr[i]; });
+    addMetric('rpe','RPE','rgba(255,209,102,1)','rgba(255,209,102,0.15)','yEffort',false, function(i){ return rpeArr[i]; });
+  } else if(isTimed){
+    addMetric('reps','Secondi',accent,accentDim,'y',true, function(i){ return repsArr[i]; });
+    addMetric('rir','RIR','rgba(255,138,92,1)','rgba(255,138,92,0.15)','yEffort',true, function(i){ return rirArr[i]; });
+    addMetric('rpe','RPE','rgba(255,209,102,1)','rgba(255,209,102,0.15)','yEffort',false, function(i){ return rpeArr[i]; });
+  } else {
+    addMetric('reps','Reps',accent,accentDim,'y',true, function(i){ return repsArr[i]; });
+    addMetric('rir','RIR','rgba(255,138,92,1)','rgba(255,138,92,0.15)','yEffort',true, function(i){ return rirArr[i]; });
+    addMetric('rpe','RPE','rgba(255,209,102,1)','rgba(255,209,102,0.15)','yEffort',false, function(i){ return rpeArr[i]; });
+  }
+
+  function btnCss(active){
+    return 'font-size:9px;padding:2px 6px;border-radius:5px;cursor:pointer;border:1px solid var(--border);margin-left:4px;' + (active ? 'background:var(--accent);color:#0a0a0a;border-color:var(--accent);' : 'background:transparent;color:var(--muted);');
+  }
+
+  // (ri)costruisce SOLO il chart leggendo lo stato corrente delle metriche
+  function buildChart(){
+    var datasets = [], usedAxes = {};
+    metrics.forEach(function(m){
+      if(!m.on) return;
+      usedAxes[m.axis] = true;
+      var data = [];
+      for(var i=0;i<labels.length;i++){ data.push(m.compute(i)); }
+      var ds = { _mkey:m.key, label:m.label, data:data, yAxisID:m.axis, borderColor:m.color };
+      if(m.style === 'bar'){ ds.type='bar'; ds.backgroundColor=m.bg; ds.borderWidth=1.5; ds.borderRadius=4; }
+      else if(m.style === 'point'){ ds.type='line'; ds.showLine=false; ds.pointRadius=4; ds.backgroundColor=m.color; ds.pointBackgroundColor=m.color; ds.spanGaps=false; }
+      else { ds.type='line'; ds.pointRadius=2; ds.spanGaps=false; ds.tension=0.2; ds.backgroundColor=m.color; ds.borderWidth=1.5; }
+      datasets.push(ds);
+    });
+
+    var opts = makeBarOpts();
+    if(usedAxes.yE){
+      opts.scales.yE = { position:'right', ticks:{ color:'#555', font:{ family:'DM Mono, monospace', size:9 } }, grid:{ display:false }, border:{ color:'rgba(255,255,255,0.05)' } };
+    }
+    if(usedAxes.yEffort){
+      opts.scales.yEffort = { position:'right', min:0, max:10, ticks:{ color:'#555', font:{ family:'DM Mono, monospace', size:9 } }, grid:{ display:false }, border:{ color:'rgba(255,255,255,0.05)' } };
+    }
+    if(!usedAxes.y){ opts.scales.y.display = false; }
+
     opts.plugins = opts.plugins || {};
     opts.plugins.tooltip = { callbacks: { label: function(ctx){
-      if(ctx.dataset && ctx.dataset.type === 'line'){ return 'RIR: ' + ctx.parsed.y; }
-      var t = tipData[ctx.dataIndex] || {};
-      return t.reps + ' x ' + t.weight + ' kg';
+      var k = ctx.dataset._mkey, v = ctx.parsed.y, di = ctx.dataIndex;
+      if(k === 'tonn'){ return repsArr[di] + ' x ' + weightArr[di] + ' = ' + v + ' kg'; }
+      if(k === 'e1rm'){ return '1RM stim: ' + v + ' kg'; }
+      if(k === 'reps'){ return 'Reps: ' + v; }
+      if(k === 'rir'){ return 'RIR: ' + v; }
+      if(k === 'rpe'){ return 'RPE: ' + v; }
+      return v;
     } } };
+
+    var active = metrics.filter(function(m){ return m.on; }).map(function(m){ return m.label.toLowerCase(); });
+    var ttl = document.getElementById('pChartSetsTitle');
+    if(ttl) ttl.textContent = 'Dettaglio serie per serie' + (active.length ? ' - ' + active.join(' + ') : '');
+
+    chartSetsInst = destroyChart(chartSetsInst);
+    chartSetsInst = new Chart(document.getElementById('chartSets').getContext('2d'), { data:{ labels:labels, datasets:datasets }, options:opts });
   }
 
-  var ttl = document.getElementById('pChartSetsTitle');
-  if(ttl) ttl.textContent = isWeighted ? 'Dettaglio set - volume (kg)' : (isTimed ? 'Dettaglio set - secondi' : 'Dettaglio set - reps');
+  // descrizione statica (passata da esc())
+  var desc = document.getElementById('pChartSetsDesc');
+  if(desc){
+    var descTxt = isWeighted
+      ? "Ogni colonna \u00E8 una singola serie. Scegli cosa vedere e come: il carico spostato, il massimale stimato, le ripetizioni e quanto eri vicino al cedimento (RIR/RPE)."
+      : "Ogni colonna \u00E8 una singola serie. Scegli cosa vedere e come: le ripetizioni e quanto eri vicino al cedimento (RIR/RPE).";
+    desc.innerHTML = esc(descTxt);
+  }
 
-  chartSetsInst = destroyChart(chartSetsInst);
-  chartSetsInst = new Chart(document.getElementById('chartSets').getContext('2d'), { data:{ labels:labels, datasets:datasets }, options:opts });
+  // controlli on/off + stile per metrica (generati via DOM, nessun onclick inline)
+  var ctrlWrap = document.getElementById('pChartSetsControls');
+  if(ctrlWrap){
+    ctrlWrap.innerHTML = '';
+    metrics.forEach(function(m){
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;margin-bottom:4px;';
+      var lbl = document.createElement('label');
+      lbl.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text);min-width:96px;cursor:pointer;';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = m.on;
+      cb.style.cssText = 'accent-color:' + m.color + ';';
+      var span = document.createElement('span');
+      span.textContent = m.label;
+      lbl.appendChild(cb);
+      lbl.appendChild(span);
+      row.appendChild(lbl);
+
+      var styleBtns = [];
+      var styleDefs = [ ['bar','barre'], ['point','punti'], ['line','linea'] ];
+      function refreshBtns(){
+        styleBtns.forEach(function(o){
+          o.btn.style.cssText = btnCss(m.style === o.style);
+          if(!m.on){ o.btn.style.opacity = '0.35'; o.btn.style.pointerEvents = 'none'; }
+          else { o.btn.style.opacity = '1'; o.btn.style.pointerEvents = 'auto'; }
+        });
+      }
+      styleDefs.forEach(function(sd){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = sd[1];
+        b.addEventListener('click', function(){
+          if(!m.on) return;
+          m.style = sd[0];
+          refreshBtns();
+          buildChart();
+        });
+        styleBtns.push({ btn:b, style:sd[0] });
+        row.appendChild(b);
+      });
+      refreshBtns();
+
+      cb.addEventListener('change', function(){
+        m.on = cb.checked;
+        refreshBtns();
+        buildChart();
+      });
+      ctrlWrap.appendChild(row);
+    });
+  }
+
+  buildChart();
 }
 
 function calNavMonth(dir){
