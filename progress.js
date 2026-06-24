@@ -114,14 +114,14 @@ function renderProgressCharts(){
   });
   var isTimed = !isWeighted && isTimedExercise(exerciseName, filtered);
 
-  var avgRepsData=[], totalRepsData=[], avgRPEData=[], maxWeightData=[];
+  var avgRepsData=[], totalRepsData=[], avgRPEData=[], maxWeightData=[], e1rmData=[], volumeData=[];
   var prReps=0, grandTotalReps=0, totalSetsCount=0;
-  var prWeight=0, weightSum=0, weightSetsCount=0, totalVolume=0;
+  var prWeight=0, weightSum=0, weightSetsCount=0, totalVolume=0, bestSet=0;
   filtered.forEach(function(s){
     var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
-    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); maxWeightData.push(0); return; }
+    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); maxWeightData.push(0); e1rmData.push(0); volumeData.push(0); return; }
     var sets = getExSets(ex);
-    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); maxWeightData.push(0); return; }
+    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); maxWeightData.push(0); e1rmData.push(0); volumeData.push(0); return; }
     var tot = sets.reduce(function(a,s){ return a+s.reps; },0);
     var avg = Math.round(tot/sets.length*10)/10;
     var rpeSets = sets.filter(function(s){ return s.rpe>0; });
@@ -130,12 +130,24 @@ function renderProgressCharts(){
     sets.forEach(function(st){ if(st.reps > prReps) prReps = st.reps; });
     grandTotalReps += tot; totalSetsCount += sets.length;
     // peso
-    var sessionMaxW = 0;
+    var sessionMaxW = 0, sessionVolume = 0, sessionMaxE1rm = 0;
     sets.forEach(function(st){
-      if(st.weight > 0){ weightSum += st.weight; weightSetsCount++; totalVolume += st.weight * st.reps; if(st.weight > sessionMaxW) sessionMaxW = st.weight; }
+      if(st.weight > 0){
+        weightSum += st.weight; weightSetsCount++;
+        var setVol = st.weight * st.reps;
+        totalVolume += setVol; sessionVolume += setVol;
+        if(setVol > bestSet) bestSet = setVol;
+        if(st.weight > sessionMaxW) sessionMaxW = st.weight;
+        if(st.reps > 0){
+          var e1 = st.weight * (1 + st.reps/30);
+          if(e1 > sessionMaxE1rm) sessionMaxE1rm = e1;
+        }
+      }
       if(st.weight > prWeight) prWeight = st.weight;
     });
     maxWeightData.push(sessionMaxW);
+    e1rmData.push(Math.round(sessionMaxE1rm*10)/10);
+    volumeData.push(Math.round(sessionVolume*10)/10);
   });
 
   var lblPR = document.getElementById('pLblPR');
@@ -149,13 +161,13 @@ function renderProgressCharts(){
     document.getElementById('pStatSessions').textContent = totalSetsCount || '—';
     document.getElementById('pStatPR').textContent = prWeight ? prWeight+'kg' : '—';
     document.getElementById('pStatAvgReps').textContent = avgWeight ? avgWeight+'kg' : '—';
-    document.getElementById('pStatTotalReps').textContent = totalVolume ? totalVolume+'kg' : '—';
+    document.getElementById('pStatTotalReps').textContent = bestSet ? (Math.round(bestSet*10)/10)+'kg' : '—';
     if(lblPR) lblPR.textContent = 'PESO MAX';
     if(lblAvg) lblAvg.textContent = 'PESO MEDIO';
-    if(lblTot) lblTot.textContent = 'VOLUME';
-    if(chartTitle) chartTitle.textContent = 'Peso massimo (kg)';
+    if(lblTot) lblTot.textContent = 'MIGLIOR SET';
+    if(chartTitle) chartTitle.textContent = '1RM stimato (kg)';
     chartRepsInst = destroyChart(chartRepsInst);
-    chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:maxWeightData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
+    chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:e1rmData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
   } else {
     var globalAvgReps = totalSetsCount>0 ? Math.round(grandTotalReps/totalSetsCount*10)/10 : 0;
     document.getElementById('pStatSessions').textContent = totalSetsCount || '—';
@@ -179,10 +191,11 @@ function renderProgressCharts(){
     chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRepsData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
   }
 
+  var totalChartData = isWeighted ? volumeData : totalRepsData;
   chartTotalRepsInst = destroyChart(chartTotalRepsInst);
-  chartTotalRepsInst = new Chart(document.getElementById('chartTotalReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:totalRepsData, backgroundColor:'rgba(200,240,96,0.1)', borderColor:'rgba(200,240,96,0.4)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts() });
+  chartTotalRepsInst = new Chart(document.getElementById('chartTotalReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:totalChartData, backgroundColor:'rgba(200,240,96,0.1)', borderColor:'rgba(200,240,96,0.4)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts() });
   var ttlTotal = document.getElementById('pChartTotalRepsTitle');
-  if(ttlTotal) ttlTotal.textContent = isTimed ? 'Secondi totali sessione' : 'Reps totali sessione';
+  if(ttlTotal) ttlTotal.textContent = isWeighted ? 'Volume per sessione (kg)' : (isTimed ? 'Secondi totali sessione' : 'Reps totali sessione');
   chartRPEInst = destroyChart(chartRPEInst);
   chartRPEInst = new Chart(document.getElementById('chartRPE').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRPEData, backgroundColor:'rgba(255,100,60,0.2)', borderColor:'rgba(255,100,60,0.6)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts({ min:0, max:10 }) });
 }
