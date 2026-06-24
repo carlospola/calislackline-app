@@ -92,7 +92,7 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   header and verifies it via `GET /auth/v1/user` (same logic and `apikey`/header as `api/admin.js`,
   but **without** the role check). It returns `401` if the token is missing or invalid. **On top of
   the JWT gate there is now a pending-gate**: the handler reads `profiles.status` with the service
-  role (same fetch pattern as `api/admin.js`, reading `status` instead of `role`) and requires
+  role (same fetch pattern as `api/admin.js`, now selecting **`status,role`**) and requires
   `status === 'active'` — otherwise it returns `403 { error: 'account_not_active' }`. **Trial gate
   (ACTIVE, 12 giugno 2026):** `pending` is now the **trialist** status — a `pending` user can log in
   AND use the chat for the first **`TRIAL_SESSIONS = 3`** sessions: the handler counts that user's
@@ -102,11 +102,12 @@ constrained by per-row policies — the anon key alone grants nothing beyond wha
   resulting count is `< 3`, else returns `403 { error:
   'trial_exhausted' }` (fail-closed: an indeterminate count → `trial_exhausted`; the count includes
   "Allenamento libero" sessions — MVP simplification). `inactive`/unknown/missing → the unchanged
-  `403 account_not_active`. **The gate applies to the admin too** — the admin's own `profiles.status`
-  must be `active` (e.g. the **admin "Prova" test session** hits `/api/chat`). **Gate trust (verified
-  12 giugno):** the decision relies solely on `u.id` from the verified JWT + the service-role profile
-  read — no `req.body` field influences it. Optional further hardening (admin bypass, still 🟢):
-  `status === 'active' || role === 'admin'`. CORS is still wide open (`*`), but
+  `403 account_not_active`. **Admin bypass (ACTIVE, giugno 2026, commit `1410bd5`):** the gate now
+  passes when `status === 'active' || role === 'admin'`, so the admin's **"Prova" test session** hits
+  `/api/chat` regardless of its `profiles.status` (the earlier hardening item is now implemented; the
+  trial gate and prompt-caching/Leva-2 structure are untouched). **Gate trust (verified
+  12 giugno):** the decision relies solely on `u.id`/`role` from the verified JWT + the service-role
+  profile read — no `req.body` field influences it. CORS is still wide open (`*`), but
   `Allow-Headers` now
   includes `Authorization` and a valid **logged-in user token is required**. The frontend attaches
   the token in `aiSend()` (it pulls the current session's `access_token` from `sb.auth.getSession()`,
@@ -186,9 +187,10 @@ only SQL artifact in the repo is the `db/policies.sql` snapshot, see "Repo `db/`
 - `programs` — many per user. Key fields: `coach_rules` (the AI system prompt for the program —
   **now reduced to program-specific rules only**, since the common coaching behavior lives in the
   `settings` motor; the per-program **RIR target stays here**), `workout_csv`, `ai_prompt` (extra
-  coach notes), `session_type` (`bodyweight` | `gym`). A placeholder is kept when there's nothing
-  specific, because the admin form currently **blocks saving an empty `coach_rules`** (a validation
-  worth removing — see open items). **Motor migration COMPLETE: all 9 programs migrated** — common
+  coach notes), `session_type` (`bodyweight` | `gym`). **`coach_rules` is now optional** — the admin
+  form (add/edit program + template) requires only the program name; the empty-`coach_rules` block was
+  removed (commit `1410bd5`), so a program can carry only its specifics or nothing (the common behavior
+  lives in the `settings` motor). **Motor migration COMPLETE: all 9 programs migrated** — common
   coaching behavior lives in the `settings` motor and each `coach_rules` carries only program
   specifics. **New Workout** (max-out) and **Muscle-Up Pro** (mixed + isometrics) now carry **lean
   `coach_rules`** too (their per-program exceptions override the motor — see the Motor behavioral
@@ -516,15 +518,17 @@ DB** (`trg_assign_trial_program`, AFTER INSERT su `profiles`), **NON frontend**.
   the holds stopwatch (isometrics).
 - **Reset password NON funzionante:** the password-reset flow (`reset.html` / `/reset`, recovery
   redirect) **does not currently work** — earlier assumed OK, now confirmed broken. Da diagnosticare.
-- **Validazione `coach_rules` non vuoto:** the admin form blocks saving an empty `coach_rules`.
-  Now that common behavior lives in the motor, this validation should be **removed** so a program
-  can carry only its specifics (or nothing).
+- **Validazione `coach_rules` non vuoto: ✅ CHIUSA (giugno 2026, commit `1410bd5`).** Rimossa la
+  validazione che bloccava il salvataggio con `coach_rules` vuoto in `saveEditProgram`, `addProgram`
+  e `saveTemplate` (`admin-ui.js`): ora richiedono solo il nome; `coach_rules` resta nel form ma è
+  opzionale (il comportamento comune vive nel motore).
 - **`console.log` in `api/chat.js`: PULITI (12 giugno 2026).** Rimossi i 3 log con dati
   conversazione/profilo (request/messages count, API-key-present, risposta del modello a riga ~112);
   resta solo `console.log('Error:', err.message)` (errore tecnico).
-- **Cleanup `workouts` in `api/admin.js`:** a riga ~176 `workouts` è ancora **destrutturato** da
-  `req.body` in `repushTemplate` (inutilizzato, innocuo — non entra nella PATCH). Da togliere col
-  cleanup `workouts` (vestigiale, come `programs.workouts`).
+- **Cleanup `workouts` in `api/admin.js`: ✅ CHIUSA (commit `2618335`).** La destrutturazione morta
+  di `workouts` in `repushTemplate` (e tutti gli altri riferimenti) è stata rimossa; file verificato
+  pulito. La colonna `workouts` è stata anche droppata da `programs`/`program_templates` nel SQL
+  Editor (vestigiale, source of truth = `workout_csv`).
 - **Leva 2 — prompt caching: DONE** (commit `ee173c7`). The `settings` motor is sent as a cached
   `cache_control:ephemeral` block — see the `api/chat.js` entry. Only effective once the motor is
   ≥ 1024 tokens.

@@ -199,7 +199,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*✅ Motore-prompt — migrazione COMPLETA (giugno 2026).\*\* Anche maxout/misto, via PRECEDENZA + override nei coach\_rules. Chiuso
 
-\- \*\*Prerequisito/hardening admin per `/api/chat.js`:\*\* oggi l'admin deve avere `status='active'` (fix dati applicato). Hardening opzionale ANCORA APERTO: gate `status==='active' || role==='admin'` (il gate trial 1A è ora implementato; questo bypass admin resta separato e non urgente, il fix dati basta)
+\- \*\*✅ Hardening admin per `/api/chat.js` — FATTO (giugno 2026, commit `1410bd5`):\*\* il gate ora seleziona `status,role` e passa se `status==='active' || role==='admin'` → l'admin (test session "Prova") non dipende più dal fix-dati `status='active'`. Gate trial e Leva 2 intatti
 
 \- \*\*✅ Peso per-esercizio / sessioni miste (bodyweight + gym) — SHIPPED via colonna CSV `peso`.\*\* La visibilità del campo peso e il target box sono ora PER-ESERCIZIO (`currentWeighted` = cella `peso` non vuota), NON più pilotati da `session\_type` (ristretto al motore + DB). Quirk New Workout (Note=varianti) risolto. \*\*✅ Anche il lato isometrici (metric=time) del descrittore per-esercizio è ora SHIPPED (giugno 2026):\*\* rilevamento regex sul campo Reps (`isTimedReps`), secondi nel campo reps + marker opzionale `metric:'time'` nel set, widget cronometro+secondi (`reps\_a` visibile), log via aeroplanino (niente bottone Registra), etichetta "Tenuta: N sec". Il lato PROMPT del misto è già coperto (filosofia MUP). Vedi ARCHITECTURE/TASKS
 
@@ -213,9 +213,9 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*✅ Timer recupero in background — SHIPPED (giugno 2026):\*\* riscritto su `Date.now()` (`sessionTimerEndAt` + ricalcolo dal diff con `ceil`, pausa congela il rimanente / resume ricalcola, tick 250ms solo repaint) → robusto col tab in background. È il \*\*motore-timer unico a timestamp\*\*, base condivisa col cronometro delle tenute (isometrici)
 
-\- \*\*Validazione `coach\_rules` non vuoto\*\* → da togliere (utile per il SaaS). NB: il guard della test session già controlla `workout\_csv`, non i coach\_rules
+\- \*\*✅ Validazione `coach\_rules` non vuoto — TOLTA (giugno 2026, commit `1410bd5`):\*\* `saveEditProgram`/`addProgram`/`saveTemplate` richiedono ora solo il nome; `coach\_rules` resta nel form ma è opzionale. Anche i placeholder di esempio del form template sono stati rimossi
 
-\- \*\*"Assegna" non idempotente:\*\* un doppio tap sul bottone crea DUE righe `programs` duplicate (capitato su Fit active, deduplicato via SQL una-tantum) → valutare un debounce sul bottone o un unique constraint `(user\_id, template\_id)`
+\- \*\*✅ "Assegna" idempotente — FATTO (giugno 2026, commit `1410bd5`):\*\* `confirmAssign` ha una guardia di re-entrancy (var `assignInFlight` + `try/finally` + bottone disabilitato durante la chiamata) → il doppio tap non crea più righe `programs` duplicate. Scartato l'unique constraint DB (il debounce basta)
 
 
 \- \*\*Open question strategiche (non task, vedi TASKS 💡):\*\* ~~rebranding del nome~~ \*\*✅ CHIUSA (16/06): AILISTENICS confermato come nome prodotto, COAICH scartato\*\* → il "Dominio email personalizzato" non è più gated dal rebranding; resta aperta solo la doppia source-of-truth dei doc (ponte git `/docs` + `@`-import in CLAUDE.md)

@@ -2,7 +2,7 @@
 
 &#x20;
 
-\_Aggiornato: 2026-06-19\_
+\_Aggiornato: 2026-06-23\_
 
 &#x20;
 
@@ -159,7 +159,7 @@
 
 \- \[ ] \*\*e1RM stimato\*\* — formula Epley per esercizi con peso.
 
-\- \[ ] \*\*\[KNOWN GAP] "Assegna" non idempotente\*\* — un doppio tap sul bottone "Assegna" crea DUE righe `programs` duplicate (capitato su Fit active, deduplicato via SQL una-tantum). Valutare un debounce sul bottone (disabilitarlo durante la chiamata) o un unique constraint DB `(user\_id, template\_id)`. Tocca `admin-ui.js` (debounce) e/o migration (constraint).
+\- \[x] \*\*\[KNOWN GAP] "Assegna" non idempotente — ✅ RISOLTO (giugno 2026, commit `1410bd5`).\*\* Il doppio tap creava DUE righe `programs` duplicate. Fix: `confirmAssign` (`admin-ui.js`) ha ora una guardia di re-entrancy — var `assignInFlight` a livello di file + `try/finally` che la resetta + bottone di conferma disabilitato durante la chiamata. Scartato il constraint DB `(user\_id, template\_id)` (il debounce frontend basta). Gap chiuso.
 
 \- \[ ] \*\*Progressi — "Volume massimo singolo set"\*\* — sostituire "Volume totale" con il volume del set più alto IN ASSOLUTO (`reps × peso`). Tocca `pLblTot` in `renderProgressCharts`. Ora in `progress.js` (refactor fase 1).
 
@@ -167,7 +167,7 @@
 
 \- \[ ] \*\*Progressi (Overview) — rinominare "RPE medio" → "Fatica percepita media"\*\* — coerenza col label in sessione. Rename banale.
 
-\- \[ ] \*\*Togliere la validazione "coach\_rules non vuoto"\*\* — col motore attivo i mini-prompt sono vuoti di default → permettere il salvataggio vuoto (utile per il SaaS). Tocca frontend e/o `admin.js`. (NB: lo stesso vincolo già allentato lato test session — il guard di `startTestSession` controlla `workout\_csv`, non i coach\_rules.)
+\- \[x] \*\*Togliere la validazione "coach\_rules non vuoto" — ✅ FATTO (giugno 2026, commit `1410bd5`).\*\* Rimossa la validazione che bloccava il salvataggio con `coach\_rules` vuoto in `saveEditProgram`, `addProgram` e `saveTemplate` (`admin-ui.js`): ora richiedono solo il nome; `coach\_rules` resta nel form ma è opzionale (il comportamento comune vive nel motore). (Il guard di `startTestSession` controllava già `workout\_csv`, non i coach\_rules.)
 
 \---
 
@@ -215,7 +215,7 @@
 
 &#x20; - \*\*GATED dietro:\*\* Progressione sequenziale (MVP) + "Fine sessione chiara" + dati sufficienti + atleti paganti. \*\*File:\*\* `chat.js` (nuova chiamata) + frontend → diff + conferma; tocca anche `editProgram` + semantica template.
 
-\- \[ ] \*\*Hardening: admin bypassa il pending-gate di `/api/chat.js`\*\* — oggi la test session "Prova" dipende dall'admin con `status='active'` (fix dati già applicato). Per renderlo immune a derive future: gate = `status==='active' || role==='admin'`. ⚠️ Tocca `/api/chat.js` (diff + conferma + deploy). Non urgente — il fix dati basta. \*\*NB:\*\* se arriva il trial funnel (🔴 1A), il pending-gate cambia comunque → fare l'hardening NELLO STESSO intervento.
+\- \[x] \*\*Hardening: admin bypassa il pending-gate di `/api/chat.js` — ✅ FATTO (giugno 2026, commit `1410bd5`).\*\* `/api/chat.js` ora seleziona `status,role` dal profilo e il gate passa se `status==='active' || role==='admin'` → la test session "Prova" gira indipendentemente dallo `status` dell'admin. Gate trial e struttura del prompt caching (Leva 2) intatti.
 
 \- \[ ] \*\*Cleanup: verifica del path "demo onboarding"\*\* — `startDemoSession` ha chiamanti (onboarding/dashboard atleta). Verificare se l'ingresso è ancora raggiungibile/voluto in UI; eventualmente ripulire i chiamanti morti SENZA toccare la primitiva `\_isDemo` (la usa anche la test session). NON urgente.
 
@@ -325,6 +325,16 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — Form template + coach\_rules opzionale + Assegna idempotente + admin bypass (23 giugno 2026, commit `1410bd5`)
+
+\- \[x] \*\*Form Template senza placeholder di esempio.\*\* Nel modale `#templateFormModal` rimossi i placeholder di esempio dai campi compilabili `tplName`, `tplRules`, `tplCsv`, `tplPrompt` (la select `tplType` invariata).
+
+\- \[x] \*\*`coach\_rules` ora opzionale.\*\* Rimossa la validazione che bloccava il salvataggio con `coach\_rules` vuoto in `saveEditProgram`, `addProgram` e `saveTemplate` (`admin-ui.js`): ora richiedono SOLO il nome; il campo `coach\_rules` resta ma è opzionale (il comportamento comune vive nel motore `settings`).
+
+\- \[x] \*\*"Assegna" idempotente (debounce).\*\* `confirmAssign` (`admin-ui.js`) ha una guardia di re-entrancy — var `assignInFlight` a livello di file + `try/finally` che la resetta + bottone di conferma disabilitato durante la chiamata. Chiude il gap noto "doppio tap = riga `programs` duplicata".
+
+\- \[x] \*\*Admin bypassa il pending-gate di `/api/chat.js`.\*\* Il gate ora seleziona `status,role` e passa se `status==='active' || role==='admin'` → la test session "Prova" gira indipendentemente dallo `status` dell'admin. Gate trial e struttura del prompt caching (Leva 2) intatti.
 
 \## ✅ Completati — Isometrici a tempo + timer a timestamp + fix motore base (giugno 2026)
 
