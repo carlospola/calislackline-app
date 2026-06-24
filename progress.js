@@ -140,7 +140,8 @@ function renderProgressCharts(){
         if(setVol > bestSet) bestSet = setVol;
         if(st.weight > sessionMaxW) sessionMaxW = st.weight;
         if(st.reps > 0){
-          var e1 = st.weight * (1 + st.reps/30);
+          var rirEff = (typeof st.rir === 'number' && !isNaN(st.rir)) ? st.rir : 0;
+          var e1 = st.weight * (1 + (st.reps + rirEff)/30);
           if(e1 > sessionMaxE1rm) sessionMaxE1rm = e1;
         }
       }
