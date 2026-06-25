@@ -120,7 +120,7 @@ function renderProgressCharts(){
 
   var avgRepsData=[], totalRepsData=[], avgRPEData=[], avgRirData=[], maxWeightData=[], e1rmData=[], volumeData=[];
   var prReps=0, grandTotalReps=0, totalSetsCount=0;
-  var prWeight=0, weightSum=0, weightSetsCount=0, totalVolume=0, bestSet=0;
+  var prWeight=0, weightSum=0, weightSetsCount=0, bestSet=0;
   filtered.forEach(function(s){
     var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
     if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); avgRirData.push(null); maxWeightData.push(0); e1rmData.push(0); volumeData.push(0); return; }
@@ -141,7 +141,7 @@ function renderProgressCharts(){
       if(st.weight > 0){
         weightSum += st.weight; weightSetsCount++;
         var setVol = st.weight * st.reps;
-        totalVolume += setVol; sessionVolume += setVol;
+        sessionVolume += setVol;
         if(setVol > bestSet) bestSet = setVol;
         if(st.weight > sessionMaxW) sessionMaxW = st.weight;
         if(st.reps > 0){

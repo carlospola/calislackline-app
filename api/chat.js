@@ -40,7 +40,9 @@ export default async function handler(req, res) {
     } else if (status === 'pending') {
       // --- Gate trial: un profilo 'pending' puo' usare la chat per le prime
       // TRIAL_SESSIONS sessioni. Conta le righe di `sessions` dell'utente
-      // VERIFICATO DAL JWT (u.id), con la service role, count exact via HEAD
+      // VERIFICATO DAL JWT (u.id), con la service role, via GET su sessions
+      // (select=created_at, order desc); la sessione piu' recente se < 24h
+      // (finestra Riprendi) viene sottratta dal conteggio.
       // (nessuna colonna nuova, nessun filtro sul contenuto, mai valori dal client).
       const cRes = await fetch(
         `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${u.id}&select=created_at&order=created_at.desc`,

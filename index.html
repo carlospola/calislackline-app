@@ -754,7 +754,6 @@ var sessionLog = null, currentSessionId = null;
 var currentSetNum = null;
 var currentWeighted = false;
 var currentTimed = false;
-var currentHoldTarget = 0;
 var holdStart = 0;
 var holdInterval = null;
 var holdElapsed = 0;
@@ -1212,11 +1211,10 @@ async function aiSend(text, isFirst){
   var tid = addTyping();
   try{
     var athleteContext = isFirst ? buildAthleteContext(currentProfile) : '';
-    var sessionContext = '';
     var systemPrompt = (currentProfile.coach_rules||currentProfile.ai_prompt||'')
       + (currentProfile.workout_csv ? '\n\nPROGRAMMA WORKOUT:\n'+currentProfile.workout_csv : '')
       + (currentProfile.ai_prompt && currentProfile.coach_rules ? '\n\nNOTE COACH:\n'+currentProfile.ai_prompt : '')
-      + athleteContext + sessionContext;
+      + athleteContext;
     var MAX_HISTORY = 12; // ~6 scambi user+assistant
     var historyToSend = sessionHistory;
     if(sessionHistory.length > MAX_HISTORY){
@@ -1533,7 +1531,6 @@ function updateSetInfo(text){
   // Esercizio con peso (colonna peso del CSV): mostra il peso target sotto le reps invece del Tempo.
   currentWeighted = exIsWeighted(csvPeso);
   currentTimed = isTimedReps(csvReps);
-  currentHoldTarget = currentTimed ? parseHoldTarget(csvReps) : 0;
   if(currentTimed && csvReps) boxTarget.textContent = csvReps;
   var wrowSet = document.getElementById('weightRow');
   if(wrowSet) wrowSet.style.display = currentWeighted ? 'block' : 'none';
@@ -1872,7 +1869,6 @@ function selectExercise(name){
   if(boxTempo){
     currentWeighted = exIsWeighted(field && field.peso);
     currentTimed = isTimedReps(field && field.reps);
-    currentHoldTarget = currentTimed ? parseHoldTarget(field && field.reps) : 0;
     var wrowSel = document.getElementById('weightRow');
     if(wrowSel) wrowSel.style.display = currentWeighted ? 'block' : 'none';
     if(currentWeighted){
@@ -1881,7 +1877,7 @@ function selectExercise(name){
       boxTempo.textContent = (field && field.tempo) ? field.tempo : '—';
     }
   }
-  // renderInputFields DOPO il calcolo di currentTimed/currentWeighted/currentHoldTarget,
+  // renderInputFields DOPO il calcolo di currentTimed/currentWeighted,
   // cosi' il widget cronometro viene reso per gli esercizi a tempo.
   renderInputFields('single',[name]);
 }
