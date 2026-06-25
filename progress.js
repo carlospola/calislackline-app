@@ -53,6 +53,7 @@ async function showProgress(){
     var opt = document.createElement('option'); opt.value = name; opt.textContent = name; sel.appendChild(opt);
   });
   if(Object.keys(exercises).length >= 1){ sel.value = Object.keys(exercises)[0]; renderProgressCharts(); }
+  switchProgressTab('overview');
 }
 
 function destroyChart(inst){ if(inst) inst.destroy(); return null; }
