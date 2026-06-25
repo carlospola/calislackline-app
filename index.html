@@ -303,6 +303,9 @@
         <div class="stat-card"><div class="stat-num" id="ovStatSessions">&mdash;</div><div class="stat-lbl">SESSIONI</div></div>
         <div class="stat-card"><div class="stat-num" id="ovStatSets">&mdash;</div><div class="stat-lbl">SET TOTALI</div></div>
         <div class="stat-card"><div class="stat-num" id="ovStatRPE">&mdash;</div><div class="stat-lbl">FATICA PERCEPITA MEDIA</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovStatReps">&mdash;</div><div class="stat-lbl">REPS TOTALI</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovStatRir">&mdash;</div><div class="stat-lbl">RIR MEDIO</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovStatAvgSets">&mdash;</div><div class="stat-lbl">MEDIA SET/SESS.</div></div>
       </div>
 
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
@@ -332,12 +335,34 @@
       </div>
 
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Fatica percepita media per sessione</div>
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Set per sessione</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Quante serie hai completato in ogni allenamento. <span style="color:#8fb0c0;">Formula: conteggio delle serie, tutti gli esercizi.</span></div>
+        <div style="position:relative;height:140px;"><canvas id="chartOvSets"></canvas></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Reps totali per sessione</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Tutte le ripetizioni di ogni allenamento messe insieme. <span style="color:#8fb0c0;">Formula: somma delle reps di tutti gli esercizi.</span></div>
+        <div style="position:relative;height:140px;"><canvas id="chartOvTotReps"></canvas></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Tonnellaggio per sessione (kg) &mdash; solo esercizi con peso</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;">I kg totali che hai sollevato in ogni allenamento. Gli esercizi a corpo libero non rientrano. <span style="color:#8fb0c0;">Formula: somma di (reps x peso).</span></div>
+        <div style="position:relative;height:140px;"><canvas id="chartOvVol"></canvas></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">RIR medio per sessione</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Quanto sei andato vicino al limite, in media, in ogni allenamento. <span style="color:#8fb0c0;">Formula: media dei RIR di tutte le serie della sessione.</span></div>
+        <div style="position:relative;height:140px;"><canvas id="chartOvRir"></canvas></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Fatica percepita (RPE medio)</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Com'&egrave; cambiata la durezza percepita degli allenamenti nel tempo. <span style="color:#8fb0c0;">Formula: RPE medio (1-10) per sessione.</span></div>
         <div style="position:relative;height:140px;"><canvas id="chartOvRPE"></canvas></div>
       </div>
 
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Distribuzione intensit&agrave; (RIR globale)</div>
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Come distribuisci lo sforzo (RIR)</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:12px;">Su tutti i tuoi allenamenti, quanto spesso vai vicino al cedimento e quanto tieni margine. <span style="color:#8fb0c0;">Formula: numero di serie per ogni valore di RIR.</span></div>
         <div style="display:flex;align-items:center;gap:20px;">
           <div style="position:relative;height:160px;width:160px;flex-shrink:0;"><canvas id="chartRIRPie"></canvas></div>
           <div id="rirPieLegend" style="display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text2);"></div>

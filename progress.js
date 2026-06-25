@@ -7,6 +7,7 @@ var chartSetsInst = null;
 var chartRirInst = null;
 var chartRIRPieInst = null;
 var chartOvRPEInst = null;
+var chartOvSetsInst = null, chartOvTotRepsInst = null, chartOvVolInst = null, chartOvRirInst = null;
 var calCurrentMonth = null;
 var currentProgressTab = 'exercise';
 
@@ -405,18 +406,25 @@ function renderOverviewCharts(){
   var cutoff = new Date(Date.now() - period * 24*60*60*1000);
   var filtered = progressData.filter(function(s){ return new Date(s.created_at) >= cutoff; });
 
-  var totalSets = 0, rpeSum = 0, rpeCount = 0;
+  var totalSets = 0, rpeSum = 0, rpeCount = 0, repsTot = 0, rirSum = 0, rirCount = 0;
   filtered.forEach(function(s){
     if(!s.log_data || !s.log_data.exercises) return;
     s.log_data.exercises.forEach(function(ex){
       var sets = getExSets(ex);
       totalSets += sets.length;
-      sets.forEach(function(st){ if(st.rpe > 0){ rpeSum += st.rpe; rpeCount++; } });
+      sets.forEach(function(st){
+        if(st.rpe > 0){ rpeSum += st.rpe; rpeCount++; }
+        repsTot += st.reps;
+        if(st.rir != null){ rirSum += st.rir; rirCount++; }
+      });
     });
   });
   document.getElementById('ovStatSessions').textContent = filtered.length;
   document.getElementById('ovStatSets').textContent = totalSets;
   document.getElementById('ovStatRPE').textContent = rpeCount > 0 ? Math.round(rpeSum/rpeCount*10)/10 : '—';
+  document.getElementById('ovStatReps').textContent = repsTot || '—';
+  document.getElementById('ovStatRir').textContent = rirCount > 0 ? Math.round(rirSum/rirCount*10)/10 : '—';
+  document.getElementById('ovStatAvgSets').textContent = filtered.length > 0 ? Math.round(totalSets/filtered.length*10)/10 : '—';
 
   if(calCurrentMonth === null){
     var now = new Date();
@@ -442,6 +450,34 @@ function renderOverviewCharts(){
       options: makeBarOpts({ min: 0, max: 10 })
     });
   }
+
+  var ovLabels = [], ovSets = [], ovReps = [], ovVol = [], ovRir = [];
+  filtered.forEach(function(s){
+    if(!s.log_data || !s.log_data.exercises) return;
+    var sCnt = 0, rCnt = 0, vSum = 0, riSum = 0, riN = 0;
+    s.log_data.exercises.forEach(function(ex){
+      getExSets(ex).forEach(function(st){
+        sCnt++;
+        rCnt += st.reps;
+        if(st.weight > 0){ vSum += st.weight * st.reps; }
+        if(st.rir != null){ riSum += st.rir; riN++; }
+      });
+    });
+    ovLabels.push(new Date(s.created_at).toLocaleDateString('it-IT', {day:'numeric', month:'short'}));
+    ovSets.push(sCnt);
+    ovReps.push(rCnt);
+    ovVol.push(Math.round(vSum*10)/10);
+    ovRir.push(riN > 0 ? Math.round(riSum/riN*10)/10 : null);
+  });
+  var ovAccent = '#c8f060', ovAccentDim = 'rgba(200,240,96,0.15)';
+  chartOvSetsInst = destroyChart(chartOvSetsInst);
+  chartOvSetsInst = new Chart(document.getElementById('chartOvSets').getContext('2d'), { type:'bar', data:{ labels:ovLabels, datasets:[{ data:ovSets, backgroundColor:ovAccentDim, borderColor:ovAccent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
+  chartOvTotRepsInst = destroyChart(chartOvTotRepsInst);
+  chartOvTotRepsInst = new Chart(document.getElementById('chartOvTotReps').getContext('2d'), { type:'bar', data:{ labels:ovLabels, datasets:[{ data:ovReps, backgroundColor:ovAccentDim, borderColor:ovAccent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
+  chartOvVolInst = destroyChart(chartOvVolInst);
+  chartOvVolInst = new Chart(document.getElementById('chartOvVol').getContext('2d'), { type:'bar', data:{ labels:ovLabels, datasets:[{ data:ovVol, backgroundColor:'rgba(200,240,96,0.1)', borderColor:'rgba(200,240,96,0.4)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts() });
+  chartOvRirInst = destroyChart(chartOvRirInst);
+  chartOvRirInst = new Chart(document.getElementById('chartOvRir').getContext('2d'), { type:'bar', data:{ labels:ovLabels, datasets:[{ data:ovRir, backgroundColor:'rgba(255,138,92,0.2)', borderColor:'rgba(255,138,92,0.6)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts({ min:0, max:10 }) });
 
   var rirBuckets = { 'RIR 0': 0, 'RIR 1': 0, 'RIR 2': 0, 'RIR 3+': 0 };
   filtered.forEach(function(s){
