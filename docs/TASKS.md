@@ -2,7 +2,7 @@
 
 &#x20;
 
-\_Aggiornato: 2026-06-24\_
+\_Aggiornato: 2026-06-25\_
 
 &#x20;
 
@@ -167,7 +167,7 @@
 
 \- \[x] \*\*Progressi (Overview) — rinominare "RPE medio" → "Fatica percepita media" — ✅ SHIPPED (Batch 1 Progressi, commit `91ff228`).\*\* Rinominati in `index.html` i titoli grafici `chartRPE`/`chartOvRPE` e la stat `ovStatRPE` ("RPE medio"/"RPE MEDIO"/"RPE medio per sessione" → "Fatica percepita media", anche in MAIUSC) per coerenza col label in sessione. Vedi ✅ Completati Batch 1.
 
-\- \[ ] \*\*Progressi — "Dettaglio set per-esercizio" (grafico per-set) — PIANO APPROVATO (24/06), DA IMPLEMENTARE (chat nuova).\*\* Nuova sezione "Dettaglio set" nel tab \*\*Esercizio\*\* dei Progressi. \*\*Asse X = ogni singolo SET\*\* del periodo (NON la sessione); etichetta tipo "24/6 #1", "24/6 #2". \*\*Barra per tipo esercizio\*\* (riuso logica esistente weighted/timed/corpo libero): con peso = VOLUME del set (`reps*peso`), tooltip "reps × kg"; corpo libero = reps del set; isometrici = secondi del set. \*\*Seconda serie RIR come LINEA\*\* sovrapposta su SECONDO ASSE (grafico misto bar+line, dual-axis), set per set. \*\*Dati già disponibili:\*\* `getExSets()` espone `reps`, `weight`, `rir`, `rpe`, `setNum` per ogni set — \*\*nessuna migration\*\*. \*\*⚠️ RICHIEDE HTML NUOVO\*\* (un nuovo `<canvas>` nel markup Progressi) — \*\*da confermare esplicitamente prima di generarlo\*\*; tutto il resto in `progress.js`. \*\*Caveat:\*\* asse X lungo con molte sessioni×set → eventuale cap agli ultimi N set (per ora poche sessioni, ok).
+\- \[x] \*\*Progressi — "Dettaglio set per-esercizio" — ✅ SHIPPED (Progressi v2, commit `4ed20c8`).\*\* Multi-metrica (peso: Tonnellaggio/Massimale stimato/Reps/RIR/RPE; corpo libero: Reps/RIR/RPE; isometrici: Secondi/RIR/RPE) con controlli on/off + stile barre/punti/linea; assi `y`/`yE`/`yEffort`; cap ultimi 60 set; stato non persistente. Vedi Completati Progressi v2.
 
 \- \[x] \*\*Togliere la validazione "coach\_rules non vuoto" — ✅ FATTO (giugno 2026, commit `1410bd5`).\*\* Rimossa la validazione che bloccava il salvataggio con `coach\_rules` vuoto in `saveEditProgram`, `addProgram` e `saveTemplate` (`admin-ui.js`): ora richiedono solo il nome; `coach\_rules` resta nel form ma è opzionale (il comportamento comune vive nel motore). (Il guard di `startTestSession` controllava già `workout\_csv`, non i coach\_rules.)
 
@@ -332,6 +332,18 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — Progressi v2: Epley RIR-adj + Dettaglio set multi-metrica + titoli/desc + grafici Overview (25 giugno 2026, commit `7744796`+`2fb6aeb`+`4ed20c8`+`e23164b`+commit Overview)
+
+\- \[x] \*\*Step 1 — Epley RIR-adjusted (commit `2fb6aeb`).\*\* Stima 1RM = `peso*(1+(reps+rir)/30)`; `rirEff=0` se rir null. Unica occorrenza in `progress.js` (sessionMaxE1rm). CORREGGE la formula del Batch 1 (era `reps/30`).
+
+\- \[x] \*\*Step 2 — Dettaglio serie per serie multi-metrica (commit `4ed20c8`).\*\* `renderSetDetailChart` riscritta: 5 metriche (peso: Tonnellaggio/Massimale stimato/Reps/RIR/RPE; corpo libero: Reps/RIR/RPE; isometrici: Secondi/RIR/RPE), controlli on/off + stile barre/punti/linea generati via DOM (no onclick inline) nei div `pChartSetsControls`/`pChartSetsDesc`. Assi: `y` (sx), `yE` (dx, massimale), `yEffort` (dx 0-10, RIR+RPE condivisi). Default ON a barre: tonn+rir (peso), reps+rir (libero). Stato NON persistente. Cap ultimi 60 set. NB: la baseline sostituita era il commit `7744796` (il cui messaggio dice "bar volume/reps/secondi + linea RIR" ma la baseline reale era "volume + linea RIR" — annotazione, nessun amend git).
+
+\- \[x] \*\*Step 3 — Tab Esercizio: titoli estesi + desc/formula + nuovo grafico RIR (commit `e23164b`).\*\* Titoli estesi su `chartReps` ("Massimale stimato per sessione (kg)" / "Media reps a serie (per sessione)"; isometrico invariato) e `chartTotalReps` ("Tonnellaggio per sessione (kg)" / "Reps totali per sessione"; isometrico invariato), settati per-ramo in `progress.js`. Nuovi div desc dinamici `pChartRepsDesc`/`pChartTotalRepsDesc` (popolati via `esc()` + span formula blu `#8fb0c0`; isometrico = desc vuota). Desc statiche in HTML per RPE (relabel "Fatica percepita (RPE medio)"). NUOVO grafico "Margine al cedimento (RIR medio)" (canvas `chartRir`, RIR medio per sessione, barre 0-10, RIR 0 valido via `rir != null`; sia peso sia corpo libero).
+
+\- \[x] \*\*Step 4 — Tab Overview: stat-card + 4 grafici + relabel (commit Overview).\*\* 3 nuove stat-card (`ovStatReps` REPS TOTALI, `ovStatRir` RIR MEDIO, `ovStatAvgSets` MEDIA SET/SESS.) nel grid esistente (3→6). 4 nuovi grafici per-sessione: `chartOvSets` (Set), `chartOvTotReps` (Reps totali), `chartOvVol` (Tonnellaggio, SOLO `weight>0`), `chartOvRir` (RIR medio, barre 0-10). Relabel: torta "Distribuzione intensità (RIR globale)" → "Come distribuisci lo sforzo (RIR)" + desc; "Fatica percepita media per sessione" → "Fatica percepita (RPE medio)" + desc. Tutti i testi user-friendly con titolo+desc+formula approvati.
+
+\- \[x] \*\*Invariati:\*\* heatmap calendario, modale giorno, rami isometrici (titoli/desc non sovrascritti). File toccati: `progress.js` + `index.html`. Residuo tecnico noto (non bug): `var totalVolume` in `renderProgressCharts` ancora morta (dal Batch 1).
 
 \## ✅ Completati — Batch 1 Progressi: 1RM stimato + volume per sessione + miglior set + rename Fatica (24 giugno 2026, commit `91ff228`)
 

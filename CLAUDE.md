@@ -27,7 +27,7 @@ Three layers, no framework:
   `<script>` core plus three sibling assets, all **classic non-module scripts** — so every function
   and `var` is **global**. Inline `onclick`/`onchange` handlers and cross-file calls depend on this;
   **do not convert to ES modules.** Plain ES5-style `var`/`function`.
-  - **`index.html`** (~1787 lines) — markup + the **core JS**: auth/init, dashboard, the AI session
+  - **`index.html`** (~2051 lines) — markup + the **core JS**: auth/init, dashboard, the AI session
     flow, CSV parsing/picker/`lista`, `setNum`/`log_data` persistence, recovery timer, chat
     rendering, onboarding, utilities (`esc`/
     `showScreen`/`closeModal`/…), and the global-state `var` block (`currentUser`, `currentProfile`,
@@ -538,7 +538,7 @@ DB** (`trg_assign_trial_program`, AFTER INSERT su `profiles`), **NON frontend**.
 - **Refactor del monolite `index.html` — FASE 1 FATTA, poi FERMATO per decisione** (giugno 2026).
   Estratti in file separati: `styles.css` (tutto il CSS), `progress.js` (Progressi/grafici),
   `admin-ui.js` (admin panel + template + test session + libreria esercizi) + `log.js` (modale log) — vedi "Architecture". index.html è passato
-  da ~2757 (pre-refactor) a ~1787 righe (fase 1 + libreria esercizi in admin-ui.js + modale log in log.js, 15/06). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
+  da ~2757 (pre-refactor) a ~1787, oggi ~2051 righe (cresciuto con feature successive) (fase 1 + libreria esercizi in admin-ui.js + modale log in log.js, 15/06). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
   estrazioni future (onboarding) **solo su richiesta**, e **sempre con una recon
   delle dipendenze prima** (chiamanti esterni, funzioni cross-area interposte, var globali condivise),
   come fatto per progress.js/admin-ui.js/log.js.
@@ -589,7 +589,7 @@ These are mandatory working rules for this repository. Follow them on every chan
 `index.html` (the `var`/no-backtick/no-localStorage/`esc()`/unchanged-IDs/16px rules included).
 
 1. **Never rewrite `index.html` (or `progress.js`/`admin-ui.js`/`styles.css`) wholesale for small
-   changes.** `index.html` is still a large file (~1787 lines); always make targeted, surgical edits
+   changes.** `index.html` is still a large file (~2051 lines); always make targeted, surgical edits
    to the specific block involved. Do not regenerate or re-emit a whole file to change a few lines.
 2. **Show the plan before writing code.** Present the intended approach and the exact spots you'll
    touch, then implement only after that's laid out.
