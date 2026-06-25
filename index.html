@@ -259,14 +259,22 @@
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:4px;">
         <div style="font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;" id="pChartRepsTitle">Media reps per set</div>
+        <div id="pChartRepsDesc" style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;"></div>
         <div style="position:relative;height:160px;"><canvas id="chartReps"></canvas></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:4px;">
         <div id="pChartTotalRepsTitle" style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Reps totali sessione</div>
+        <div id="pChartTotalRepsDesc" style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;"></div>
         <div style="position:relative;height:120px;"><canvas id="chartTotalReps"></canvas></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Fatica percepita media</div>
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Margine al cedimento (RIR medio)</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Quante ripetizioni ti restavano in canna a fine serie, in media. 0 vuol dire che sei andato a cedimento; pi&ugrave; il valore scende, pi&ugrave; stai spingendo vicino al limite. <span style="color:#8fb0c0;">Formula: media dei RIR delle serie dell'allenamento.</span></div>
+        <div style="position:relative;height:120px;"><canvas id="chartRir"></canvas></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Fatica percepita (RPE medio)</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px;">Quanto &egrave; stata dura la sessione secondo te, da 1 a 10. <span style="color:#8fb0c0;">Formula: media degli RPE delle serie. RPE e RIR sono due facce della stessa medaglia: @8 vale circa 2 RIR, @10 &egrave; il cedimento.</span></div>
         <div style="position:relative;height:120px;"><canvas id="chartRPE"></canvas></div>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">

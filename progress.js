@@ -4,6 +4,7 @@
 var progressData = [];
 var chartRepsInst = null, chartTotalRepsInst = null, chartRPEInst = null;
 var chartSetsInst = null;
+var chartRirInst = null;
 var chartRIRPieInst = null;
 var chartOvRPEInst = null;
 var calCurrentMonth = null;
@@ -115,19 +116,21 @@ function renderProgressCharts(){
   });
   var isTimed = !isWeighted && isTimedExercise(exerciseName, filtered);
 
-  var avgRepsData=[], totalRepsData=[], avgRPEData=[], maxWeightData=[], e1rmData=[], volumeData=[];
+  var avgRepsData=[], totalRepsData=[], avgRPEData=[], avgRirData=[], maxWeightData=[], e1rmData=[], volumeData=[];
   var prReps=0, grandTotalReps=0, totalSetsCount=0;
   var prWeight=0, weightSum=0, weightSetsCount=0, totalVolume=0, bestSet=0;
   filtered.forEach(function(s){
     var ex = s.log_data.exercises.find(function(e){ return e.name === exerciseName; });
-    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); maxWeightData.push(0); e1rmData.push(0); volumeData.push(0); return; }
+    if(!ex){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); avgRirData.push(null); maxWeightData.push(0); e1rmData.push(0); volumeData.push(0); return; }
     var sets = getExSets(ex);
-    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); maxWeightData.push(0); e1rmData.push(0); volumeData.push(0); return; }
+    if(!sets.length){ avgRepsData.push(0); totalRepsData.push(0); avgRPEData.push(null); avgRirData.push(null); maxWeightData.push(0); e1rmData.push(0); volumeData.push(0); return; }
     var tot = sets.reduce(function(a,s){ return a+s.reps; },0);
     var avg = Math.round(tot/sets.length*10)/10;
     var rpeSets = sets.filter(function(s){ return s.rpe>0; });
     var avgRPE = rpeSets.length>0 ? Math.round(rpeSets.reduce(function(a,s){ return a+s.rpe; },0)/rpeSets.length*10)/10 : null;
-    avgRepsData.push(avg); totalRepsData.push(tot); avgRPEData.push(avgRPE);
+    var rirSets = sets.filter(function(s){ return s.rir != null; });
+    var avgRIR = rirSets.length>0 ? Math.round(rirSets.reduce(function(a,s){ return a+s.rir; },0)/rirSets.length*10)/10 : null;
+    avgRepsData.push(avg); totalRepsData.push(tot); avgRPEData.push(avgRPE); avgRirData.push(avgRIR);
     sets.forEach(function(st){ if(st.reps > prReps) prReps = st.reps; });
     grandTotalReps += tot; totalSetsCount += sets.length;
     // peso
@@ -167,7 +170,7 @@ function renderProgressCharts(){
     if(lblPR) lblPR.textContent = 'PESO MAX';
     if(lblAvg) lblAvg.textContent = 'PESO MEDIO';
     if(lblTot) lblTot.textContent = 'MIGLIOR SET';
-    if(chartTitle) chartTitle.textContent = '1RM stimato (kg)';
+    if(chartTitle) chartTitle.textContent = 'Massimale stimato per sessione (kg)';
     chartRepsInst = destroyChart(chartRepsInst);
     chartRepsInst = new Chart(document.getElementById('chartReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:e1rmData, backgroundColor:accentDim, borderColor:accent, borderWidth:1.5, borderRadius:4 }] }, options:makeBarOpts() });
   } else {
@@ -179,7 +182,7 @@ function renderProgressCharts(){
     if(lblPR) lblPR.textContent = 'MASSIMALE';
     if(lblAvg) lblAvg.textContent = 'MEDIA';
     if(lblTot) lblTot.textContent = 'TOT REPS';
-    if(chartTitle) chartTitle.textContent = 'Media reps per set';
+    if(chartTitle) chartTitle.textContent = 'Media reps a serie (per sessione)';
     if(isTimed){
       if(lblPR) lblPR.textContent = 'TENUTA MAX';
       if(lblAvg) lblAvg.textContent = 'MEDIA';
@@ -197,9 +200,26 @@ function renderProgressCharts(){
   chartTotalRepsInst = destroyChart(chartTotalRepsInst);
   chartTotalRepsInst = new Chart(document.getElementById('chartTotalReps').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:totalChartData, backgroundColor:'rgba(200,240,96,0.1)', borderColor:'rgba(200,240,96,0.4)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts() });
   var ttlTotal = document.getElementById('pChartTotalRepsTitle');
-  if(ttlTotal) ttlTotal.textContent = isWeighted ? 'Volume per sessione (kg)' : (isTimed ? 'Secondi totali sessione' : 'Reps totali sessione');
+  if(ttlTotal) ttlTotal.textContent = isWeighted ? 'Tonnellaggio per sessione (kg)' : (isTimed ? 'Secondi totali sessione' : 'Reps totali per sessione');
   chartRPEInst = destroyChart(chartRPEInst);
   chartRPEInst = new Chart(document.getElementById('chartRPE').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRPEData, backgroundColor:'rgba(255,100,60,0.2)', borderColor:'rgba(255,100,60,0.6)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts({ min:0, max:10 }) });
+
+  chartRirInst = destroyChart(chartRirInst);
+  chartRirInst = new Chart(document.getElementById('chartRir').getContext('2d'), { type:'bar', data:{ labels:labels, datasets:[{ data:avgRirData, backgroundColor:'rgba(255,138,92,0.2)', borderColor:'rgba(255,138,92,0.6)', borderWidth:1, borderRadius:4 }] }, options:makeBarOpts({ min:0, max:10 }) });
+
+  var fOpen = '<span style="color:#8fb0c0;">', fClose = '</span>';
+  var repsDescEl = document.getElementById('pChartRepsDesc');
+  if(repsDescEl){
+    if(isWeighted){ repsDescEl.innerHTML = esc('Una stima di quanto solleveresti per una singola ripetizione al massimo, allenamento dopo allenamento. Guarda il trend, non il numero esatto.') + ' ' + fOpen + esc('Come si calcola (Epley): peso x (1 + (reps + rir) / 30). Il RIR serve a stimare quante ripetizioni avevi ancora in canna.') + fClose; }
+    else if(isTimed){ repsDescEl.innerHTML = ''; }
+    else { repsDescEl.innerHTML = esc('In media quante ripetizioni fai per ogni serie. Quando sale, stai migliorando.') + ' ' + fOpen + esc('Reps totali diviso il numero di serie.') + fClose; }
+  }
+  var totDescEl = document.getElementById('pChartTotalRepsDesc');
+  if(totDescEl){
+    if(isWeighted){ totDescEl.innerHTML = esc('Quanti kg hai spostato in tutto in un allenamento. Pi\u00F9 \u00E8 alto, pi\u00F9 volume di lavoro hai fatto.') + ' ' + fOpen + esc('Somma di (reps x peso) per ogni serie.') + fClose; }
+    else if(isTimed){ totDescEl.innerHTML = ''; }
+    else { totDescEl.innerHTML = esc('Il tuo volume di lavoro a corpo libero: tutte le ripetizioni messe insieme.') + ' ' + fOpen + esc('Somma delle reps di tutte le serie.') + fClose; }
+  }
 
   renderSetDetailChart(filtered, isWeighted, isTimed);
 }
