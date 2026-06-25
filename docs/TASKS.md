@@ -14,7 +14,7 @@
 
 &#x20;
 
-\- \[ ] \*\*🎯 PRIORITÀ ATTUALE — Conversione MANUALE dei primi 1-3 trialist (validazione, decisione 16/06).\*\* La mossa che sblocca tutto: convertire a mano i primi trialist reali col percorso GIÀ esistente — CTA "Richiedi il coaching" (sul `403 trial\_exhausted`) → mailto all'admin → l'admin porta `pending`→`active` + incasso manuale (es. bonifico/PayPal). NIENTE codice nuovo: gira sul funnel trial 1A già live. \*\*È il GATE di "Sistema pagamenti — Stripe"\*\* (Stripe NON si costruisce prima della prima conversione manuale). Gira in PARALLELO al pacchetto landing/profilo-slim/privacy.
+\- \[ ] \*\*Conversione MANUALE dei primi 1-3 trialist (validazione, decisione 16/06) — PRONTA, in attesa del via del founder (founder-timed).\*\* Percorso GIÀ esistente, pronto da eseguire ma NON da avviare ora: è il founder a decidere quando si parte. Convertire a mano i primi trialist reali col percorso GIÀ esistente — CTA "Richiedi il coaching" (sul `403 trial\_exhausted`) → mailto all'admin → l'admin porta `pending`→`active` + incasso manuale (es. bonifico/PayPal). NIENTE codice nuovo: gira sul funnel trial 1A già live. \*\*È il GATE di "Sistema pagamenti — Stripe"\*\* (Stripe NON si costruisce prima della prima conversione manuale). Gira in PARALLELO al pacchetto landing/profilo-slim/privacy.
 
 \- \[x] \*\*RIR target per-programma — FATTO (BBR + i 3 gym).\*\* Spostato in ✅ Completati (giugno 2026). I valori vivono nei `coach\_rules` dei TEMPLATE (BBR fascia 0-3 + autoregolazione; 741/POOL DANGER/Bro split RIR \~3) + "Applica a tutti".
 

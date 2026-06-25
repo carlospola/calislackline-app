@@ -76,7 +76,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 &#x20; strategica che impatta il flusso Stripe (vedi "Distribuzione app store" in TASKS).
 
-\- \*\*✅ DECISIONE — Priorità attuale = VALIDAZIONE con conversione MANUALE (16/06):\*\* la prima mossa
+\- \*\*✅ DECISIONE — VALIDAZIONE con conversione MANUALE (16/06), PRONTA ma in attesa del via del founder (founder-timed):\*\* la mossa
 &#x20; è convertire a mano i primi \*\*1-3 trialist reali\*\* col percorso manuale GIÀ esistente (CTA
 &#x20; "Richiedi il coaching" → mailto → l'admin porta `pending`→`active` + incasso manuale). \*\*Stripe
 &#x20; resta GATED dietro la prima conversione manuale\*\*: prima si validano i paganti, poi si automatizza
@@ -94,7 +94,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Production\*\* — live su ailistenics.com (Vercel)
 
-\- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~1787 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session/libreria esercizi) + `log.js` (modale log). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito (`buildLogSummary` incluso)
+\- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~2051 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session/libreria esercizi) + `log.js` (modale log). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito (`buildLogSummary` incluso)
 
 \- \*\*✅ Gate di sintassi pre-deploy (ATTIVO, ora AUTOMATICO):\*\* pre-commit hook (`core.hooksPath .githooks` → `scripts/syntax-check.js`, `node --check` su index.html inline + progress.js + admin-ui.js + log.js, commit `d258d6d`) blocca il commit su `SyntaxError`. In più il check manuale (Chrome incognito + console F12: nessun `Uncaught SyntaxError`, nessun 404) per il visivo/runtime. Documentato in CLAUDE.md. Elimina la causa #1 della "pagina bianca". \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora possibile
 
@@ -200,7 +200,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO (intero path), non solo il reset\*\* — i doc davano email/password funzionante: NON lo è. Funziona SOLO Google OAuth (PKCE). Login/signup via email+password e il reset password sono entrambi rotti. \*\*Piano (16/06): SOSTITUZIONE con flusso OTP a codice\*\* (Supabase `signInWithOtp`/`verifyOtp`/`updateUser`) che unifica signup/login/reset e scavalca il magic-link/PKCE rotto → un solo lavoro, vedi TASKS 🟡 1B. \*\*Dipendenza HARD: SMTP custom / provider transazionale\*\* (il mailer Supabase di default è 2 mail/ora, inutilizzabile in produzione). Non bloccante per il trial funnel (lancio solo-Google)
 
-\- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`/`log.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` −35% (\~1787 righe oggi, dopo l'estrazione della libreria esercizi in `admin-ui.js` e del modale log in `log.js` il 15/06; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
+\- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`/`log.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` −35% (\~2051 righe oggi, dopo l'estrazione della libreria esercizi in `admin-ui.js` e del modale log in `log.js` il 15/06; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
 
 \- \*\*✅ RIR target per-programma — FATTO (tutti).\*\* BBR fascia 0-3, i 3 gym \~3, maxout 0-1 via filosofia New Workout
 
