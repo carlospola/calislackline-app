@@ -94,7 +94,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Production\*\* — live su ailistenics.com (Vercel)
 
-\- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~2051 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session/libreria esercizi) + `log.js` (modale log). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito (`buildLogSummary` incluso)
+\- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~1921 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session/libreria esercizi) + `log.js` (modale log) + `onboard.js` (form lead-only "Richiedi il coaching": submitLead/closeLead + APPS_URL). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito (`buildLogSummary` incluso)
 
 \- \*\*✅ Gate di sintassi pre-deploy (ATTIVO, ora AUTOMATICO):\*\* pre-commit hook (`core.hooksPath .githooks` → `scripts/syntax-check.js`, `node --check` su index.html inline + progress.js + admin-ui.js + log.js, commit `d258d6d`) blocca il commit su `SyntaxError`. In più il check manuale (Chrome incognito + console F12: nessun `Uncaught SyntaxError`, nessun 404) per il visivo/runtime. Documentato in CLAUDE.md. Elimina la causa #1 della "pagina bianca". \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora possibile
 
@@ -142,8 +142,11 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*✅ Profilo SLIM self-serve — CHIUSO/GIÀ IMPLEMENTATO (verifica codice 24/06):\*\* la verifica diretta ha
 &#x20; trovato che il form self-serve in `profileScreen` raccoglie GIÀ SOLO il nickname (input `p_name`;
-&#x20; `saveProfile` valida solo il nickname) e che il form completo (nome/cognome/telefono/infortuni…) vive
-&#x20; in `onboardScreen` ed È il questionario di CONVERSIONE, distinto e voluto → niente da implementare.
+&#x20; `saveProfile` valida solo il nickname). \*\*⚠️ AGGIORNAMENTO (luglio 2026): `onboardScreen` NON è più
+&#x20; il questionario di conversione con intake completo.\*\* È ora un form \*\*lead-only\*\* "Richiedi il
+&#x20; coaching" (soli campi Nome/Email/Telefono facoltativo/Messaggio + consenso privacy) che fa
+&#x20; lead-catching verso il Google Sheet via APPS_URL e \*\*NON scrive più su `profiles`\*\* (logica estratta
+&#x20; in `onboard.js`). La raccolta di dati salute/infortuni nel funnel via `onboardScreen` non avviene più.
 &#x20; \*\*Conseguenza:\*\* unico residuo pre-lancio del pacchetto landing/privacy = compilare i placeholder
 &#x20; `[DATA]`/`[EMAIL-CONTATTO]` in `privacy.html`/`termini.html`. _(Decisione originale 16/06 sotto.)_
 
@@ -154,9 +157,11 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 &#x20; infortuni — non eliminare (sicurezza)": gli infortuni/dati salute NON si raccolgono nel self-serve →
 &#x20; rete di sicurezza = contenuto di prova generico e a basso rischio (bodyweight) + l'atleta segnala il
 &#x20; dolore in chat + disclaimer medico nei Termini. \*\*Due profili distinti:\*\* SLIM in-app (nickname) vs
-&#x20; questionario di CONVERSIONE ("Richiedi il coaching": intake completo + infortuni/salute con consenso
-&#x20; esplicito). DB: semplificazione SOLO-UI, colonne profilo restano nullable, NESSUNA migration. Vedi
-&#x20; TASKS + ARCHITECTURE + AI_RULES.
+&#x20; "Richiedi il coaching". \*\*⚠️ AGGIORNAMENTO (luglio 2026):\*\* "Richiedi il coaching" (`onboardScreen`)
+&#x20; NON è più un questionario di conversione con intake completo che popola `profiles`: è ora un form
+&#x20; \*\*lead-only\*\* (Nome/Email/Telefono/Messaggio + consenso) che manda un lead al Google Sheet via
+&#x20; APPS_URL. Infortuni/salute NON si raccolgono più nel funnel via `onboardScreen`. DB: colonne profilo
+&#x20; restano nullable, NESSUNA migration. Vedi TASKS + ARCHITECTURE + AI_RULES.
 
 \- \*\*✅ DECISIONE — Landing + hero + flusso accesso (16/06):\*\* hero riscritto in italiano (headline
 &#x20; "Il coach AI che adatta ogni serie alla tua fatica"); azioni "Accedi con Google" (primaria) + "Crea
@@ -200,7 +205,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO (intero path), non solo il reset\*\* — i doc davano email/password funzionante: NON lo è. Funziona SOLO Google OAuth (PKCE). Login/signup via email+password e il reset password sono entrambi rotti. \*\*Piano (16/06): SOSTITUZIONE con flusso OTP a codice\*\* (Supabase `signInWithOtp`/`verifyOtp`/`updateUser`) che unifica signup/login/reset e scavalca il magic-link/PKCE rotto → un solo lavoro, vedi TASKS 🟡 1B. \*\*Dipendenza HARD: SMTP custom / provider transazionale\*\* (il mailer Supabase di default è 2 mail/ora, inutilizzabile in produzione). Non bloccante per il trial funnel (lancio solo-Google)
 
-\- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`/`log.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` −35% (\~2051 righe oggi, dopo l'estrazione della libreria esercizi in `admin-ui.js` e del modale log in `log.js` il 15/06; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
+\- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`/`log.js`/`onboard.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` \~1921 righe (dopo l'estrazione della libreria esercizi in `admin-ui.js` e del modale log in `log.js` il 15/06 e della logica onboarding lead-only in `onboard.js`; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
 
 \- \*\*✅ RIR target per-programma — FATTO (tutti).\*\* BBR fascia 0-3, i 3 gym \~3, maxout 0-1 via filosofia New Workout
 
@@ -309,7 +314,7 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Auth\*\* — SOLO Google OAuth (PKCE) attivo (⚠️ email/password NON attivo — intero path, non solo il reset; vedi Problemi Aperti)
 
-\- \*\*Dashboard atleta\*\* — programmi assegnati, statistiche, log recenti, riquadro "Riprendi"
+\- \*\*Dashboard atleta\*\* — programmi assegnati, \*\*zona coach\*\* (tra programmi e statistiche: `contactCoachBtn` "Contatta il coach" → WhatsApp `wa.me/393279870444`, SEMPRE visibile per l'atleta loggato; `reqCoachBtn` "Richiedi il coaching" → `onboardScreen`, visibile SOLO se l'atleta ha solo il programma trial, via `hasRealProgram`), statistiche, log recenti, riquadro "Riprendi"
 
 \- \*\*AI Coach session\*\* — chat real-time, 3 info box, salvataggio per-serie, lista tappabile (ordine libero), \*\*warm-up obbligatorio\*\*; chiusura con "Torna"
 
@@ -325,7 +330,7 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*log\_data strutturato\*\* — per-set con reps/rir/rpe/weight/note + programId/chosenWorkout
 
-\- \*\*Profilo atleta\*\* — DUE livelli (decisione 16/06): SLIM self-serve in-app (solo nickname) vs intake completo (dati fisici, obiettivi, attrezzatura, infortuni/salute con consenso) nel questionario di CONVERSIONE "Richiedi il coaching". Le colonne profilo complete restano nel DB (nullable)
+\- \*\*Profilo atleta\*\* — profilo self-serve in-app SLIM (solo nickname). \*\*⚠️ AGGIORNAMENTO (luglio 2026):\*\* "Richiedi il coaching" (`onboardScreen`) NON è più un intake completo che popola `profiles` — è ora un form \*\*lead-only\*\* (Nome/Email/Telefono/Messaggio + consenso) verso il Google Sheet via APPS_URL. Le colonne profilo complete restano nel DB (nullable) ma non vengono più popolate dal funnel
 
 \- \*\*Admin panel\*\* — gestione atleti, log, libreria esercizi, tab Template
 
@@ -333,7 +338,7 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Libreria esercizi\*\* — 49+ esercizi
 
-\- \*\*Onboarding form\*\* — email automatica via Apps Script (in overhaul, vedi TASKS)
+\- \*\*Onboarding lead-only\*\* — form "Richiedi il coaching" (`onboardScreen`): Nome/Email/Telefono facoltativo/Messaggio + consenso privacy → lead-catching verso il Google Sheet via APPS_URL (logica in `onboard.js`: submitLead/closeLead). NON salva su `profiles`. Apps Script in overhaul (vedi TASKS)
 
 \- \*\*(In arrivo)\*\* Compilazione placeholder legali `[DATA]`/`[EMAIL-CONTATTO]` (unico residuo pre-lancio del pacchetto landing — il profilo SLIM self-serve è ✅ già implementato, verifica 24/06); Dettaglio set per-esercizio (grafico per-set, piano approvato 24/06); Fase i18n IT/EN/DE (prioritaria post-lancio; l'hero elaborato si fa qui); Accesso email via OTP a codice (fase 2, sostituisce il blocco email/pw nascosto); Analytics funnel (da dati Supabase); Conversione manuale primi trialist + Stripe (gated); Mail resoconto AI settimanale; Logo/icona home screen (passo 1 PWA); Breathwork (frontend-only); Editor tabellare programmi (CSV↔tabella); Allenamento libero (log manuale, no AI); Periodizzazione attiva (GATED); Distribuzione app store (GATED)
 

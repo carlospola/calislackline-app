@@ -16,7 +16,7 @@
 
 \- Mantieni naming conventions esistenti (camelCase JS, kebab-case CSS IDs)
 
-\- \*\*Frontend MULTI-FILE (refactor fase 1, giugno 2026):\*\* `index.html` + `styles.css` + `progress.js` + `admin-ui.js` + `log.js`, script CLASSICI non-module → funzioni e var GLOBALI (gli onclick inline e le chiamate cross-file ci contano). TUTTE le Frontend Rules valgono per TUTTI i .js frontend. NON convertire in ES modules; NON cambiare l'ordine dei tag (inline → progress.js → admin-ui.js → log.js); NON estrarre il CORE SESSIONE AI da `index.html` (decisione di fase 1). `admin-ui.js` (frontend, root) ≠ `api/admin.js` (serverless). Eventuali nuove estrazioni (onboarding): SOLO su richiesta, col metodo recon dipendenze read-only → diff → gate → test funzionale (la libreria esercizi è già stata estratta in `admin-ui.js` e il modale log in `log.js` il 15/06; `buildLogSummary` è rimasta nel core)
+\- \*\*Frontend MULTI-FILE (refactor fase 1, giugno 2026):\*\* `index.html` + `styles.css` + `progress.js` + `admin-ui.js` + `log.js` + `onboard.js`, script CLASSICI non-module → funzioni e var GLOBALI (gli onclick inline e le chiamate cross-file ci contano). TUTTE le Frontend Rules valgono per TUTTI i .js frontend. NON convertire in ES modules; NON cambiare l'ordine dei tag (inline → progress.js → admin-ui.js → log.js → onboard.js, onboard.js ULTIMO); NON estrarre il CORE SESSIONE AI da `index.html` (decisione di fase 1). `admin-ui.js` (frontend, root) ≠ `api/admin.js` (serverless). L'estrazione onboarding è in parte realizzata (submitLead/closeLead + APPS_URL in `onboard.js`, luglio 2026; il markup `onboardScreen` resta nel core). Eventuali nuove estrazioni: SOLO su richiesta, col metodo recon dipendenze read-only → diff → gate → test funzionale (la libreria esercizi è già stata estratta in `admin-ui.js` e il modale log in `log.js` il 15/06; `buildLogSummary` è rimasta nel core)
 
 \## Sviluppo via Claude Code (repo locale)
 
@@ -300,7 +300,7 @@
 
 \- Storico ultime sessioni NON iniettato
 
-\- `athleteContext` (profilo) iniettato solo al primo turno (`isFirst`). \*\*⚠️ REGOLA REVISIONATA (16/06, profilo SLIM):\*\* la vecchia nota "incl. infortuni — non eliminare (sicurezza)" NON vale più per il SELF-SERVE — nel self-serve il profilo è SLIM (solo nickname) → `athleteContext` snello/vuoto, niente dati infortuni/salute. La rete di sicurezza self-serve = contenuto di prova a basso rischio (bodyweight) + dolore segnalato in chat + disclaimer medico nei Termini. \*\*Infortuni/limitazioni si raccolgono SOLO nel questionario di CONVERSIONE "Richiedi il coaching" (con consenso esplicito):\*\* per quegli atleti, quando il profilo è popolato, `athleteContext` torna a iniettarli (e lì NON vanno eliminati — sicurezza)
+\- `athleteContext` (profilo) iniettato solo al primo turno (`isFirst`). \*\*⚠️ REGOLA REVISIONATA (16/06, profilo SLIM):\*\* la vecchia nota "incl. infortuni — non eliminare (sicurezza)" NON vale più per il SELF-SERVE — nel self-serve il profilo è SLIM (solo nickname) → `athleteContext` snello/vuoto, niente dati infortuni/salute. La rete di sicurezza self-serve = contenuto di prova a basso rischio (bodyweight) + dolore segnalato in chat + disclaimer medico nei Termini. \*\*⚠️ AGGIORNAMENTO (luglio 2026):\*\* con `onboardScreen` ora \*\*lead-only\*\* (Nome/Email/Telefono/Messaggio + consenso), infortuni/limitazioni NON si raccolgono più nel funnel via "Richiedi il coaching" (che oggi cattura solo il lead e NON popola `profiles`). Cambia SOLO il canale di raccolta: la logica di sicurezza (default bodyweight + dolore segnalato in chat + disclaimer) resta valida; se in futuro il profilo viene popolato per altra via, `athleteContext` torna a iniettare gli infortuni (e lì NON vanno eliminati — sicurezza)
 
 \- \*\*Prompt caching (Leva 2):\*\* motore cachato in `chat.js` — non rompere (vedi Backend Rules). Il motore è cresciuto (\~250 token: precedenza + valutazione range) ma resta nel blocco cachato; i coach\_rules vanno tenuti SNELLI perché viaggiano nel blocco NON cachato.
 
@@ -334,7 +334,7 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- `exercises.owner\_id = null` = esercizio globale
 
-\- \*\*✅ Profilo SLIM self-serve — CHIUSO/GIÀ IMPLEMENTATO (verifica codice 24/06):\*\* la UI self-serve in-app (`profileScreen`) scrive GIÀ SOLO `name` (= nickname; input `p_name`, `saveProfile` valida solo il nickname); il form completo (nome/cognome/telefono/infortuni…) vive in `onboardScreen` ed È il questionario di CONVERSIONE "Richiedi il coaching", distinto e voluto → niente da implementare. Gli altri campi profilo (biometrie, `infortuni`, salute, obiettivi…) restano NULLABLE e si popolano SOLO dal questionario di conversione. \*\*Semplificazione SOLO-UI → NESSUNA migration\*\* (non droppare colonne). Il consenso salute (Art. 9) è confinato al questionario di conversione (vedi regola `athleteContext` revisionata).
+\- \*\*✅ Profilo SLIM self-serve — CHIUSO/GIÀ IMPLEMENTATO (verifica codice 24/06):\*\* la UI self-serve in-app (`profileScreen`) scrive GIÀ SOLO `name` (= nickname; input `p_name`, `saveProfile` valida solo il nickname). \*\*⚠️ AGGIORNAMENTO (luglio 2026): `onboardScreen` NON è più il questionario di conversione che popolava `profiles`\*\* — è ora un form \*\*lead-only\*\* "Richiedi il coaching" (Nome/Email/Telefono/Messaggio + consenso) che manda un lead al Google Sheet via APPS_URL (logica in `onboard.js`) e NON scrive su `profiles`. Gli altri campi profilo (biometrie, `infortuni`, salute, obiettivi…) restano NULLABLE ma NON sono più popolati dal funnel. \*\*Semplificazione SOLO-UI → NESSUNA migration\*\* (non droppare colonne).
 
 \- \*\*La colonna `workouts` è stata DROPPATA da `programs` e `program\_templates` (14/06)\*\* — source of truth = `workout\_csv`. NON reintrodurla e NON copiarla tra le tabelle né in `repushTemplate`.
 
@@ -360,7 +360,7 @@ Vecchio: exercises\[].reps/rir/sets (number)                          <- getExSe
 
 \- Non riscrivere tutto `index.html` per una modifica piccola
 
-\- \*\*Non convertire i .js frontend in ES modules; non togliere/riordinare i tag `<script>` (inline → progress.js → admin-ui.js → log.js) né il `<link styles.css>`; non estrarre il core sessione AI da `index.html`\*\*
+\- \*\*Non convertire i .js frontend in ES modules; non togliere/riordinare i tag `<script>` (inline → progress.js → admin-ui.js → log.js → onboard.js) né il `<link styles.css>`; non estrarre il core sessione AI da `index.html`\*\*
 
 \- \*\*Non confondere `admin-ui.js` (frontend, root) con `api/admin.js` (serverless): sono due file diversi\*\*
 

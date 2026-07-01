@@ -23,13 +23,15 @@ I 4 doc di progetto vivono in /docs e sono la source of truth condivisa col Proj
 
 Three layers, no framework:
 
-- **The frontend is split across four files** (no framework, no bundler, no build step): one inline
-  `<script>` core plus three sibling assets, all **classic non-module scripts** — so every function
+- **The frontend is `index.html` plus five sibling files** (no framework, no bundler, no build step):
+  one inline `<script>` core plus five siblings (`styles.css`, `progress.js`, `admin-ui.js`, `log.js`,
+  `onboard.js`), all **classic non-module scripts** — so every function
   and `var` is **global**. Inline `onclick`/`onchange` handlers and cross-file calls depend on this;
   **do not convert to ES modules.** Plain ES5-style `var`/`function`.
-  - **`index.html`** (~2051 lines) — markup + the **core JS**: auth/init, dashboard, the AI session
+  - **`index.html`** (~1921 lines) — markup + the **core JS**: auth/init, dashboard (incl. the coach
+    zone + `contactCoach()`), the AI session
     flow, CSV parsing/picker/`lista`, `setNum`/`log_data` persistence, recovery timer, chat
-    rendering, onboarding, utilities (`esc`/
+    rendering, utilities (`esc`/
     `showScreen`/`closeModal`/…), and the global-state `var` block (`currentUser`, `currentProfile`,
     `sessionHistory`, `sessionLog`, `currentSessionId`, `currentSetNum`, `testSession`,
     …) at the top of the inline `<script>`. UI is a set of `.screen` divs toggled by
@@ -52,9 +54,14 @@ Three layers, no framework:
     The markup `#logModal` and its `onclick`s stay in `index.html`. **`buildLogSummary` does NOT move
     — it stays in the `index.html` core** (pure log-summary helper used by both `resumeSession` and
     `openLogModal`).
+  - **`onboard.js`** — the **lead-only "Richiedi il coaching" form**: `APPS_URL` (moved here from
+    `index.html`) + 2 functions (`submitLead`/`closeLead`). `submitLead` posts a lead
+    `{nome,email,telefono,messaggio,consenso,timestamp}` to the Google Sheet via `APPS_URL` and does
+    **NOT** write to `profiles`. The markup `onboardScreen` and its `onclick`s stay in `index.html`.
 
   **Load order — do not change.** `<link rel="stylesheet" href="styles.css">` in `<head>`; then at
-  the end of `<body>`, in this order: the inline `<script>` → `progress.js` → `admin-ui.js` → `log.js`.
+  the end of `<body>`, in this order: the inline `<script>` → `progress.js` → `admin-ui.js` → `log.js`
+  → `onboard.js` (onboard.js last).
   Each later file relies on globals the inline core already defined; the order is the current
   convention (not load-bearing for correctness — all cross-file calls fire post-load via global scope).
 
@@ -67,8 +74,10 @@ Three layers, no framework:
   via the dashboard log-item `onclick`); log.js → core (`openLogModal` → `buildLogSummary`;
   `saveLogEdit`/`deleteLog` → `showDash`, behind a `typeof` guard); log.js → admin-ui.js
   (`deleteLog` → `renderLogTable`, behind a `typeof` guard); admin-ui.js → log.js
-  (`openLogModalById` → `openLogModal`). `deleteLog`'s `role` branch (admin → `renderLogTable`,
-  athlete → `showDash`) is unchanged.
+  (`openLogModalById` → `openLogModal`). **onboard.js** ↔ rest: core → onboard.js (the `reqCoachBtn` /
+  `showScreen('onboardScreen')` in the core opens the form, then its `submitLead` `onclick` posts the
+  lead); `contactCoach()` (opens `wa.me/393279870444`) stays in the core. `deleteLog`'s `role` branch
+  (admin → `renderLogTable`, athlete → `showDash`) is unchanged.
 - **`reset.html`** — standalone password-reset page (served at `/reset` via `vercel.json` rewrite).
 - **`api/*.js`** — Vercel serverless functions (Node, `export default async function handler`).
 
@@ -359,6 +368,15 @@ from its `log_data`, rebuilds `currentProfile` from the program (re-filtering th
 `buildLogSummary()` (it does **not** replay the old chat), and keeps logging into the **same** row —
 so a resumed session stays one `sessions` row. **"Inizia"** always starts a brand-new session.
 
+**Coach zone (dashboard body).** Between "I tuoi programmi" and "Statistiche", `showDash()` renders
+two buttons. **`contactCoachBtn`** ("Contatta il coach") calls **`contactCoach()`** (core global) →
+opens WhatsApp `wa.me/393279870444`; it is **always visible** for any logged-in athlete.
+**`reqCoachBtn`** ("Richiedi il coaching") → `showScreen('onboardScreen')`, shown **only** when the
+athlete has just the trial program — the `hasRealProgram` check in `showDash` (true if any program has
+`program_name !== 'Prova — Full Body'`, em dash U+2014). **Dead code left on purpose:** the old
+`requestProgramBtn`/`personalizedSessionBtn` inside `programEmpty` and the `hasProfile` block are now
+unreachable (every athlete has at least the trial) but harmless — leave them.
+
 **Demo / non-persisted sessions (primitive: `_isDemo`).** A session can run **without touching the
 DB**: when `currentProfile._isDemo` is true, `persistSets()` returns early (no `sessions`
 INSERT/UPDATE, `currentSessionId` stays `null`) and `showDash()` restores the saved
@@ -537,9 +555,9 @@ DB** (`trg_assign_trial_program`, AFTER INSERT su `profiles`), **NON frontend**.
 
 - **Refactor del monolite `index.html` — FASE 1 FATTA, poi FERMATO per decisione** (giugno 2026).
   Estratti in file separati: `styles.css` (tutto il CSS), `progress.js` (Progressi/grafici),
-  `admin-ui.js` (admin panel + template + test session + libreria esercizi) + `log.js` (modale log) — vedi "Architecture". index.html è passato
-  da ~2757 (pre-refactor) a ~1787, oggi ~2051 righe (cresciuto con feature successive) (fase 1 + libreria esercizi in admin-ui.js + modale log in log.js, 15/06). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
-  estrazioni future (onboarding) **solo su richiesta**, e **sempre con una recon
+  `admin-ui.js` (admin panel + template + test session + libreria esercizi) + `log.js` (modale log) + `onboard.js` (form lead-only "Richiedi il coaching": submitLead/closeLead + APPS_URL) — vedi "Architecture". index.html è passato
+  da ~2757 (pre-refactor) a ~1787, oggi ~1921 righe (fase 1 + libreria esercizi in admin-ui.js + modale log in log.js, 15/06 + logica onboarding lead-only in onboard.js, luglio 2026). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
+  estrazioni future **solo su richiesta**, e **sempre con una recon
   delle dipendenze prima** (chiamanti esterni, funzioni cross-area interposte, var globali condivise),
   come fatto per progress.js/admin-ui.js/log.js.
 - **Test sessione AI Coach dall'account admin — DONE.** Shipped as the **"Prova" test session**
@@ -589,7 +607,7 @@ These are mandatory working rules for this repository. Follow them on every chan
 `index.html` (the `var`/no-backtick/no-localStorage/`esc()`/unchanged-IDs/16px rules included).
 
 1. **Never rewrite `index.html` (or `progress.js`/`admin-ui.js`/`styles.css`) wholesale for small
-   changes.** `index.html` is still a large file (~2051 lines); always make targeted, surgical edits
+   changes.** `index.html` is still a large file (~1921 lines); always make targeted, surgical edits
    to the specific block involved. Do not regenerate or re-emit a whole file to change a few lines.
 2. **Show the plan before writing code.** Present the intended approach and the exact spots you'll
    touch, then implement only after that's laid out.

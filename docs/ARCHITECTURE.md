@@ -6,7 +6,7 @@
 
 \- \*\*Framework:\*\* Nessuno — HTML/CSS/JS vanilla. \*\*MULTI-FILE dal refactor fase 1 (giugno 2026):\*\*
 
-&#x20; - `index.html` (\~2051 righe; pre-refactor 2757) — markup + core JS: auth/init, dashboard, sessione AI (avvio/chat/aiSend/sendMsg), parsing CSV + picker + lista, setNum + persistenza `log\_data`, timer, chat rendering, onboarding, utility comuni (`esc`/`showScreen`/`closeModal`), client `sb`, var globali in testa allo `<script>`. NB: il MARKUP della libreria esercizi (toolbar + modale `exerciseModal`) e del modale log (`#logModal`) — con i rispettivi onclick — resta qui; le funzioni sono in `admin-ui.js` / `log.js`. **`buildLogSummary` RESTA nel core** (helper puro di riassunto log, usato da `resumeSession` e `openLogModal`)
+&#x20; - `index.html` (\~1921 righe; pre-refactor 2757) — markup + core JS: auth/init, dashboard (incl. zona coach + `contactCoach()`), sessione AI (avvio/chat/aiSend/sendMsg), parsing CSV + picker + lista, setNum + persistenza `log\_data`, timer, chat rendering, utility comuni (`esc`/`showScreen`/`closeModal`), client `sb`, var globali in testa allo `<script>`. NB: il MARKUP della libreria esercizi (toolbar + modale `exerciseModal`), del modale log (`#logModal`) e di `onboardScreen` — con i rispettivi onclick — resta qui; le funzioni sono in `admin-ui.js` / `log.js` / `onboard.js`. La LOGICA onboarding (submitLead/closeLead) vive in `onboard.js`; il markup `onboardScreen` resta nel core. **`buildLogSummary` RESTA nel core** (helper puro di riassunto log, usato da `resumeSession` e `openLogModal`)
 
 &#x20; - `styles.css` — tutto il CSS (ex blocco `<style>`), `<link>` nel `<head>`
 
@@ -16,9 +16,11 @@
 
 &#x20; - `log.js` — modale log: var `currentLogSession` + 4 funzioni (openLogModal/toggleLogEdit/saveLogEdit/deleteLog), estratte da `index.html` il 15/06; il markup `#logModal` e gli onclick restano in `index.html`. **`buildLogSummary` NON è qui** (resta nel core di `index.html`)
 
-\- \*\*Ordine di caricamento (NON cambiare):\*\* `<link styles.css>` nel `<head>`; in coda al `<body>`: `<script>` inline → `<script src="progress.js">` → `<script src="admin-ui.js">` → `<script src="log.js">`. Script \*\*CLASSICI non-module\*\*: funzioni e var restano GLOBALI — gli onclick/onchange inline e le chiamate cross-file ci contano. NON convertire in ES modules. (L'ordine non è vincolante per la correttezza — tutte le call cross-file sono post-load via global scope — ma è la convenzione attuale.)
+&#x20; - `onboard.js` — form lead-only "Richiedi il coaching": var/costante `APPS_URL` (spostata qui da `index.html`) + 2 funzioni (submitLead/closeLead). `submitLead` manda un lead `{nome,email,telefono,messaggio,consenso,timestamp}` al Google Sheet via APPS_URL e NON scrive su `profiles`; il markup `onboardScreen` e gli onclick restano in `index.html`
 
-\- \*\*Punti di contatto cross-file (via global scope):\*\* `handleSession→showAdmin`; `showDash→renderTemplates` (ritorno test session, tab `atabTemplates`); `admin-ui.js` → `esc`/`showScreen`/`closeModal`/`sb`/`startSessionWithPrompt` + R/W su `currentProfile`/`testSession`; `progress.js` → `esc`/`showScreen`/`sb`/`Chart`. \*\*log.js\*\* ↔ resto: core→log.js (`showDash→openLogModal`, via onclick del log-item in dashboard); log.js→core (`openLogModal→buildLogSummary`; `saveLogEdit`/`deleteLog`→`showDash`, con guard `typeof`); log.js→admin-ui.js (`deleteLog→renderLogTable`, con guard `typeof`); admin-ui.js→log.js (`openLogModalById→openLogModal`). Il ramo `role` di `deleteLog` (admin→`renderLogTable`, atleta→`showDash`) è invariato.
+\- \*\*Ordine di caricamento (NON cambiare):\*\* `<link styles.css>` nel `<head>`; in coda al `<body>`: `<script>` inline → `<script src="progress.js">` → `<script src="admin-ui.js">` → `<script src="log.js">` → `<script src="onboard.js">` (onboard.js ULTIMO). Script \*\*CLASSICI non-module\*\*: funzioni e var restano GLOBALI — gli onclick/onchange inline e le chiamate cross-file ci contano. NON convertire in ES modules. (L'ordine non è vincolante per la correttezza — tutte le call cross-file sono post-load via global scope — ma è la convenzione attuale.)
+
+\- \*\*Punti di contatto cross-file (via global scope):\*\* `handleSession→showAdmin`; `showDash→renderTemplates` (ritorno test session, tab `atabTemplates`); `admin-ui.js` → `esc`/`showScreen`/`closeModal`/`sb`/`startSessionWithPrompt` + R/W su `currentProfile`/`testSession`; `progress.js` → `esc`/`showScreen`/`sb`/`Chart`. \*\*log.js\*\* ↔ resto: core→log.js (`showDash→openLogModal`, via onclick del log-item in dashboard); log.js→core (`openLogModal→buildLogSummary`; `saveLogEdit`/`deleteLog`→`showDash`, con guard `typeof`); log.js→admin-ui.js (`deleteLog→renderLogTable`, con guard `typeof`); admin-ui.js→log.js (`openLogModalById→openLogModal`). \*\*onboard.js\*\* ↔ resto: core→onboard.js (il bottone `reqCoachBtn`/`showScreen('onboardScreen')` nel core apre il form, poi l'onclick `submitLead` in onboard.js invia il lead); la funzione `contactCoach()` (apre `wa.me/393279870444`) resta nel core. Il ramo `role` di `deleteLog` (admin→`renderLogTable`, atleta→`showDash`) è invariato.
 
 \- \*\*Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO\*\* (protocollo implicito sendMsg→nextSetNum→persistSets→reader): non estrarlo.
 
@@ -198,15 +200,17 @@ settings
 
 > \*\*✅ Profilo SLIM self-serve — CHIUSO/GIÀ IMPLEMENTATO (verifica codice 24/06):\*\* il form self-serve
 > in `profileScreen` raccoglie GIÀ SOLO il nickname (input `p_name`; `saveProfile` valida solo il
-> nickname); il form completo (nome/cognome/telefono/infortuni…) vive in `onboardScreen` ed È il
-> questionario di CONVERSIONE, distinto e voluto → niente da implementare. _(Decisione originale 16/06
+> nickname). \*\*⚠️ AGGIORNAMENTO (luglio 2026):\*\* `onboardScreen` NON è più il questionario di
+> conversione con intake completo (nome/cognome/telefono/infortuni…) che popolava `profiles`. È ora un
+> form \*\*lead-only\*\* "Richiedi il coaching" (Nome/Email/Telefono facoltativo/Messaggio + consenso) che
+> manda un lead al Google Sheet via APPS_URL (logica in `onboard.js`) e NON scrive su `profiles`. _(Decisione originale 16/06
 > sotto.)_
 
-> \*\*✅ Profilo SLIM self-serve (DECISO 16/06):\*\* la UI self-serve in-app raccoglie SOLO `nickname`
+> \*\*✅ Profilo SLIM self-serve (DECISO 16/06, aggiornato luglio 2026):\*\* la UI self-serve in-app raccoglie SOLO `nickname`
 > (→ `name`). Gli altri campi profilo (biometrie, `infortuni`, salute, obiettivi…) restano colonne
-> NULLABLE nel DB ma NON sono chiesti nel self-serve: si popolano SOLO dal questionario di CONVERSIONE
-> "Richiedi il coaching" (con consenso salute esplicito). \*\*Semplificazione SOLO-UI → NESSUNA
-> migration\*\* (le colonne non si toccano). Conseguenza coaching: `athleteContext` resta snello/vuoto
+> NULLABLE nel DB. \*\*⚠️ AGGIORNAMENTO:\*\* con `onboardScreen` ora lead-only questi campi NON sono più
+> raccolti dal funnel — né dal self-serve né da "Richiedi il coaching" (che oggi cattura solo il lead).
+> \*\*Semplificazione SOLO-UI → NESSUNA migration\*\* (le colonne non si toccano). Conseguenza coaching: `athleteContext` resta snello/vuoto
 > nel self-serve (la test session prova già che il motore gira su profilo neutro) → la rete di
 > sicurezza infortuni si sposta su contenuto di prova a basso rischio + segnalazione dolore in chat +
 > disclaimer medico nei Termini. Vedi AI_RULES ("athleteContext") e la sezione Privacy sotto.
@@ -1080,7 +1084,7 @@ Copre il rischio CRITICO (syntax error = pagina bianca). Il gate manuale Chrome 
 
 \- \*\*Anthropic API\*\* — Claude (`claude-sonnet-4-5`) via `/api/chat.js`
 
-\- \*\*Google Apps Script\*\* — email conferma onboarding + mail richiesta coaching. \*\*⚠️ Usa la GEMINI API per generare il messaggio\*\* (dipendenza prima NON documentata). Sistema in OVERHAUL (vedi TASKS 🟡): non costruirci sopra; candidato sostituzione Gemini → Anthropic (un vendor, una chiave); parti del flusso spariranno se l'accesso passa dalle mail Supabase (1A/1B)
+\- \*\*Google Apps Script\*\* — riceve oggi il \*\*lead\*\* `{nome,email,telefono,messaggio,consenso,timestamp}` dal form lead-only "Richiedi il coaching" (`onboard.js` → APPS_URL) + mail richiesta coaching. \*\*⚠️ Usa la GEMINI API per generare il messaggio\*\* (dipendenza prima NON documentata). Sistema in OVERHAUL (vedi TASKS 🟡): non costruirci sopra; candidato sostituzione Gemini → Anthropic (un vendor, una chiave); parti del flusso spariranno se l'accesso passa dalle mail Supabase (1A/1B)
 
 \- \*\*Google Fonts\*\* — DM Mono, Syne | \*\*Chart.js\*\* — grafici (CDN)
 
@@ -1110,9 +1114,13 @@ SUPABASE\_ANON\_KEY = sb\_publishable\_...   (index.html \~842 — pubblica per 
 
 ADMIN\_EMAIL       = calislackline@gmail.com   (index.html \~843)
 
-APPS\_URL          = https://script.google.com/macros/s/.../exec
+APPS\_URL          = https://script.google.com/macros/s/.../exec   (ora in onboard.js, spostata da index.html)
+
+WHATSAPP\_COACH    = 393279870444   (link wa.me/393279870444; contactCoach() nel core di index.html)
 
 ```
+
+> \*\*Regola di visibilità zona coach (index.html, showDash):\*\* `contactCoachBtn` (WhatsApp `wa.me/393279870444`) è SEMPRE visibile per l'atleta loggato; `reqCoachBtn` ("Richiedi il coaching" → `onboardScreen`) è mostrato SOLO se `hasRealProgram` è false, cioè se TUTTI i programmi dell'atleta sono il trial `'Prova — Full Body'` (em dash U+2014).
 
 &#x20;
 
