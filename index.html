@@ -47,7 +47,14 @@
 <div class="screen" id="dashScreen">
   <div class="topbar">
     <div class="topbar-brand">AILISTENICS</div>
-    <div class="topbar-right"><button class="topbar-btn" onclick="showProgress()">Progressi</button><button class="topbar-btn" onclick="showProfile()">Profilo</button><button class="topbar-btn" onclick="doLogout()" title="Esci">&#x23FB;</button></div>
+    <div class="dash-menu-wrap">
+      <button class="topbar-btn" id="dashMenuBtn" onclick="toggleDashMenu()" title="Menu" aria-label="Menu" aria-haspopup="true">&#x2630;</button>
+      <div class="dash-menu" id="dashMenu">
+        <button class="dash-menu-item" onclick="closeDashMenu();showProgress()">Progressi</button>
+        <button class="dash-menu-item" onclick="closeDashMenu();showProfile()">Profilo</button>
+        <button class="dash-menu-item" onclick="closeDashMenu();doLogout()">Esci</button>
+      </div>
+    </div>
   </div>
   <div class="dash-body">
     <div><div class="dash-name" id="dashWelcome">Ciao!</div><div class="dash-sub">Pronto per allenarti oggi?</div></div>
@@ -670,6 +677,9 @@ function fmtTime(s){return String(Math.floor(Math.max(s,0)/60)).padStart(2,'0')+
 function hideLoading(){document.getElementById('loadingScreen').style.display='none';}
 function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+// Hamburger menu della dashboard atleta
+function toggleDashMenu(){var m=document.getElementById('dashMenu');if(m)m.classList.toggle('open');}
+function closeDashMenu(){var m=document.getElementById('dashMenu');if(m)m.classList.remove('open');}
 
 function startDemoSession(){
   var orig = JSON.parse(JSON.stringify(currentProfile||{}));
@@ -832,6 +842,7 @@ async function showDash(){
     return;
   }
   showScreen('dashScreen');
+  var _dm=document.getElementById('dashMenu');if(_dm)_dm.classList.remove('open');
   var name = (currentProfile&&currentProfile.name)||currentUser.email.split('@')[0];
   var dul = document.getElementById('dashUserLabel'); if(dul) dul.textContent = name;
   document.getElementById('dashWelcome').textContent = 'Ciao, '+name.split(' ')[0]+'!';
@@ -1878,6 +1889,15 @@ function buildLogSummary(ld){
 }
 
 document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o) o.classList.remove('open');});});
+    // Click fuori dall'hamburger della dash: chiudi il menu
+    document.addEventListener('click',function(e){
+      var m=document.getElementById('dashMenu');
+      if(!m||!m.classList.contains('open'))return;
+      var b=document.getElementById('dashMenuBtn');
+      if(b&&(e.target===b||b.contains(e.target)))return;
+      if(m.contains(e.target))return;
+      m.classList.remove('open');
+    });
 
 document.addEventListener('DOMContentLoaded', function(){
   init();
