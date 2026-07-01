@@ -73,6 +73,10 @@
         </div>
       </div>
     </div>
+    <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+      <button id="contactCoachBtn" class="onboard-submit" onclick="contactCoach()" style="display:none;">Contatta il coach</button>
+      <button id="reqCoachBtn" class="onboard-submit" onclick="showScreen('onboardScreen')" style="display:none;">Richiedi il coaching &rarr;</button>
+    </div>
     <div>
       <div class="section-label">Statistiche</div>
       <div class="stats-row">
@@ -839,6 +843,18 @@ async function showDash(){
 
   var pr = await sb.from('programs').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:true});
   var programs = pr.data;
+  // Zona coach: contactCoachBtn sempre visibile; reqCoachBtn solo se l'atleta ha solo il trial
+  var hasRealProgram = false;
+  var _i;
+  if(programs){
+    for(_i=0;_i<programs.length;_i++){
+      if(programs[_i].program_name !== 'Prova \u2014 Full Body'){ hasRealProgram = true; break; }
+    }
+  }
+  var contactBtn = document.getElementById('contactCoachBtn');
+  var reqBtn = document.getElementById('reqCoachBtn');
+  if(contactBtn) contactBtn.style.display = 'block';
+  if(reqBtn) reqBtn.style.display = hasRealProgram ? 'none' : 'block';
   if(programs&&programs.length){
     document.getElementById('programEmpty').style.display='none';
     document.getElementById('programContent').style.display='block';
@@ -892,6 +908,11 @@ async function showDash(){
     i.innerHTML = '<div><div class="log-item-name">'+esc(s.workout_name)+'</div><div class="log-item-date">'+date+'</div></div><div class="log-item-right">Vedi</div>';
     i.onclick = function(){openLogModal(s);}; ll.appendChild(i);
   });
+}
+
+// Zona coach: apre WhatsApp verso il coach
+function contactCoach(){
+  window.open('https://wa.me/393279870444','_blank');
 }
 
 async function startSessionWithPrompt(programName, coachRules, workoutCsv, extraPrompt, sessionType, programId){
