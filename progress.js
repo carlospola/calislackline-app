@@ -28,10 +28,7 @@ function switchProgressTab(tab){
   document.getElementById('ptabEx').style.borderColor = tab === 'exercise' ? 'var(--accent)' : '';
   document.getElementById('ptabOv').style.color = tab === 'overview' ? 'var(--accent)' : '';
   document.getElementById('ptabOv').style.borderColor = tab === 'overview' ? 'var(--accent)' : '';
-  if(tab === 'overview'){
-    if(progressData.length > 0){ renderOverviewCharts(); }
-    else { showProgress().then(function(){ switchProgressTab('overview'); }); }
-  }
+  if(tab === 'overview'){ renderOverviewCharts(); }
 }
 
 async function showProgress(targetUserId){
