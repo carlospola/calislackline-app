@@ -237,7 +237,7 @@
 <div class="screen" id="progressScreen">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="topbar-btn" onclick="showDash()">&larr; Torna</button>
+      <button class="topbar-btn" onclick="progressBackScreen==='adminScreen'?showScreen('adminScreen'):showDash()">&larr; Torna</button>
       <div class="topbar-brand">Progressi</div>
     </div>
     <div style="display:flex;gap:4px;">
@@ -659,6 +659,7 @@ var currentSetMode = 'single', currentExercises = [];
 var sessionFirstSetDone = false;
 var sessionTimerInterval = null, sessionTimerRunning = false, sessionTimerLeft = 0, sessionTimerTotal = 0, sessionTimerEndAt = 0;
 var athleteProgramsUserId = null;
+var progressBackScreen = 'dashScreen';
 var currentSetState = null;
 var sessionLog = null, currentSessionId = null;
 var currentSetNum = null;

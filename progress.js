@@ -34,12 +34,15 @@ function switchProgressTab(tab){
   }
 }
 
-async function showProgress(){
+async function showProgress(targetUserId){
+  // targetUserId valorizzato = admin che guarda i progressi di un atleta; back verso adminScreen
+  var uid = targetUserId || currentUser.id;
+  progressBackScreen = targetUserId ? 'adminScreen' : 'dashScreen';
   showScreen('progressScreen');
   switchProgressTab('exercise');
   var r = await sb.from('sessions')
     .select('id,workout_name,created_at,log_data')
-    .eq('user_id', currentUser.id)
+    .eq('user_id', uid)
     .order('created_at', {ascending: true});
   progressData = r.data || [];
   var exercises = {};

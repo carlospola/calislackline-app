@@ -17,7 +17,7 @@ async function renderUserTable(){
   var athletes=r.data;
   if(!athletes||!athletes.length){tbody.innerHTML='<tr><td colspan="4" class="empty-table">Nessun atleta ancora.</td></tr>'; return;}
   tbody.innerHTML=athletes.map(function(u){
-    return '<tr><td>'+esc(u.name||'-')+'</td><td style="color:var(--muted)">'+esc(u.email)+'</td><td><span class="badge badge-'+(u.status||'pending')+'">'+(u.status||'pending')+'</span></td><td><button class="action-btn" onclick="openAthleteProfileModal(\''+u.id+'\',\''+esc(u.name||u.email)+'\')">Profilo</button><button class="action-btn primary" onclick="openAthleteProgramsModal(\''+u.id+'\',\''+esc(u.name||u.email)+'\')">Programmi</button><button class="action-btn '+(u.status==='active'?'danger':'')+'" onclick="toggleStatus(\''+u.id+'\',\''+u.status+'\')">'+(u.status==='active'?'Disattiva':'Attiva')+'</button></td></tr>';
+    return '<tr><td>'+esc(u.name||'-')+'</td><td style="color:var(--muted)">'+esc(u.email)+'</td><td><span class="badge badge-'+(u.status||'pending')+'">'+(u.status||'pending')+'</span></td><td><button class="action-btn" onclick="openAthleteProfileModal(\''+u.id+'\',\''+esc(u.name||u.email)+'\')">Profilo</button><button class="action-btn primary" onclick="openAthleteProgramsModal(\''+u.id+'\',\''+esc(u.name||u.email)+'\')">Programmi</button><button class="action-btn '+(u.status==='active'?'danger':'')+'" onclick="toggleStatus(\''+u.id+'\',\''+u.status+'\')">'+(u.status==='active'?'Disattiva':'Attiva')+'</button><button class="action-btn" onclick="showProgress(\''+u.id+'\')">Progressi</button></td></tr>';
   }).join('');
 }
 
