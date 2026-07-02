@@ -94,7 +94,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*Production\*\* — live su ailistenics.com (Vercel)
 
-\- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~1921 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session/libreria esercizi) + `log.js` (modale log) + `onboard.js` (form lead-only "Richiedi il coaching": submitLead/closeLead + APPS_URL). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito (`buildLogSummary` incluso)
+\- Frontend: vanilla JS \*\*multi-file\*\* (refactor fase 1, giugno 2026): `index.html` (\~1942 righe) + `styles.css` + `progress.js` (Progressi/grafici) + `admin-ui.js` (admin panel/template/test session/libreria esercizi) + `log.js` (modale log) + `onboard.js` (form lead-only "Richiedi il coaching": submitLead/closeLead + APPS_URL). Script CLASSICI non-module → funzioni e var globali. Il CORE SESSIONE AI resta in `index.html` di proposito (`buildLogSummary` incluso)
 
 \- \*\*✅ Gate di sintassi pre-deploy (ATTIVO, ora AUTOMATICO):\*\* pre-commit hook (`core.hooksPath .githooks` → `scripts/syntax-check.js`, `node --check` su index.html inline + progress.js + admin-ui.js + log.js, commit `d258d6d`) blocca il commit su `SyntaxError`. In più il check manuale (Chrome incognito + console F12: nessun `Uncaught SyntaxError`, nessun 404) per il visivo/runtime. Documentato in CLAUDE.md. Elimina la causa #1 della "pagina bianca". \*\*Node.js `v24.16.0` installato in locale (13/06)\*\* → `vercel dev` ora possibile
 
@@ -205,7 +205,7 @@ template riassegnabili\*\*, assegnabili a più atleti con aggiornamento in casca
 
 \- \*\*⚠️ EMAIL/PASSWORD NON ATTIVO (intero path), non solo il reset\*\* — i doc davano email/password funzionante: NON lo è. Funziona SOLO Google OAuth (PKCE). Login/signup via email+password e il reset password sono entrambi rotti. \*\*Piano (16/06): SOSTITUZIONE con flusso OTP a codice\*\* (Supabase `signInWithOtp`/`verifyOtp`/`updateUser`) che unifica signup/login/reset e scavalca il magic-link/PKCE rotto → un solo lavoro, vedi TASKS 🟡 1B. \*\*Dipendenza HARD: SMTP custom / provider transazionale\*\* (il mailer Supabase di default è 2 mail/ora, inutilizzabile in produzione). Non bloccante per il trial funnel (lancio solo-Google)
 
-\- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`/`log.js`/`onboard.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` \~1921 righe (dopo l'estrazione della libreria esercizi in `admin-ui.js` e del modale log in `log.js` il 15/06 e della logica onboarding lead-only in `onboard.js`; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
+\- \*\*Refactor monolite → FASE 1 FATTA (giugno 2026), refactor FERMATO QUI di proposito.\*\* Gate di sintassi + estrazione `styles.css`/`progress.js`/`admin-ui.js`/`log.js`/`onboard.js`: rischio pagina-bianca eliminato, blast radius ridotto, `index.html` \~1942 righe (dopo l'estrazione della libreria esercizi in `admin-ui.js` e del modale log in `log.js` il 15/06 e della logica onboarding lead-only in `onboard.js`; pre-refactor 2757). Il CORE SESSIONE AI resta in `index.html` DI PROPOSITO. Estrazioni residue OPZIONALI (vedi TASKS 🟢)
 
 \- \*\*✅ RIR target per-programma — FATTO (tutti).\*\* BBR fascia 0-3, i 3 gym \~3, maxout 0-1 via filosofia New Workout
 
@@ -314,7 +314,7 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Auth\*\* — SOLO Google OAuth (PKCE) attivo (⚠️ email/password NON attivo — intero path, non solo il reset; vedi Problemi Aperti)
 
-\- \*\*Dashboard atleta\*\* — programmi assegnati, \*\*zona coach\*\* (tra programmi e statistiche: `contactCoachBtn` "Contatta il coach" → WhatsApp `wa.me/393279870444`, SEMPRE visibile per l'atleta loggato; `reqCoachBtn` "Richiedi il coaching" → `onboardScreen`, visibile SOLO se l'atleta ha solo il programma trial, via `hasRealProgram`), statistiche, log recenti, riquadro "Riprendi"
+\- \*\*Dashboard atleta\*\* — programmi assegnati, \*\*zona coach\*\* (tra programmi e statistiche: `contactCoachBtn` "Contatta il coach" → WhatsApp `wa.me/393279870444`, SEMPRE visibile per l'atleta loggato; `reqCoachBtn` "Richiedi il coaching" → `onboardScreen`, visibile SOLO se l'atleta ha solo il programma trial, via `hasRealProgram`), statistiche, log recenti, riquadro "Riprendi". \*\*✅ Hamburger menu (solo dashScreen):\*\* i 3 bottoni topbar-right (Progressi/Profilo/Esci) sono dietro un'icona hamburger che apre un menu a tendina (`toggleDashMenu`/`closeDashMenu`; reset in `showDash`; listener click-fuori); "Contatta il coach" NON è nell'hamburger (resta CTA nel corpo). Altre 5 topbar (admin inclusa) invariate
 
 \- \*\*AI Coach session\*\* — chat real-time, 3 info box, salvataggio per-serie, lista tappabile (ordine libero), \*\*warm-up obbligatorio\*\*; chiusura con "Torna"
 
@@ -334,7 +334,7 @@ espandibile online. Programmi anche per palestra tradizionale.
 
 \- \*\*Admin panel\*\* — gestione atleti, log, libreria esercizi, tab Template
 
-\- \*\*Schermata Progressi\*\* — tab Esercizio + Overview (✅ Batch 1 Progressi 24/06: 1RM stimato, Volume per sessione, Miglior set, label "Fatica percepita media")
+\- \*\*Schermata Progressi\*\* — tab Esercizio + Overview (✅ Batch 1 Progressi 24/06: 1RM stimato, Volume per sessione, Miglior set, label "Fatica percepita media"). \*\*✅ Admin vede i progressi di un atleta:\*\* riuso di `progressScreen` via `showProgress(targetUserId)` (bottone "Progressi" nella tabella atleti admin), back ramificato via `progressBackScreen` (adminScreen vs showDash); lettura via client `sb` con RLS `is_admin()`, nessun endpoint nuovo. \*\*Limite noto v1:\*\* `isTimedExercise` legge il CSV dell'utente loggato → il relabel isometrici può essere errato nella vista admin (vedi TASKS/ARCHITECTURE)
 
 \- \*\*Libreria esercizi\*\* — 49+ esercizi
 

@@ -233,6 +233,8 @@
 
 \- \[ ] \*\*Commento stale in `api/chat.js`\*\* — sopra il blocco del gate trial cita ancora "count exact via HEAD", ma la logica è ora GET + finestra 24h (commit `21b25ff`). Solo commento, nessun impatto.
 
+\- \[ ] \*\*\[LIMITE NOTO v1] Relabel isometrici errato nella vista admin dei progressi\*\* — `isTimedExercise()` (`progress.js`) legge `currentProfile.workout_csv`, cioè il CSV dell'utente LOGGATO. In vista admin (`showProgress(targetUserId)` che guarda i progressi di un altro atleta) `currentProfile` resta quello dell'admin, non dell'atleta visualizzato → il relabel degli esercizi isometrici/a-tempo nei grafici può essere errato per l'atleta guardato. \*\*NON è un bug\*\* del flusso atleta (lì `currentProfile` è corretto): è un limite della vista admin, da affrontare più avanti (es. caricare il CSV dell'atleta target o basarsi solo sul marker `metric:'time'` nel log). Introdotto con "Admin vede i progressi di un atleta".
+
 \- \[ ] \*\*Playwright E2E del funnel trial — SBLOCCATO (prerequisito SODDISFATTO: ambiente di preview locale ✅ FATTA, 14/06).\*\* Test ad alto valore (signup → template → 3 sessioni → 403 → CTA): ora c'è dove farlo girare in sicurezza (`vercel dev` via `.\dev.ps1`). \*\*Caveat:\*\* la preview tocca il DB Supabase REALE (env da production) → l'E2E va isolato su dati/account di test.
 
 \- \[ ] \*\*Cleanup account/programmi di test\*\* — rimuovere account/programmi di prova residui.
@@ -332,6 +334,12 @@
 \---
 
 &#x20;
+
+\## ✅ Completati — Hamburger dashboard + admin vede i progressi di un atleta (luglio 2026)
+
+\- \[x] \*\*Hamburger menu dashboard atleta (solo dashScreen).\*\* I 3 bottoni topbar-right (Progressi/Profilo/Esci) della SOLA `dashScreen` sono ora dietro un'icona hamburger (`#dashMenuBtn`) che apre un menu a tendina `#dashMenu`. Globali `toggleDashMenu()`/`closeDashMenu()` (index.html \~682, add/remove `.open`); ogni voce chiama prima `closeDashMenu()`; reset del menu (`.open` rimosso) in `showDash` subito dopo `showScreen('dashScreen')`; listener `document` click-fuori accanto a quello dei `.modal-overlay` (\~riga 1892). Regole CSS `.dash-menu*` in `styles.css` con convenzione `.open`. \*\*Solo `dashScreen` toccata\*\* — le altre 5 topbar (adminScreen inclusa) invariate. \*\*"Contatta il coach" NON è nell'hamburger\*\*: resta CTA nel corpo dashboard.
+
+\- \[x] \*\*Admin vede i progressi di un atleta selezionato.\*\* Riuso di `progressScreen` esistente: `showProgress(targetUserId)` accetta un `targetUserId` OPZIONALE (progress.js \~34) → se presente la query `sessions` usa quell'id invece di `currentUser.id`. Globale `progressBackScreen` (default `'dashScreen'`, dichiarata accanto ad `athleteProgramsUserId`, index.html \~662) impostata da `showProgress` (`'adminScreen'` se `targetUserId`, altrimenti `'dashScreen'`); il bottone "← Torna" di `progressScreen` ramifica (`adminScreen` → `showScreen('adminScreen')`, altrimenti `showDash()`, così il flusso atleta preserva la logica di `showDash`). Aggiunto bottone "Progressi" nella cella azioni della tabella atleti admin (`renderUserTable`, admin-ui.js) → `showProgress(u.id)`. \*\*Permessi:\*\* lettura via client `sb` con RLS `is_admin()` (stesso canale di `renderLogTable`), nessun endpoint service-role nuovo. \*\*Fix collegato:\*\* `switchProgressTab` nel ramo overview chiama `renderOverviewCharts()` INCONDIZIONATAMENTE (prima, con `progressData` vuoto, ri-chiamava `showProgress` senza argomento e riscriveva `progressBackScreen`, rompendo il "Torna" per atleti senza dati). \*\*Limite noto v1\*\* (relabel isometrici nella vista admin) registrato in 🟢 Low Priority.
 
 \## ✅ Completati — Progressi v2: Epley RIR-adj + Dettaglio set multi-metrica + titoli/desc + grafici Overview (25 giugno 2026, commit `7744796`+`2fb6aeb`+`4ed20c8`+`e23164b`+commit Overview)
 

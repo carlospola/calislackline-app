@@ -6,11 +6,11 @@
 
 \- \*\*Framework:\*\* Nessuno — HTML/CSS/JS vanilla. \*\*MULTI-FILE dal refactor fase 1 (giugno 2026):\*\*
 
-&#x20; - `index.html` (\~1921 righe; pre-refactor 2757) — markup + core JS: auth/init, dashboard (incl. zona coach + `contactCoach()`), sessione AI (avvio/chat/aiSend/sendMsg), parsing CSV + picker + lista, setNum + persistenza `log\_data`, timer, chat rendering, utility comuni (`esc`/`showScreen`/`closeModal`), client `sb`, var globali in testa allo `<script>`. NB: il MARKUP della libreria esercizi (toolbar + modale `exerciseModal`), del modale log (`#logModal`) e di `onboardScreen` — con i rispettivi onclick — resta qui; le funzioni sono in `admin-ui.js` / `log.js` / `onboard.js`. La LOGICA onboarding (submitLead/closeLead) vive in `onboard.js`; il markup `onboardScreen` resta nel core. **`buildLogSummary` RESTA nel core** (helper puro di riassunto log, usato da `resumeSession` e `openLogModal`)
+&#x20; - `index.html` (\~1942 righe; pre-refactor 2757) — markup + core JS: auth/init, dashboard (incl. zona coach + `contactCoach()`), sessione AI (avvio/chat/aiSend/sendMsg), parsing CSV + picker + lista, setNum + persistenza `log\_data`, timer, chat rendering, utility comuni (`esc`/`showScreen`/`closeModal`), client `sb`, var globali in testa allo `<script>`. NB: il MARKUP della libreria esercizi (toolbar + modale `exerciseModal`), del modale log (`#logModal`) e di `onboardScreen` — con i rispettivi onclick — resta qui; le funzioni sono in `admin-ui.js` / `log.js` / `onboard.js`. La LOGICA onboarding (submitLead/closeLead) vive in `onboard.js`; il markup `onboardScreen` resta nel core. **`buildLogSummary` RESTA nel core** (helper puro di riassunto log, usato da `resumeSession` e `openLogModal`)
 
 &#x20; - `styles.css` — tutto il CSS (ex blocco `<style>`), `<link>` nel `<head>`
 
-&#x20; - `progress.js` — schermata Progressi/grafici: stato co-locato + 10 funzioni (switchProgressTab, showProgress, destroyChart, numOrNull, getExSets, makeBarOpts, renderProgressCharts, calNavMonth, renderOverviewCharts, renderHeatmapMonth)
+&#x20; - `progress.js` — schermata Progressi/grafici: stato co-locato + 10 funzioni (switchProgressTab, showProgress, destroyChart, numOrNull, getExSets, makeBarOpts, renderProgressCharts, calNavMonth, renderOverviewCharts, renderHeatmapMonth). \*\*`showProgress(targetUserId)` accetta un `targetUserId` OPZIONALE\*\* (admin che guarda i progressi di un atleta): presente → query `sessions` su quell'id + `progressBackScreen='adminScreen'`; assente → `currentUser.id` + `'dashScreen'`. `switchProgressTab('overview')` chiama `renderOverviewCharts()` INCONDIZIONATAMENTE (niente ri-entrata argument-less di `showProgress`). Vedi "Admin vede i progressi di un atleta" sotto.
 
 &#x20; - `admin-ui.js` — admin panel (19 funzioni showAdmin…removeProgram) + template (renderTemplates…applyToAll + `editingTemplateId`/`assigningTemplateId`) + `startTestSession` + libreria esercizi (5 funzioni loadLibrary/filterLibrary/openExerciseModal/saveExercise/deleteExercise + var `allExercises`, spostate da `index.html` il 15/06; markup/onclick restano in `index.html`). \*\*⚠️ NON confondere con `api/admin.js` (serverless)\*\*
 
@@ -621,6 +621,50 @@ deleteLog (fix 7f8315d): role==='admin' -> solo renderLogTable() (resta su admin
 &#x20; atleta -> showDash().
 
 ```
+
+&#x20;
+
+\## Hamburger menu dashboard atleta (solo dashScreen)
+
+I 3 bottoni topbar-right della \*\*dashboard atleta\*\* (Progressi / Profilo / Esci) vivono ora dietro un'icona hamburger (`#dashMenuBtn`, `&#x2630;`) che apre un menu a tendina `#dashMenu`. Globali \*\*`toggleDashMenu()`\*\* / \*\*`closeDashMenu()`\*\* (index.html \~682) togglano/rimuovono `.open`; ogni voce chiama prima `closeDashMenu()`. Il menu è \*\*resettato\*\* (`.open` rimosso) dentro `showDash()` subito dopo `showScreen('dashScreen')`; un listener `document` click-fuori (accanto a quello dei `.modal-overlay`, \~riga 1892) lo chiude. \*\*Solo `dashScreen` è toccata\*\* — le altre 5 topbar (adminScreen inclusa) invariate. \*\*"Contatta il coach" NON è nell'hamburger\*\*: resta CTA nel corpo dashboard. CSS `.dash-menu*` in `styles.css` con convenzione `.open`.
+
+&#x20;
+
+\## Admin vede i progressi di un atleta (riuso di progressScreen)
+
+Riuso della schermata Progressi esistente lato admin, nessun endpoint nuovo.
+
+```
+
+showProgress(targetUserId)  <-- targetUserId OPZIONALE (progress.js ~34)
+
+&#x20; presente  -> query sessions su targetUserId (non currentUser.id); progressBackScreen='adminScreen'
+
+&#x20; assente   -> currentUser.id; progressBackScreen='dashScreen'
+
+progressBackScreen  <-- globale, default 'dashScreen', dichiarata accanto ad athleteProgramsUserId (index.html ~662)
+
+Bottone "← Torna" di progressScreen (index.html ~240) ramifica:
+
+&#x20; progressBackScreen==='adminScreen' -> showScreen('adminScreen')   (torna al pannello admin)
+
+&#x20; altrimenti                          -> showDash()                  (flusso atleta: preserva la logica di showDash)
+
+renderUserTable (admin-ui.js): aggiunto bottone "Progressi" nella cella azioni -> showProgress(u.id)
+
+PERMESSI: lettura sessions di un altro atleta via client sb con RLS is_admin() (stesso canale di
+
+&#x20; renderLogTable) -> NESSUN endpoint service-role nuovo.
+
+FIX collegato: switchProgressTab nel ramo overview chiama renderOverviewCharts() INCONDIZIONATAMENTE
+
+&#x20; (prima, con progressData vuoto, ri-chiamava showProgress SENZA argomento e riscriveva
+
+&#x20; progressBackScreen, rompendo il "Torna" per atleti senza dati).
+
+```
+
+\*\*⚠️ LIMITE NOTO (v1, NON un bug):\*\* `isTimedExercise()` (progress.js) legge `currentProfile.workout_csv`, cioè il CSV dell'\*\*utente loggato\*\*. In vista admin (progressi di un altro atleta) `currentProfile` resta quello dell'admin, non dell'atleta visualizzato → il relabel degli esercizi isometrici/a-tempo nei grafici può essere errato per l'atleta guardato. Da affrontare più avanti.
 
 &#x20;
 

@@ -28,7 +28,7 @@ Three layers, no framework:
   `onboard.js`), all **classic non-module scripts** — so every function
   and `var` is **global**. Inline `onclick`/`onchange` handlers and cross-file calls depend on this;
   **do not convert to ES modules.** Plain ES5-style `var`/`function`.
-  - **`index.html`** (~1921 lines) — markup + the **core JS**: auth/init, dashboard (incl. the coach
+  - **`index.html`** (~1942 lines) — markup + the **core JS**: auth/init, dashboard (incl. the coach
     zone + `contactCoach()`), the AI session
     flow, CSV parsing/picker/`lista`, `setNum`/`log_data` persistence, recovery timer, chat
     rendering, utilities (`esc`/
@@ -41,7 +41,11 @@ Three layers, no framework:
   - **`progress.js`** — the Progressi/charts area: its co-located state (`progressData`,
     `CHART_DEFAULTS`, chart instances, `calCurrentMonth`, …) + 10 functions (`switchProgressTab`,
     `showProgress`, `getExSets`, `numOrNull`, `destroyChart`, `makeBarOpts`, `renderProgressCharts`,
-    `calNavMonth`, `renderOverviewCharts`, `renderHeatmapMonth`).
+    `calNavMonth`, `renderOverviewCharts`, `renderHeatmapMonth`). **`showProgress(targetUserId)` takes
+    an optional `targetUserId`** (see "Admin views an athlete's Progressi" below): passed → the
+    `sessions` query runs on that id and the back target is `adminScreen`; absent → `currentUser.id`
+    and back to `dashScreen`. `switchProgressTab('overview')` calls `renderOverviewCharts()`
+    unconditionally (it does **not** re-enter argument-less `showProgress`).
   - **`admin-ui.js`** (repo root — **NOT** `api/admin.js`, which is the serverless function) — the
     admin panel (19 functions, `showAdmin`…`removeProgram`) + the template library (7 functions,
     `renderTemplates`…`applyToAll`, plus the `editingTemplateId`/`assigningTemplateId` state) +
@@ -377,6 +381,33 @@ athlete has just the trial program — the `hasRealProgram` check in `showDash` 
 `requestProgramBtn`/`personalizedSessionBtn` inside `programEmpty` and the `hasProfile` block are now
 unreachable (every athlete has at least the trial) but harmless — leave them.
 
+**Dashboard hamburger menu (dashScreen only).** The three top-right buttons of the **athlete
+dashboard** (Progressi / Profilo / Esci) live behind a hamburger icon (`#dashMenuBtn`, `&#x2630;`)
+that toggles a dropdown `#dashMenu`. Globals **`toggleDashMenu()`** / **`closeDashMenu()`**
+(index.html ~682) add/remove `.open`; each menu item calls `closeDashMenu()` first. The menu is reset
+(`.open` removed) inside `showDash()` right after `showScreen('dashScreen')`, and a document
+click-outside listener (next to the `.modal-overlay` one, ~line 1892) closes it. **Only `dashScreen`
+was touched** — the other 5 topbars (adminScreen included) are unchanged. **"Contatta il coach" is
+NOT in the hamburger** — it stays a CTA in the dashboard body (Coach zone above). CSS `.dash-menu*`
+in `styles.css` uses the `.open` convention.
+
+**Admin views an athlete's Progressi.** Reuses the existing `progressScreen`. **`showProgress(targetUserId)`**
+(progress.js ~34) takes an **optional** `targetUserId`: when present the `sessions` query filters on
+that id instead of `currentUser.id`. A global **`progressBackScreen`** (default `'dashScreen'`,
+declared next to `athleteProgramsUserId` in index.html ~662) is set by `showProgress` to
+`'adminScreen'` when `targetUserId` is passed, else `'dashScreen'`; the progressScreen "← Torna"
+button branches on it (`progressBackScreen==='adminScreen' ? showScreen('adminScreen') : showDash()`
+— so the athlete flow keeps `showDash()`'s exit logic). A **"Progressi"** button was added to the
+actions cell of the admin athletes table (`renderUserTable`, admin-ui.js) → `showProgress(u.id)`.
+**Permissions:** reading another athlete's sessions goes through the browser `sb` client under RLS
+`is_admin()` — same channel as `renderLogTable`; **no new service-role endpoint**. Fix landed with
+this: `switchProgressTab` in the overview branch calls `renderOverviewCharts()` unconditionally
+(previously, with empty `progressData`, it re-called argument-less `showProgress` which rewrote
+`progressBackScreen` and broke "Torna" for athletes with no data). **Known limit (v1, not a bug):**
+`isTimedExercise()` (progress.js) reads `currentProfile.workout_csv` = the **logged-in user's** CSV;
+in the admin view `currentProfile` is still the admin's, so the isometric/timed relabel of charts may
+be wrong for the athlete being viewed. To address later.
+
 **Demo / non-persisted sessions (primitive: `_isDemo`).** A session can run **without touching the
 DB**: when `currentProfile._isDemo` is true, `persistSets()` returns early (no `sessions`
 INSERT/UPDATE, `currentSessionId` stays `null`) and `showDash()` restores the saved
@@ -556,7 +587,7 @@ DB** (`trg_assign_trial_program`, AFTER INSERT su `profiles`), **NON frontend**.
 - **Refactor del monolite `index.html` — FASE 1 FATTA, poi FERMATO per decisione** (giugno 2026).
   Estratti in file separati: `styles.css` (tutto il CSS), `progress.js` (Progressi/grafici),
   `admin-ui.js` (admin panel + template + test session + libreria esercizi) + `log.js` (modale log) + `onboard.js` (form lead-only "Richiedi il coaching": submitLead/closeLead + APPS_URL) — vedi "Architecture". index.html è passato
-  da ~2757 (pre-refactor) a ~1787, oggi ~1921 righe (fase 1 + libreria esercizi in admin-ui.js + modale log in log.js, 15/06 + logica onboarding lead-only in onboard.js, luglio 2026). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
+  da ~2757 (pre-refactor) a ~1787, oggi ~1942 righe (fase 1 + libreria esercizi in admin-ui.js + modale log in log.js, 15/06 + logica onboarding lead-only in onboard.js, luglio 2026). **Il CORE della SESSIONE AI resta in index.html: NON estrarlo.** Eventuali
   estrazioni future **solo su richiesta**, e **sempre con una recon
   delle dipendenze prima** (chiamanti esterni, funzioni cross-area interposte, var globali condivise),
   come fatto per progress.js/admin-ui.js/log.js.
@@ -607,7 +638,7 @@ These are mandatory working rules for this repository. Follow them on every chan
 `index.html` (the `var`/no-backtick/no-localStorage/`esc()`/unchanged-IDs/16px rules included).
 
 1. **Never rewrite `index.html` (or `progress.js`/`admin-ui.js`/`styles.css`) wholesale for small
-   changes.** `index.html` is still a large file (~1921 lines); always make targeted, surgical edits
+   changes.** `index.html` is still a large file (~1942 lines); always make targeted, surgical edits
    to the specific block involved. Do not regenerate or re-emit a whole file to change a few lines.
 2. **Show the plan before writing code.** Present the intended approach and the exact spots you'll
    touch, then implement only after that's laid out.
